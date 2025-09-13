@@ -27,6 +27,8 @@ export default async function ProtectedPage() {
       profile = await res.json();
     }
   }
+
+  console.log({ jwt });
   console.log({ profile });
   
   return (
