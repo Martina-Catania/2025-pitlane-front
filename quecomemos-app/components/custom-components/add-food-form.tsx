@@ -20,8 +20,8 @@ export function AddFoodForm({
 	...props
 }: React.ComponentPropsWithoutRef<"div">) {
 	const [foodName, setFoodName] = useState("");
-	const [preferences, setPreferences] = useState(0);
-	const [restrictions, setRestrictions] = useState(0);
+	const [preferences, setPreferences] = useState<number[]>([]);
+	const [restrictions, setRestrictions] = useState<number[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
@@ -37,8 +37,8 @@ export function AddFoodForm({
 				body: JSON.stringify({
 					name: foodName,
 					svgLink: "",
-					preferences: [preferences],
-					dietaryRestrictions: [restrictions]
+					preferences: preferences,
+					dietaryRestrictions: restrictions
 				}),
 			});
 			console.log("response - ", response);
@@ -74,10 +74,16 @@ export function AddFoodForm({
 								/>
 							</div>
 							<DropdownWrapper label="Preferences">
-								<CustomCheckbox endpoint={"preferences"} />
+								<CustomCheckbox 
+									endpoint={"preferences"} 
+									onSelectionChange={setPreferences}
+								/>
 							</DropdownWrapper>
 							<DropdownWrapper label="Dietary Restrictions">
-								<CustomCheckbox endpoint={"dietary-restrictions"} />
+								<CustomCheckbox 
+									endpoint={"dietary-restrictions"} 
+									onSelectionChange={setRestrictions}
+								/>
 							</DropdownWrapper>
 						</div>
 						{error && <p className="text-red-500">{error}</p>}

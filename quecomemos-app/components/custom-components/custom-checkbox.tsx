@@ -6,14 +6,16 @@ import { Checkbox } from "../ui/checkbox";
 import React from "react";
 interface CustomCheckboxProps extends React.ComponentPropsWithoutRef<"div"> {
     endpoint: string;
+    onSelectionChange?: (selectedIds: number[]) => void;
 }
 
 export function CustomCheckbox({
     endpoint,
+    onSelectionChange,
     className,
     ...props
 }: CustomCheckboxProps) {
-    const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+    const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -34,12 +36,16 @@ export function CustomCheckbox({
             }
             const data = await response.json();
             setOptions(Array.isArray(data) ? data : []);
+            console.log("Fetched options:", data);
         } catch (error: unknown) {
             setError(error instanceof Error ? error.message : "An error occurred");
         } finally {
             setIsLoading(false);
         }
     };
+    React.useEffect(() => {
+        console.log("Selected options:", selectedOptions);
+    }, [selectedOptions]);
 
     React.useEffect(() => {
         handleEndpoint();
@@ -48,21 +54,26 @@ export function CustomCheckbox({
     return (
         <div className={cn("relative", className)} {...props}>
                 <div className="flex flex-col gap-2">
-                    {options.map(option => (
-                        <label key={option.PreferenceID || option.DietaryRestrictionID || option.name} className="flex items-center gap-2">
-                            <Checkbox
-                                checked={selectedOptions.includes(option.name)}
-                                onCheckedChange={(checked: boolean) => {
-                                    setSelectedOptions(prev =>
-                                        checked
-                                            ? [...prev, option.name]
-                                            : prev.filter(o => o !== option.name)
-                                    );
-                                }}
-                            />
-                            {option.name}
-                        </label>
-                    ))}
+                    {options.map(option => {
+                        const optionId = option.PreferenceID || option.DietaryRestrictionID;
+                        return (
+                            <label key={optionId || option.name} className="flex items-center gap-2">
+                                <Checkbox
+                                    checked={optionId ? selectedOptions.includes(optionId) : false}
+                                    onCheckedChange={(checked: boolean) => {
+                                        if (optionId) {
+                                            const newSelection = checked
+                                                ? [...selectedOptions, optionId]
+                                                : selectedOptions.filter(o => o !== optionId);
+                                            setSelectedOptions(newSelection);
+                                            onSelectionChange?.(newSelection);
+                                        }
+                                    }}
+                                />
+                                {option.name}
+                            </label>
+                        );
+                    })}
                 </div>
             </div>
     );
