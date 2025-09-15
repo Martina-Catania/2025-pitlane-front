@@ -24,7 +24,6 @@ export function AddFoodForm({
 	const [restrictions, setRestrictions] = useState<number[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
-	const router = useRouter();
 	const handleAddFood = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
