@@ -49,11 +49,9 @@ export default async function ProtectedPage() {
 
           {/* UI solo para admin */}
           <RoleGate role="admin" userRole={profile.role}>
-            <AdminFoodForm />     
             <div className="mt-6">
-              <UserFoods foods={foods} />
+              <AddFoodForm />
             </div>
-      <AddFoodForm />
           </RoleGate>
 
           {/* UI solo para user */}
