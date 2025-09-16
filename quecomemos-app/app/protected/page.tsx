@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-
 import { createClient } from "@/lib/supabase/server";
-import { InfoIcon } from "lucide-react";
-import { FetchDataSteps } from "@/components/tutorial/fetch-data-steps";
+import { RoleGate } from "@/components/ui/role-based";
+import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
+import { UserFoods } from "@/components/ui/UserFoods";
 
 export default async function ProtectedPage() {
   const supabase = await createClient();
@@ -15,47 +15,54 @@ export default async function ProtectedPage() {
   const jwt = await supabase.auth.getSession().then(res => res.data.session?.access_token);
 
   let profile = null;
+  let foods: any[] = [];
 
-  if (data.claims && jwt) {
-    const res = await fetch(`http://localhost:3005/profile/${data.claims.sub}`, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-      cache: "no-store",
-    });
-    if (res.ok) {
-      profile = await res.json();
+  if (data.claims) {
+    const profileRes = await fetch(
+      `http://localhost:3005/profile/${data.claims.sub}`,
+      {
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (profileRes.ok) profile = await profileRes.json();
+
+    // Traigo comidas si es usuario normal o admin
+    if (profile?.role === "user" || profile?.role === "admin") {
+      const foodsRes = await fetch("http://localhost:3005/foods");
+      if (foodsRes.ok) foods = await foodsRes.json();
     }
   }
 
-  console.log({ jwt });
-  console.log({ profile });
-  
+  console.log("profile:", profile);
+  console.log("foods:", foods);
+
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="w-full">
-        <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
-          <InfoIcon size="16" strokeWidth={2} />
-          This is a protected page that you can only see as an authenticated
-          user
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 items-start">
-        <h2 className="font-bold text-2xl mb-4">Your user details</h2>
-        <pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
-          {JSON.stringify(data.claims, null, 2)}
-        </pre>
+      {profile && (
+        <>
+          <div className="mb-4">
+            <div className="font-bold text-lg">{profile.username || profile.email}</div>
+            <div className="text-sm text-gray-500 capitalize">{profile.role}</div>
+          </div>
 
-        {profile && (
-          <pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
-            {JSON.stringify(profile, null, 2)}
-          </pre>
-        )}
-      </div>
-      <div>
-        <h2 className="font-bold text-2xl mb-4">Next steps</h2>
-        <FetchDataSteps />
-      </div>
+          {/* UI solo para admin */}
+          <RoleGate role="admin" userRole={profile.role}>
+            <AdminFoodForm />     
+            <div className="mt-6">
+              <UserFoods foods={foods} />
+            </div>
+          </RoleGate>
+
+          {/* UI solo para user */}
+          <RoleGate role="user" userRole={profile.role}>
+            <UserFoods foods={foods} />
+          </RoleGate>
+        </>
+      )}
     </div>
   );
 }
