@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AddFoodForm } from "@/components/custom-components/add-food-form";
 import { createClient } from "@/lib/supabase/server";
 import { RoleGate } from "@/components/ui/role-based";
 import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
@@ -36,10 +37,7 @@ export default async function ProtectedPage() {
       if (foodsRes.ok) foods = await foodsRes.json();
     }
   }
-
-  console.log("profile:", profile);
-  console.log("foods:", foods);
-
+  
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
       {profile && (
@@ -55,6 +53,7 @@ export default async function ProtectedPage() {
             <div className="mt-6">
               <UserFoods foods={foods} />
             </div>
+      <AddFoodForm />
           </RoleGate>
 
           {/* UI solo para user */}
