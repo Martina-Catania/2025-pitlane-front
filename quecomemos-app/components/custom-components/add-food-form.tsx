@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { IconSelect } from "@/components/custom-components/icon-select";
 import { useState } from "react";
 
 export function AddFoodForm({
@@ -22,6 +22,7 @@ export function AddFoodForm({
 	const [foodName, setFoodName] = useState("");
 	const [preferences, setPreferences] = useState<number[]>([]);
 	const [restrictions, setRestrictions] = useState<number[]>([]);
+	const [icon, setIcon] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const handleAddFood = async (e: React.FormEvent) => {
@@ -35,7 +36,7 @@ export function AddFoodForm({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					name: foodName,
-					svgLink: "",
+					svgLink: icon ? icon : "",
 					preferences: preferences,
 					dietaryRestrictions: restrictions
 				}),
@@ -84,6 +85,9 @@ export function AddFoodForm({
 									onSelectionChange={setRestrictions}
 								/>
 							</DropdownWrapper>
+							<IconSelect 
+								onSelectionChange={setIcon}
+							/>
 						</div>
 						{error && <p className="text-red-500">{error}</p>}
 						<Button type="submit" disabled={isLoading} className="mt-2">

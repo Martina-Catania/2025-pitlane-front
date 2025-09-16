@@ -1,6 +1,5 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Checkbox } from "../ui/checkbox";
 import React from "react";
