@@ -25,12 +25,14 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [authEmail, setAuthEmail] = useState('');
   const supabase = createClient();
+
 
   // Estados para cada sección
   const [profileData, setProfileData] = useState({
     username: initialProfile?.username || '',
-    email: initialProfile?.email || '',
+    email: '',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -39,12 +41,26 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
     confirmPassword: '',
   });
 
+  // Fetch email from Supabase auth
+  useEffect(() => {
+    const fetchAuthEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        const email = user.email;
+        setAuthEmail(email);
+        // Don't populate profileData.email - keep it empty for placeholder behavior
+      }
+    };
+
+    fetchAuthEmail();
+  }, [supabase]);
+
   // Sincronizar estado cuando cambie initialProfile
   useEffect(() => {
-    setProfileData({
+    setProfileData(prev => ({
       username: initialProfile?.username || '',
-      email: initialProfile?.email || '',
-    });
+      email: prev.email, // Keep the current email value (empty or user-entered)
+    }));
   }, [initialProfile]);
 
   const updateProfile = async (e: React.FormEvent) => {
@@ -71,31 +87,36 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
       if (!response.ok) {
         throw new Error('Failed to update profile');
       }
+      
 
       // Actualizar email en Supabase si cambió
-      if (profileData.email !== initialProfile.email) {
-        const { error: emailError } = await supabase.auth.updateUser({
+      if (profileData.email && profileData.email !== authEmail) {
+        const { error: emailError, data } = await supabase.auth.updateUser({
           email: profileData.email,
         });
 
+        console.log('Email update response:', { data, emailError });
         if (emailError) {
           throw new Error('Failed to update email: ' + emailError.message);
         }
+        
+        // Update local auth email state after successful update
+        setAuthEmail(profileData.email);
       }
 
       // Forzar refetch y limpiar cache
       await refetch();
-      
+
       // Emitir evento global para que otros componentes se actualicen
       window.dispatchEvent(new CustomEvent('userProfileUpdated'));
-      
+
       setMessage('Profile updated successfully!');
-      
+
       // Opcional: pequeño delay para asegurar que los otros componentes se actualicen
       setTimeout(() => {
         setMessage('Profile updated successfully! Changes are reflected across the app.');
       }, 500);
-      
+
     } catch (error) {
       setMessage('Error updating profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
@@ -105,7 +126,7 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
   const updatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage('New passwords do not match');
       return;
@@ -171,24 +192,12 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
                 type="email"
                 value={profileData.email || ''}
                 onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="Enter email"
+                placeholder={authEmail || 'Enter email'}
               />
             </div>
 
-            <div>
-              <Label htmlFor="role">Role</Label>
-              <Input
-                id="role"
-                type="text"
-                value={initialProfile.role}
-                disabled
-                className="bg-gray-100 capitalize"
-              />
-              <p className="text-xs text-gray-500 mt-1">Role cannot be changed</p>
-            </div>
-
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isUpdating}
               className="w-full"
             >
@@ -256,8 +265,8 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isUpdating || !passwordData.newPassword || !passwordData.confirmPassword}
               className="w-full"
             >
@@ -269,11 +278,10 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
       {/* Messages */}
       {message && (
-        <div className={`p-4 rounded-lg ${
-          message.includes('Error') || message.includes('Failed') 
-            ? 'bg-red-50 text-red-700 border border-red-200' 
+        <div className={`p-4 rounded-lg ${message.includes('Error') || message.includes('Failed')
+            ? 'bg-red-50 text-red-700 border border-red-200'
             : 'bg-green-50 text-green-700 border border-green-200'
-        }`}>
+          }`}>
           {message}
         </div>
       )}

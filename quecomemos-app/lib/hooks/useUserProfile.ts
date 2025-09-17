@@ -44,7 +44,16 @@ export function useUserProfile(): UseUserProfileReturn {
       // Verificar cache (saltar si forceRefresh es true)
       const cached = profileCache.get(userId);
       if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_TTL) {
-        setProfile(cached.data);
+        // Even with cache, get fresh email from auth as it might have been updated
+        const { data: { user } } = await supabase.auth.getUser();
+        const emailFromAuth = user?.email || '';
+        
+        const profileWithFreshEmail = {
+          ...cached.data,
+          email: emailFromAuth
+        };
+        
+        setProfile(profileWithFreshEmail);
         setLoading(false);
         return;
       }
@@ -66,13 +75,23 @@ export function useUserProfile(): UseUserProfileReturn {
 
       const profileData = await response.json();
       
+      // Get email from Supabase auth
+      const { data: { user } } = await supabase.auth.getUser();
+      const emailFromAuth = user?.email || '';
+      
+      // Merge profile data with email from auth
+      const completeProfile = {
+        ...profileData,
+        email: emailFromAuth
+      };
+      
       // Actualizar cache
       profileCache.set(userId, { 
-        data: profileData, 
+        data: completeProfile, 
         timestamp: now 
       });
       
-      setProfile(profileData);
+      setProfile(completeProfile);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setProfile(null);
@@ -103,9 +122,18 @@ export function useUserProfile(): UseUserProfileReturn {
         const now = Date.now();
         const cached = profileCache.get(userId);
         
-        // Si tenemos cache válido, usarlo directamente sin loading
+        // Si tenemos cache válido, usarlo directamente sin loading pero con email fresco
         if (cached && (now - cached.timestamp) < CACHE_TTL) {
-          setProfile(cached.data);
+          // Get fresh email from auth even when using cache
+          const { data: { user } } = await supabase.auth.getUser();
+          const emailFromAuth = user?.email || '';
+          
+          const profileWithFreshEmail = {
+            ...cached.data,
+            email: emailFromAuth
+          };
+          
+          setProfile(profileWithFreshEmail);
           setLoading(false);
           return; // No hacer fetch si el cache es válido
         }
