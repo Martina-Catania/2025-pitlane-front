@@ -25,6 +25,8 @@ export function AddFoodForm({
 	const [icon, setIcon] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [preferencesLoading, setPreferencesLoading] = useState(false);
+	const [restrictionsLoading, setRestrictionsLoading] = useState(false);
 	const handleAddFood = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
@@ -74,15 +76,28 @@ export function AddFoodForm({
 								/>
 							</div>
 							<DropdownWrapper label="Preferences">
+								{preferencesLoading && (
+									<div className="flex items-center gap-2 p-2">
+										<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+										<span className="text-sm text-gray-600">Loading preferences...</span>
+									</div>
+								)}
 								<CustomCheckbox 
 									endpoint={"preferences"} 
 									onSelectionChange={setPreferences}
+									onLoadingChange={setPreferencesLoading}
 								/>
 							</DropdownWrapper>
 							<DropdownWrapper label="Dietary Restrictions">
+								{restrictionsLoading && (
+									<div className="flex items-center gap-2 p-2">
+										<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+									</div>
+								)}
 								<CustomCheckbox 
 									endpoint={"dietary-restrictions"} 
 									onSelectionChange={setRestrictions}
+									onLoadingChange={setRestrictionsLoading}
 								/>
 							</DropdownWrapper>
 							<IconSelect 
@@ -90,9 +105,11 @@ export function AddFoodForm({
 							/>
 						</div>
 						{error && <p className="text-red-500">{error}</p>}
-						<Button type="submit" disabled={isLoading} className="mt-2">
-							{isLoading ? "Adding..." : "Add Food"}
-						</Button>
+						<div className="flex justify-center mt-4">
+							<Button type="submit" disabled={isLoading} className="mt-2">
+								{isLoading ? "Adding..." : "Add Food"}
+							</Button>
+						</div>
 					</form>
 				</CardContent>
 			</Card>
