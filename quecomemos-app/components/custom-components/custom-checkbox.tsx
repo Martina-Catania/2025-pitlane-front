@@ -1,17 +1,18 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Checkbox } from "../ui/checkbox";
 import React from "react";
 interface CustomCheckboxProps extends React.ComponentPropsWithoutRef<"div"> {
     endpoint: string;
     onSelectionChange?: (selectedIds: number[]) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export function CustomCheckbox({
     endpoint,
     onSelectionChange,
+    onLoadingChange,
     className,
     ...props
 }: CustomCheckboxProps) {
@@ -23,6 +24,7 @@ export function CustomCheckbox({
 
     const handleEndpoint = async () => {
         setIsLoading(true);
+        onLoadingChange?.(true);
         setError(null);
 
         try {
@@ -41,6 +43,7 @@ export function CustomCheckbox({
             setError(error instanceof Error ? error.message : "An error occurred");
         } finally {
             setIsLoading(false);
+            onLoadingChange?.(false);
         }
     };
     React.useEffect(() => {
@@ -53,6 +56,12 @@ export function CustomCheckbox({
 
     return (
         <div className={cn("relative", className)} {...props}>
+            {error && (
+                <div className="text-red-500 text-sm p-2">
+                    Error: {error}
+                </div>
+            )}
+            {!isLoading && !error && (
                 <div className="flex flex-col gap-2">
                     {options.map(option => {
                         const optionId = option.PreferenceID || option.DietaryRestrictionID;
@@ -75,6 +84,7 @@ export function CustomCheckbox({
                         );
                     })}
                 </div>
-            </div>
+            )}
+        </div>
     );
 }
