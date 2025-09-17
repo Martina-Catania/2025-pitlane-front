@@ -13,11 +13,9 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 interface AddUserDataFormProps extends React.ComponentPropsWithoutRef<"div"> {
-    endpoint: string;
 }
 
 export function AddUserDataForm({
-    endpoint,
     className,
     ...props
 }: AddUserDataFormProps) {
