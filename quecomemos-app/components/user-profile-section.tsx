@@ -1,9 +1,11 @@
 'use client';
 
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useUserPreferences } from '@/lib/hooks/useUserPreferences';
 import { RoleGate } from './ui/role-based';
 import { AddFoodForm } from './custom-components/add-food-form';
 import { UserFoods } from './ui/UserFoods';
+import { PreferencesWarning } from './custom-components/preferences-warning';
 import { useEffect, useState } from 'react';
 
 interface Food {
@@ -16,6 +18,7 @@ interface Food {
 
 export function UserProfileSection() {
   const { profile, loading, error, refetch } = useUserProfile();
+  const { userPreferences, loading: preferencesLoading } = useUserPreferences();
   const [foods, setFoods] = useState<Food[]>([]);
   const [loadingFoods, setLoadingFoods] = useState(true);
 
@@ -53,7 +56,7 @@ export function UserProfileSection() {
     };
   }, [refetch]);
 
-  if (loading) {
+  if (loading || preferencesLoading) {
     return (
       <div className="flex-1 w-full flex flex-col gap-12">
         <div className="mb-4">
@@ -90,6 +93,11 @@ export function UserProfileSection() {
 
       {/* UI solo para user */}
       <RoleGate role="user" userRole={profile.role}>
+        {/* Show preferences warning if user doesn't have preferences set */}
+        {!preferencesLoading && userPreferences && !userPreferences.hasPreferences && (
+          <PreferencesWarning className="mb-6" />
+        )}
+        
         {loadingFoods ? (
           <div className="text-gray-500">Loading foods...</div>
         ) : (

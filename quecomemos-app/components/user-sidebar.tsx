@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Settings, LogOut, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { User, Settings, LogOut, X, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 
@@ -10,6 +11,7 @@ export function UserSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const { profile, loading, refetch } = useUserProfile();
+  const router = useRouter();
 
   // Escuchar eventos de actualización de perfil
   useEffect(() => {
@@ -131,6 +133,20 @@ export function UserSidebar() {
         {/* Menu Items */}
         <div className="p-2">
           <Link
+            href="/protected"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-3 w-full p-3 text-left hover:bg-gray-800 rounded-lg transition-colors"
+          >
+            <Home className="w-5 h-5 text-gray-300" />
+            <div>
+              <div className="font-medium text-sm text-white">Home</div>
+              <div className="text-xs text-gray-400">
+                Go to main dashboard
+              </div>
+            </div>
+          </Link>
+
+          <Link
             href="/protected/settings"
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 w-full p-3 text-left hover:bg-gray-800 rounded-lg transition-colors"
@@ -149,11 +165,11 @@ export function UserSidebar() {
               className="flex items-center gap-3 w-full p-3 text-left hover:bg-red-900 rounded-lg transition-colors text-red-400"
               onClick={() => {
                 setIsOpen(false);
-                // Llamar logout directamente
+                // Llamar logout usando router en lugar de window.location
                 import('@/lib/supabase/client').then(({ createClient }) => {
                   const supabase = createClient();
                   supabase.auth.signOut().then(() => {
-                    window.location.href = '/auth/login';
+                    router.push('/auth/login');
                   });
                 });
               }}

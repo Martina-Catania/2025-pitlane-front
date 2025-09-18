@@ -12,6 +12,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useUserProfile } from "@/lib/hooks/useUserProfile";
+import { useUserPreferences } from "@/lib/hooks/useUserPreferences";
 interface AddUserDataFormProps extends React.ComponentPropsWithoutRef<"div"> {
 }
 
@@ -19,6 +21,8 @@ export function AddUserDataForm({
     className,
     ...props
 }: AddUserDataFormProps) {
+    const { refetch } = useUserProfile();
+    const { refetch: refetchPreferences } = useUserPreferences();
     const [preferences, setPreferences] = useState<any[]>([]);
     const [dietaryRestrictions, setDietaryRestrictions] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -101,6 +105,14 @@ export function AddUserDataForm({
             const result = await response.json();
             console.log("User preferences updated successfully", result);
             
+            // Forzar refetch y limpiar cache (same as username update)
+            await refetch();
+            
+            // ALSO refetch preferences directly
+            await refetchPreferences();
+
+            // Emitir evento global para que otros componentes se actualicen (same as username update)
+            window.dispatchEvent(new CustomEvent('userProfileUpdated'));
             
         } catch (error: unknown) {
             console.error("Error updating preferences:", error);

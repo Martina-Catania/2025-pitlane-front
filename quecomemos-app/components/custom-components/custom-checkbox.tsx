@@ -39,7 +39,6 @@ export function CustomCheckbox({
             }
             const data = await response.json();
             setOptions(Array.isArray(data) ? data : []);
-            console.log("Fetched options:", data);
         } catch (error: unknown) {
             setError(error instanceof Error ? error.message : "An error occurred");
         } finally {
@@ -55,9 +54,6 @@ export function CustomCheckbox({
     useEffect(() => {
         handleEndpoint();
     }, [endpoint]);
-
-    console.log("initial options - ", initialOptions)
-    console.log("selected options - ", selectedOptions)
 
     return (
         <div className={cn("relative", className)} {...props}>
