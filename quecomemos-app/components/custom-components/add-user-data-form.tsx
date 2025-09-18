@@ -49,8 +49,8 @@ export function AddUserDataForm({
 
             if (response.ok) {
                 const data = await response.json();
-                setPreferences(data.Preference);
-                setDietaryRestrictions(data.DietaryRestriction);
+                setPreferences(data.Preference.map((pref: { PreferenceID: any; }) => pref.PreferenceID));
+                setDietaryRestrictions(data.DietaryRestriction.map((dr: { DietaryRestrictionID: any; }) => dr.DietaryRestrictionID));
             }
         };
 
@@ -142,7 +142,7 @@ export function AddUserDataForm({
                             <div>
                                 <Label className="block mb-2">Preferences</Label>
                                 <CustomCheckbox 
-                                    initialOptions={preferences?.map(pref => pref.PreferenceID) || []}
+                                    initialOptions={preferences.length > 0 ? preferences : []}
                                     endpoint="preferences"
                                     onSelectionChange={setPreferences}
                                 />
@@ -150,7 +150,7 @@ export function AddUserDataForm({
                             <div>
                                 <Label className="block mb-2">Dietary Restrictions</Label>
                                 <CustomCheckbox 
-                                    initialOptions={dietaryRestrictions?.map(dr => dr.DietaryRestrictionID) || []}
+                                    initialOptions={dietaryRestrictions.length > 0 ? dietaryRestrictions : []}
                                     endpoint="dietary-restrictions"
                                     onSelectionChange={setDietaryRestrictions}
                                 />

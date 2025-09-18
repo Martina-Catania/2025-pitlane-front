@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { RoleGate } from "@/components/ui/role-based";
 import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
 import { UserFoods } from "@/components/ui/UserFoods";
+import { AddUserDataForm } from "@/components/custom-components/add-user-data-form";
 
 export default async function ProtectedPage() {
   const supabase = await createClient();
@@ -46,6 +47,7 @@ export default async function ProtectedPage() {
             <div className="font-bold text-lg">{profile.username || profile.email}</div>
             <div className="text-sm text-gray-500 capitalize">{profile.role}</div>
           </div>
+          <AddUserDataForm />
 
           {/* UI solo para admin */}
           <RoleGate role="admin" userRole={profile.role}>
