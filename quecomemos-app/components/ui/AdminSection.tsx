@@ -42,34 +42,40 @@ export function AdminSection() {
 
       {/* MODAL: Agregar comida */}
       {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
+          <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
             <button
-              className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+              className="absolute top-4 right-4 text-amber-200 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-2 rounded-full transition-all"
               onClick={handleCloseAddModal}
+              aria-label="Cerrar modal"
             >
               ✖
             </button>
-            <AddFoodForm onSuccess={handleCloseAddModal} />
+            <div className="mt-4">
+              <AddFoodForm onSuccess={handleCloseAddModal} />
+            </div>
           </div>
         </div>
       )}
 
       {/* MODAL: Editar comida */}
       {showEditModal && selectedFood && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
+          <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
             <button
-              className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+              className="absolute top-4 right-4 text-amber-200 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-2 rounded-full transition-all"
               onClick={handleCloseEditModal}
+              aria-label="Cerrar modal"
             >
               ✖
             </button>
 
-            <EditFoodForm
-              food={selectedFood}
-              onSuccess={handleCloseEditModal}
-            />
+            <div className="mt-4">
+              <EditFoodForm
+                food={selectedFood}
+                onSuccess={handleCloseEditModal}
+              />
+            </div>
           </div>
         </div>
       )}

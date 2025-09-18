@@ -73,21 +73,22 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
 
   return (
     <div className={cn("max-w-md mx-auto", className)} {...props}>
-      <Card>
+      <Card className="bg-neutral-800 border-amber-800/30">
         <CardHeader>
-          <CardTitle>Add Food</CardTitle>
-          <CardDescription>Add a new food item to the list</CardDescription>
+          <CardTitle className="text-amber-100">Add Food</CardTitle>
+          <CardDescription className="text-gray-400">Add a new food item to the list</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddFood}>
             <div className="grid gap-4">
               <div>
-                <Label htmlFor="food-name">Food Name</Label>
+                <Label htmlFor="food-name" className="text-amber-200">Food Name</Label>
                 <Input
                   id="food-name"
                   value={foodName}
                   onChange={(e) => setFoodName(e.target.value)}
                   required
+                  className="bg-neutral-700 border-amber-800/30 text-amber-100 placeholder:text-gray-400 focus:border-amber-600 focus:ring-amber-600/20"
                 />
               </div>
 
@@ -110,10 +111,14 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
               <IconSelect onSelectionChange={setIcon} />
             </div>
 
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="text-red-300 bg-red-900/20 border border-red-800/30 rounded-lg px-3 py-2 text-sm">{error}</p>}
 
             <div className="flex justify-center mt-4">
-              <Button type="submit" disabled={isLoading} className="mt-2">
+              <Button 
+                type="submit" 
+                disabled={isLoading} 
+                className="mt-2 bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg"
+              >
                 {isLoading ? "Adding..." : "Add Food"}
               </Button>
             </div>

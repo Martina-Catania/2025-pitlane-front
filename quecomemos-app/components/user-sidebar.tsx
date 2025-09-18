@@ -53,7 +53,7 @@ export function UserSidebar() {
 
   if (loading) {
     return (
-      <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+      <div className="w-8 h-8 bg-neutral-200 rounded-full animate-pulse"></div>
     );
   }
 
@@ -68,10 +68,10 @@ export function UserSidebar() {
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="relative w-8 h-8 rounded-full bg-gray-600 hover:bg-gray-700 p-0"
+        className="relative w-8 h-8 rounded-full bg-amber-800/30 hover:bg-amber-700/40 border border-amber-800/30 p-0 transition-all"
         aria-label="Open user menu"
       >
-        <User className="w-4 h-4 text-gray-200" />
+        <User className="w-4 h-4 text-amber-200" />
       </Button>
 
       {/* Overlay */}
@@ -87,13 +87,13 @@ export function UserSidebar() {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-white">User Menu</h2>
+        <div className="flex items-center justify-between p-4 border-b border-amber-800/30">
+          <h2 className="text-lg font-semibold text-amber-100">User Menu</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsOpen(false)}
-            className="w-8 h-8 p-0 text-gray-300 hover:text-white hover:bg-gray-800"
+            className="w-8 h-8 p-0 text-amber-200 hover:text-amber-100 hover:bg-amber-800/20"
             aria-label="Close menu"
           >
             <X className="w-4 h-4" />
@@ -101,17 +101,17 @@ export function UserSidebar() {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-b border-gray-700 bg-gray-800">
+        <div className="p-4 border-b border-amber-800/30 bg-neutral-800">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-gray-200" />
+            <div className="w-12 h-12 bg-amber-800/30 border border-amber-700/50 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-amber-200" />
             </div>
             <div>
-              <div className="font-medium text-sm text-white">
+              <div className="font-medium text-sm text-amber-100">
                 {profile.username || 'User'}
               </div>
-              <div className="text-xs text-gray-300">{profile.email}</div>
-              <div className="text-xs text-blue-400 capitalize font-medium">
+              <div className="text-xs text-neutral-400">{profile.email}</div>
+              <div className="text-xs text-amber-400 capitalize font-medium">
                 {profile.role}
               </div>
             </div>
@@ -123,12 +123,12 @@ export function UserSidebar() {
           <Link
             href="/protected"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 w-full p-3 text-left hover:bg-gray-800 rounded-lg transition-colors"
+            className="flex items-center gap-3 w-full p-3 text-left hover:bg-amber-800/20 rounded-lg transition-colors"
           >
-            <Home className="w-5 h-5 text-gray-300" />
+            <Home className="w-5 h-5 text-amber-300" />
             <div>
-              <div className="font-medium text-sm text-white">Home</div>
-              <div className="text-xs text-gray-400">
+              <div className="font-medium text-sm text-amber-100">Home</div>
+              <div className="text-xs text-neutral-400">
                 Go to main dashboard
               </div>
             </div>
@@ -137,20 +137,20 @@ export function UserSidebar() {
           <Link
             href="/protected/settings"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 w-full p-3 text-left hover:bg-gray-800 rounded-lg transition-colors"
+            className="flex items-center gap-3 w-full p-3 text-left hover:bg-amber-800/20 rounded-lg transition-colors"
           >
-            <Settings className="w-5 h-5 text-gray-300" />
+            <Settings className="w-5 h-5 text-amber-300" />
             <div>
-              <div className="font-medium text-sm text-white">Settings</div>
-              <div className="text-xs text-gray-400">
+              <div className="font-medium text-sm text-amber-100">Settings</div>
+              <div className="text-xs text-neutral-400">
                 Update your profile and preferences
               </div>
             </div>
           </Link>
 
-          <div className="mt-2 pt-2 border-t border-gray-700">
+          <div className="mt-2 pt-2 border-t border-amber-800/30">
             <button 
-              className="flex items-center gap-3 w-full p-3 text-left hover:bg-red-900 rounded-lg transition-colors text-red-400"
+              className="flex items-center gap-3 w-full p-3 text-left hover:bg-red-900/40 rounded-lg transition-colors text-red-400"
               onClick={() => {
                 setIsOpen(false);
                 // Llamar logout usando router en lugar de window.location

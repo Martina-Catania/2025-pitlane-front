@@ -10,7 +10,7 @@ interface FoodItemProps {
 // Componente memoizado para evitar re-renders innecesarios
 export const FoodItem = React.memo<FoodItemProps>(({ food, onEditClick }) => {
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded shadow relative flex flex-col items-center">
+    <div className="bg-neutral-700 p-4 rounded-lg shadow-lg relative flex flex-col items-center border border-amber-800/30 hover:border-amber-700/50 transition-all">
       {/* Imagen */}
       {food.svgLink && (
         <img
@@ -20,14 +20,15 @@ export const FoodItem = React.memo<FoodItemProps>(({ food, onEditClick }) => {
         />
       )}
 
-      <span className="text-gray-900 dark:text-gray-100 font-semibold">
+      <span className="text-amber-100 font-semibold text-center">
         {food.name}
       </span>
 
       {/* Ícono lápiz para editar */}
       <button
-        className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+        className="absolute top-2 right-2 text-amber-300 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-1.5 rounded-full transition-all"
         onClick={() => onEditClick(food)}
+        aria-label="Editar comida"
       >
         ✏️
       </button>
