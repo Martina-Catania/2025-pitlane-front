@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { UserProfileSection } from "@/components/user-profile-section";
 
+
 export default async function ProtectedPage() {
   const supabase = await createClient();
 
@@ -9,6 +10,5 @@ export default async function ProtectedPage() {
   if (error || !data?.claims) {
     redirect("/auth/login");
   }
-
   return <UserProfileSection />;
 }
