@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/custom-components/icon-select";
 import { useState } from "react";
+import { useFoods } from "@/lib/contexts/FoodsContext";
 
 interface AddFoodFormProps {
   onSuccess?: () => void
@@ -21,6 +22,7 @@ interface AddFoodFormProps {
 }
 
 export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps & React.ComponentPropsWithoutRef<"div">) {
+  const { addFood } = useFoods();
   const [foodName, setFoodName] = useState("");
   const [preferences, setPreferences] = useState<number[]>([]);
   const [restrictions, setRestrictions] = useState<number[]>([]);
@@ -49,6 +51,17 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
         const data = await response.json();
         throw new Error(data.error || "Failed to add food");
       }
+
+      const newFood = await response.json();
+      
+      // Agregar la comida al contexto inmediatamente
+      addFood(newFood);
+      
+      // Limpiar el formulario
+      setFoodName("");
+      setPreferences([]);
+      setRestrictions([]);
+      setIcon(null);
 
       if (onSuccess) onSuccess();
     } catch (err: unknown) {

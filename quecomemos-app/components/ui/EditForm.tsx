@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/custom-components/icon-select";
 import { useState, useEffect } from "react";
+import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 
 interface EditFoodFormProps {
-  food: any;
+  food: Food;
   onSuccess: () => void;
 }
 
 export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
+  const { updateFood } = useFoods();
   const [foodName, setFoodName] = useState(food.name || "");
   const [preferences, setPreferences] = useState<number[]>(
     food.preferences?.map((p: any) => p.PreferenceID || p) || []
@@ -41,10 +43,23 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
           dietaryRestrictions: restrictions
         }),
       });
+      
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to update food");
       }
+
+      const updatedFood = await response.json();
+      
+      // Actualizar la comida en el contexto inmediatamente
+      updateFood(food.FoodID, {
+        name: foodName,
+        svgLink: icon,
+        preferences: preferences,
+        dietaryRestrictions: restrictions,
+        ...updatedFood
+      });
+      
       onSuccess();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred");

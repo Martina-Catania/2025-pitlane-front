@@ -9,19 +9,12 @@ import { PreferencesWarning } from './custom-components/preferences-warning';
 import { useEffect, useState } from 'react';
 import { AdminFoodForm } from './ui/AdminFoodForm';
 import { AdminSection } from './ui/AdminSection';
-
-interface Food {
-  FoodID: number;
-  name: string;
-  svgLink?: string;
-  dietaryRestrictions?: any[];
-  preferences?: any[];
-}
+import { useFoods } from '@/lib/contexts/FoodsContext';
 
 export function UserProfileSection() {
   const { profile, loading, error, refetch } = useUserProfile();
   const { userPreferences, loading: preferencesLoading } = useUserPreferences();
-  const [foods, setFoods] = useState<Food[]>([]);
+  const { setFoods, foods } = useFoods();
   const [loadingFoods, setLoadingFoods] = useState(true);
 
   useEffect(() => {
@@ -43,7 +36,7 @@ export function UserProfileSection() {
     if (!loading && profile) {
       fetchFoods();
     }
-  }, [profile, loading]);
+  }, [profile, loading, setFoods]);
 
   // Escuchar eventos de actualización de perfil
   useEffect(() => {
@@ -89,7 +82,7 @@ export function UserProfileSection() {
       {/* UI solo para admin */}
       <RoleGate role="admin" userRole={profile.role}>
         <div className="mt-6">
-          <AdminSection foods={foods} />
+          <AdminSection />
         </div>
       </RoleGate>
 
