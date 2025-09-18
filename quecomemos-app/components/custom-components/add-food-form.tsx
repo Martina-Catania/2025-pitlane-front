@@ -27,8 +27,6 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
   const [icon, setIcon] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [preferencesLoading, setPreferencesLoading] = useState(false);
-  const [restrictionsLoading, setRestrictionsLoading] = useState(false);
 
   const handleAddFood = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,29 +79,18 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
               </div>
 
               <DropdownWrapper label="Preferences">
-                {preferencesLoading && (
-                  <div className="flex items-center gap-2 p-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span className="text-sm text-gray-600">Loading preferences...</span>
-                  </div>
-                )}
                 <CustomCheckbox
+                  initialOptions={preferences.length > 0 ? preferences : []}
                   endpoint="preferences"
                   onSelectionChange={setPreferences}
-                  onLoadingChange={setPreferencesLoading}
                 />
               </DropdownWrapper>
 
               <DropdownWrapper label="Dietary Restrictions">
-                {restrictionsLoading && (
-                  <div className="flex items-center gap-2 p-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  </div>
-                )}
                 <CustomCheckbox
+                  initialOptions={restrictions.length > 0 ? restrictions : []}
                   endpoint="dietary-restrictions"
                   onSelectionChange={setRestrictions}
-                  onLoadingChange={setRestrictionsLoading}
                 />
               </DropdownWrapper>
 

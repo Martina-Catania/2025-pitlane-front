@@ -7,6 +7,8 @@ import { AddFoodForm } from './custom-components/add-food-form';
 import { UserFoods } from './ui/UserFoods';
 import { PreferencesWarning } from './custom-components/preferences-warning';
 import { useEffect, useState } from 'react';
+import { AdminFoodForm } from './ui/AdminFoodForm';
+import { AdminSection } from './ui/AdminSection';
 
 interface Food {
   FoodID: number;
@@ -87,7 +89,7 @@ export function UserProfileSection() {
       {/* UI solo para admin */}
       <RoleGate role="admin" userRole={profile.role}>
         <div className="mt-6">
-          <AddFoodForm />
+          <AdminSection foods={foods} />
         </div>
       </RoleGate>
 

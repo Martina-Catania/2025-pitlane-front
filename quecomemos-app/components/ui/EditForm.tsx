@@ -15,8 +15,12 @@ interface EditFoodFormProps {
 
 export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   const [foodName, setFoodName] = useState(food.name || "");
-  const [preferences, setPreferences] = useState<number[]>(food.preferences || []);
-  const [restrictions, setRestrictions] = useState<number[]>(food.dietaryRestrictions || []);
+  const [preferences, setPreferences] = useState<number[]>(
+    food.preferences?.map((p: any) => p.PreferenceID || p) || []
+  );
+  const [restrictions, setRestrictions] = useState<number[]>(
+    food.dietaryRestrictions?.map((r: any) => r.DietaryRestrictionID || r) || []
+  );
   const [icon, setIcon] = useState<string | null>(food.svgLink || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +37,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
         body: JSON.stringify({
           name: foodName,
           svgLink: icon,
-          preferences,
+          preferences: preferences,
           dietaryRestrictions: restrictions
         }),
       });
@@ -65,6 +69,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
 
           <DropdownWrapper label="Preferences">
             <CustomCheckbox
+              initialOptions={preferences.length > 0 ? preferences : []}
               endpoint="preferences"
               onSelectionChange={setPreferences}
             />
@@ -72,6 +77,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
 
           <DropdownWrapper label="Dietary Restrictions">
             <CustomCheckbox
+              initialOptions={restrictions.length > 0 ? restrictions : []}
               endpoint="dietary-restrictions"
               onSelectionChange={setRestrictions}
             />
