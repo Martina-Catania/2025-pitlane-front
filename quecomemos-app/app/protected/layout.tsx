@@ -1,4 +1,5 @@
 import { AuthButton } from "@/components/auth-button";
+import { Logo } from "@/components/logo";
 import { FoodsProvider } from "@/lib/contexts/FoodsContext";
 import { UserProvider } from "@/lib/contexts/UserContext";
 
@@ -15,7 +16,7 @@ export default function ProtectedLayout({
             <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
               <div className="w-full max-w-5xl flex justify-between items-center p-3 px-3 md:px-5 text-sm">
                 <div className="flex gap-5 items-center font-semibold">
-                  <span>Hello!</span>
+                  <Logo />
                 </div>
                 <AuthButton />
               </div>
