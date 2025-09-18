@@ -1,27 +1,28 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Checkbox } from "../ui/checkbox";
 import React from "react";
 interface CustomCheckboxProps extends React.ComponentPropsWithoutRef<"div"> {
     endpoint: string;
+    initialOptions?: number[];
     onSelectionChange?: (selectedIds: number[]) => void;
     onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export function CustomCheckbox({
     endpoint,
+    initialOptions = [],
     onSelectionChange,
     onLoadingChange,
     className,
     ...props
 }: CustomCheckboxProps) {
-    const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
+    const [selectedOptions, setSelectedOptions] = useState(initialOptions);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const [options, setOptions] = useState<Array<{PreferenceID?: number, DietaryRestrictionID?: number, name: string}>>([]);
-
     const handleEndpoint = async () => {
         setIsLoading(true);
         onLoadingChange?.(true);
@@ -38,7 +39,6 @@ export function CustomCheckbox({
             }
             const data = await response.json();
             setOptions(Array.isArray(data) ? data : []);
-            console.log("Fetched options:", data);
         } catch (error: unknown) {
             setError(error instanceof Error ? error.message : "An error occurred");
         } finally {
@@ -46,11 +46,12 @@ export function CustomCheckbox({
             onLoadingChange?.(false);
         }
     };
-    React.useEffect(() => {
-        console.log("Selected options:", selectedOptions);
-    }, [selectedOptions]);
 
-    React.useEffect(() => {
+    useEffect(() => {
+        setSelectedOptions(initialOptions);
+    }, [initialOptions]);
+
+    useEffect(() => {
         handleEndpoint();
     }, [endpoint]);
 
