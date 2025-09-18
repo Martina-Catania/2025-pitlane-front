@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { createClient } from '@/lib/supabase/client';
 import { Eye, EyeOff } from 'lucide-react';
+import { AddUserDataForm } from './custom-components/add-user-data-form';
+
 
 interface UserProfile {
   id: string;
@@ -164,6 +166,11 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
   return (
     <div className="space-y-6">
+
+
+        <div className="mt-6">
+          <AddUserDataForm />
+        </div>
       {/* Profile Information */}
       <Card>
         <CardHeader>
