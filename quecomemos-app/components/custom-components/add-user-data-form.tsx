@@ -19,8 +19,8 @@ export function AddUserDataForm({
     className,
     ...props
 }: AddUserDataFormProps) {
-    const [preferences, setPreferences] = useState<number[]>([]);
-    const [dietaryRestrictions, setDietaryRestrictions] = useState<number[]>([]);
+    const [preferences, setPreferences] = useState<any[]>([]);
+    const [dietaryRestrictions, setDietaryRestrictions] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
@@ -33,7 +33,30 @@ export function AddUserDataForm({
         };
         getUser();
     }, [supabase]);
-    
+
+    useEffect(() => {
+        const getUserPreferences = async () => {
+            if (!user) return;
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) return;
+
+            const response = await fetch(`http://localhost:3005/profile/${user.id}/full`, {
+                headers: {
+                    "Authorization": `Bearer ${session.access_token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setPreferences(data.Preference);
+                setDietaryRestrictions(data.DietaryRestriction);
+            }
+        };
+
+        getUserPreferences();
+    }, [user, supabase]);
+
     const handleUpdateUserData = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -52,10 +75,6 @@ export function AddUserDataForm({
                 throw new Error("No valid session found");
             }
 
-            console.log("User ID:", user.id);
-            console.log("Session token exists:", !!session?.access_token);
-            console.log("Preferences:", preferences);
-            console.log("Dietary Restrictions:", dietaryRestrictions);
 
             // Use the preferences-and-restrictions endpoint
             const headers: HeadersInit = { 
@@ -73,7 +92,6 @@ export function AddUserDataForm({
                 }),
             });
             
-            console.log("response - ", response);
             
             if (!response.ok) {
                 const data = await response.json();
@@ -124,6 +142,7 @@ export function AddUserDataForm({
                             <div>
                                 <Label className="block mb-2">Preferences</Label>
                                 <CustomCheckbox 
+                                    initialOptions={preferences?.map(pref => pref.PreferenceID) || []}
                                     endpoint="preferences"
                                     onSelectionChange={setPreferences}
                                 />
@@ -131,6 +150,7 @@ export function AddUserDataForm({
                             <div>
                                 <Label className="block mb-2">Dietary Restrictions</Label>
                                 <CustomCheckbox 
+                                    initialOptions={dietaryRestrictions?.map(dr => dr.DietaryRestrictionID) || []}
                                     endpoint="dietary-restrictions"
                                     onSelectionChange={setDietaryRestrictions}
                                 />
