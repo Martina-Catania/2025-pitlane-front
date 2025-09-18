@@ -5,26 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Settings, LogOut, X, Home } from 'lucide-react';
 import { Button } from './ui/button';
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useUser } from '@/lib/contexts/UserContext';
 
 export function UserSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const { profile, loading, refetch } = useUserProfile();
+  const { userData, loading } = useUser();
   const router = useRouter();
-
-  // Escuchar eventos de actualización de perfil
-  useEffect(() => {
-    const handleProfileUpdate = () => {
-      refetch();
-    };
-
-    window.addEventListener('userProfileUpdated', handleProfileUpdate);
-
-    return () => {
-      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
-    };
-  }, [refetch]);
+  const profile = userData.profile;
 
   // Cerrar sidebar al hacer click fuera
   useEffect(() => {
@@ -80,10 +68,10 @@ export function UserSidebar() {
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="relative w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 p-0"
+        className="relative w-8 h-8 rounded-full bg-gray-600 hover:bg-gray-700 p-0"
         aria-label="Open user menu"
       >
-        <User className="w-4 h-4" />
+        <User className="w-4 h-4 text-gray-200" />
       </Button>
 
       {/* Overlay */}

@@ -1,7 +1,6 @@
 'use client';
 
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
-import { useUserPreferences } from '@/lib/hooks/useUserPreferences';
+import { useUser } from '@/lib/contexts/UserContext';
 import { RoleGate } from './ui/role-based';
 import { AddFoodForm } from './custom-components/add-food-form';
 import { UserFoods } from './ui/UserFoods';
@@ -12,10 +11,13 @@ import { AdminSection } from './ui/AdminSection';
 import { useFoods } from '@/lib/contexts/FoodsContext';
 
 export function UserProfileSection() {
-  const { profile, loading, error, refetch } = useUserProfile();
-  const { userPreferences, loading: preferencesLoading } = useUserPreferences();
+  const { userData, loading, error } = useUser();
   const { setFoods, foods } = useFoods();
   const [loadingFoods, setLoadingFoods] = useState(true);
+  
+  const profile = userData.profile;
+  const userPreferences = userData.preferences;
+  const preferencesLoading = loading;
 
   useEffect(() => {
     const fetchFoods = async () => {
@@ -37,19 +39,6 @@ export function UserProfileSection() {
       fetchFoods();
     }
   }, [profile, loading, setFoods]);
-
-  // Escuchar eventos de actualización de perfil
-  useEffect(() => {
-    const handleProfileUpdate = () => {
-      refetch();
-    };
-
-    window.addEventListener('userProfileUpdated', handleProfileUpdate);
-
-    return () => {
-      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
-    };
-  }, [refetch]);
 
   if (loading || preferencesLoading) {
     return (

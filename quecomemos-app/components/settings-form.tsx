@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useUser } from '@/lib/contexts/UserContext';
 import { createClient } from '@/lib/supabase/client';
 import { Eye, EyeOff } from 'lucide-react';
 import { AddUserDataForm } from './custom-components/add-user-data-form';
@@ -23,7 +23,7 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({ initialProfile }: SettingsFormProps) {
-  const { refetch } = useUserProfile();
+  const { updateProfile: updateUserProfile } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -106,11 +106,11 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         setAuthEmail(profileData.email);
       }
 
-      // Forzar refetch y limpiar cache
-      await refetch();
-
-      // Emitir evento global para que otros componentes se actualicen
-      window.dispatchEvent(new CustomEvent('userProfileUpdated'));
+      // Actualizar el perfil localmente en el contexto (sin refetch)
+      updateUserProfile({ 
+        username: profileData.username.trim(),
+        email: profileData.email 
+      });
 
       setMessage('Profile updated successfully!');
 
