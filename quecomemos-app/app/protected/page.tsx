@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
-import { AddFoodForm } from "@/components/custom-components/add-food-form";
 import { createClient } from "@/lib/supabase/server";
 import { RoleGate } from "@/components/ui/role-based";
-import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
 import { UserFoods } from "@/components/ui/UserFoods";
+import { AdminSection } from "@/components/ui/AdminSection";
 
 export default async function ProtectedPage() {
   const supabase = await createClient();
@@ -31,13 +30,12 @@ export default async function ProtectedPage() {
     );
     if (profileRes.ok) profile = await profileRes.json();
 
-    // Traigo comidas si es usuario normal o admin
     if (profile?.role === "user" || profile?.role === "admin") {
       const foodsRes = await fetch("http://localhost:3005/foods");
       if (foodsRes.ok) foods = await foodsRes.json();
     }
   }
-  
+
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
       {profile && (
@@ -49,9 +47,7 @@ export default async function ProtectedPage() {
 
           {/* UI solo para admin */}
           <RoleGate role="admin" userRole={profile.role}>
-            <div className="mt-6">
-              <AddFoodForm />
-            </div>
+            <AdminSection foods={foods} />
           </RoleGate>
 
           {/* UI solo para user */}
