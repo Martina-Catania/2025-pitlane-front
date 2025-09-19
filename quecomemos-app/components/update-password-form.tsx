@@ -10,10 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { EnhancedPasswordInput } from "@/components/ui/enhanced-password-input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { validatePasswordWithBreachCheck } from "@/lib/utils/password-validation";
 
 export function UpdatePasswordForm({
   className,
@@ -29,6 +31,14 @@ export function UpdatePasswordForm({
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
+
+    // Validate password with breach check
+    const passwordValidation = await validatePasswordWithBreachCheck(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors.join(". "));
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.updateUser({ password });
@@ -56,13 +66,13 @@ export function UpdatePasswordForm({
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="password">New password</Label>
-                <Input
+                <EnhancedPasswordInput
                   id="password"
-                  type="password"
                   placeholder="New password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  showRequirements={true}
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

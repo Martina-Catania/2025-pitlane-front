@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { PasswordInput } from './ui/password-input';
+import { EnhancedPasswordInput } from './ui/enhanced-password-input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { useUser } from '@/lib/contexts/UserContext';
 import { createClient } from '@/lib/supabase/client';
-import { Eye, EyeOff } from 'lucide-react';
 import { AddUserDataForm } from './custom-components/add-user-data-form';
+import { validatePasswordWithBreachCheck } from '@/lib/utils/password-validation';
 
 
 interface UserProfile {
@@ -26,8 +28,8 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const { updateProfile: updateUserProfile } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
+  const [isPasswordBreached, setIsPasswordBreached] = useState(false);
   const supabase = createClient();
 
 
@@ -129,13 +131,26 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const updatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!passwordData.currentPassword) {
+      setMessage('Current password is required');
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage('New passwords do not match');
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      setMessage('Password must be at least 6 characters long');
+    // Check if password is breached
+    if (isPasswordBreached) {
+      setMessage('Cannot use a password that has been found in data breaches. Please choose a different password.');
+      return;
+    }
+
+    // Validate password with breach check
+    const passwordValidation = await validatePasswordWithBreachCheck(passwordData.newPassword);
+    if (!passwordValidation.isValid) {
+      setMessage(passwordValidation.errors.join(". "));
       return;
     }
 
@@ -143,6 +158,23 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
     setMessage('');
 
     try {
+      // First, verify the current password by attempting to sign in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        throw new Error('Unable to get user email');
+      }
+
+      // Verify current password using signInWithPassword
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwordData.currentPassword,
+      });
+
+      if (verifyError) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // If current password is correct, proceed with password update
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword,
       });
@@ -219,53 +251,38 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         <CardHeader>
           <CardTitle>Update Password</CardTitle>
           <CardDescription>
-            Ensure your account is using a long, random password to stay secure.
+            Enter your current password to confirm your identity, then set a new secure password.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={updatePassword} className="space-y-4">
             <div>
-              <Label htmlFor="current-password">Current Password</Label>
-              <Input
+              <Label htmlFor="current-password">Current Password *</Label>
+              <PasswordInput
                 id="current-password"
-                type="password"
                 value={passwordData.currentPassword}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                 placeholder="Enter current password"
+                required
               />
             </div>
 
             <div>
               <Label htmlFor="new-password">New Password</Label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showPassword ? "text" : "password"}
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  placeholder="Enter new password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <EnhancedPasswordInput
+                id="new-password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                placeholder="Enter new password"
+                showRequirements={true}
+                onBreachStatusChange={setIsPasswordBreached}
+              />
             </div>
 
             <div>
               <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <Input
+              <PasswordInput
                 id="confirm-password"
-                type={showPassword ? "text" : "password"}
                 value={passwordData.confirmPassword}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 placeholder="Confirm new password"
@@ -274,7 +291,7 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
             <Button
               type="submit"
-              disabled={isUpdating || !passwordData.newPassword || !passwordData.confirmPassword}
+              disabled={isUpdating || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || isPasswordBreached}
               className="w-full"
             >
               {isUpdating ? 'Updating...' : 'Update Password'}

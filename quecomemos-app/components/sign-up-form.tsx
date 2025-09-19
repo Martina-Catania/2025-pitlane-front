@@ -11,10 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { EnhancedPasswordInput } from "@/components/ui/enhanced-password-input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { validatePasswordWithBreachCheck } from "@/lib/utils/password-validation";
 
 export function SignUpForm({
   className,
@@ -36,6 +39,14 @@ export function SignUpForm({
 
     if (password !== repeatPassword) {
       setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate password with breach check
+    const passwordValidation = await validatePasswordWithBreachCheck(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors.join(". "));
       setIsLoading(false);
       return;
     }
@@ -97,21 +108,20 @@ export function SignUpForm({
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                 </div>
-                <Input
+                <EnhancedPasswordInput
                   id="password"
-                  type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  showRequirements={true}
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="repeat-password">Repeat Password</Label>
                 </div>
-                <Input
+                <PasswordInput
                   id="repeat-password"
-                  type="password"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
