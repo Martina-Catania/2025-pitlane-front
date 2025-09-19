@@ -81,8 +81,9 @@ export function LoginForm({
                     Forgot your password?
                   </Link>
                 </div>
-                <PasswordInput
+                <Input
                   id="password"
+                  type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
