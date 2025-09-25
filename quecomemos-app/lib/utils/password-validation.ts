@@ -67,7 +67,6 @@ export async function checkPasswordBreach(password: string): Promise<{
     const response = await fetch(`https://api.pwnedpasswords.com/range/${hashPrefix}`, {
       method: 'GET',
       headers: {
-        'User-Agent': 'QueComemos-App-Password-Check/1.0',
         'Add-Padding': 'true'
       }
     });
