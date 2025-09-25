@@ -13,7 +13,6 @@ interface UseUserProfileReturn {
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
 }
 
 /**
@@ -21,12 +20,11 @@ interface UseUserProfileReturn {
  * Se mantiene para compatibilidad con componentes existentes.
  */
 export function useUserProfile(): UseUserProfileReturn {
-  const { userData, loading, error, refetch } = useUser();
+  const { userData, loading, error } = useUser();
 
   return {
     profile: userData.profile,
     loading,
     error,
-    refetch,
   };
 }

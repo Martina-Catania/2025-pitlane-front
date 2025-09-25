@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export function AuthButton() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const { profile, loading, refetch } = useUserProfile();
+  const { profile, loading } = useUserProfile();
   const supabase = createClient();
 
   useEffect(() => {
@@ -31,18 +31,11 @@ export function AuthButton() {
       }
     );
 
-    // Escuchar eventos de actualización de perfil
-    const handleProfileUpdate = () => {
-      refetch();
-    };
-
-    window.addEventListener('userProfileUpdated', handleProfileUpdate);
 
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
     };
-  }, [supabase, refetch]);
+  }, [supabase]);
 
   // Mostrar loading mientras verificamos autenticación
   if (isAuthenticated === null) {

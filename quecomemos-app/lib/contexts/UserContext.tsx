@@ -27,7 +27,6 @@ interface UserContextType {
   error: string | null;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updatePreferences: (preferences: UserPreferences) => void;
-  refetch: () => Promise<void>;
   setUsername: (username: string) => void;
 }
 
@@ -236,19 +235,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     updateProfile({ username });
   }, [updateProfile]);
 
-  // Función para refetch completo
-  const refetch = async () => {
-    // Limpiar todo el cache para forzar fetch
-    userDataCache.clear();
-    
-    const { data: claims } = await supabase.auth.getClaims();
-    if (claims?.claims?.sub) {
-      // Asegurar que el cache específico del usuario esté limpio
-      userDataCache.delete(claims.claims.sub);
-    }
-    
-    await fetchUserData(true); // Forzar refresh
-  };
 
   useEffect(() => {
     const initializeUserData = async () => {
@@ -301,18 +287,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // Escuchar eventos personalizados para actualizaciones (mantenemos por compatibilidad)
-  useEffect(() => {
-    const handleProfileUpdate = async () => {
-      await refetch();
-    };
-
-    window.addEventListener('userProfileUpdated', handleProfileUpdate);
-
-    return () => {
-      window.removeEventListener('userProfileUpdated', handleProfileUpdate);
-    };
-  }, []);
 
   const value: UserContextType = {
     userData,
@@ -320,7 +294,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     error,
     updateProfile,
     updatePreferences,
-    refetch,
     setUsername,
   };
 

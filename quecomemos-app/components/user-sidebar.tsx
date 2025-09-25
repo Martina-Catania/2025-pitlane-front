@@ -153,7 +153,6 @@ export function UserSidebar() {
               className="flex items-center gap-3 w-full p-3 text-left hover:bg-red-900/40 rounded-lg transition-colors text-red-400"
               onClick={() => {
                 setIsOpen(false);
-                // Llamar logout usando router en lugar de window.location
                 import('@/lib/supabase/client').then(({ createClient }) => {
                   const supabase = createClient();
                   supabase.auth.signOut().then(() => {
