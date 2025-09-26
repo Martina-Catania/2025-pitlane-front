@@ -28,6 +28,7 @@ export function AddUserDataForm({
     const [preferences, setPreferences] = useState<any[]>([]);
     const [dietaryRestrictions, setDietaryRestrictions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
     const [user, setUser] = useState<any>(null);
     const supabase = createClient();
 
@@ -43,19 +44,26 @@ export function AddUserDataForm({
         const getUserPreferences = async () => {
             if (!user) return;
 
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) return;
+            setIsLoadingPreferences(true);
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.access_token) return;
 
-            const response = await fetch(`http://localhost:3005/profile/${user.id}/full`, {
-                headers: {
-                    "Authorization": `Bearer ${session.access_token}`
+                const response = await fetch(`http://localhost:3005/profile/${user.id}/full`, {
+                    headers: {
+                        "Authorization": `Bearer ${session.access_token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setPreferences(data.Preference.map((pref: { PreferenceID: any; }) => pref.PreferenceID));
+                    setDietaryRestrictions(data.DietaryRestriction.map((dr: { DietaryRestrictionID: any; }) => dr.DietaryRestrictionID));
                 }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setPreferences(data.Preference.map((pref: { PreferenceID: any; }) => pref.PreferenceID));
-                setDietaryRestrictions(data.DietaryRestriction.map((dr: { DietaryRestrictionID: any; }) => dr.DietaryRestrictionID));
+            } catch (error) {
+                console.error('Error loading preferences:', error);
+            } finally {
+                setIsLoadingPreferences(false);
             }
         };
 
@@ -155,39 +163,45 @@ export function AddUserDataForm({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleUpdateUserData}>
-                        <div className="grid gap-4">
-                            <div>
-                                <Label className="block mb-2">Preferences</Label>
-                                <CustomCheckbox 
-                                    initialOptions={preferences.length > 0 ? preferences : []}
-                                    endpoint="preferences"
-                                    onSelectionChange={setPreferences}
-                                />
-                            </div>
-                            <div>
-                                <Label className="block mb-2">Dietary Restrictions</Label>
-                                <CustomCheckbox 
-                                    initialOptions={dietaryRestrictions.length > 0 ? dietaryRestrictions : []}
-                                    endpoint="dietary-restrictions"
-                                    onSelectionChange={setDietaryRestrictions}
-                                />
-                            </div>
+                    {isLoadingPreferences ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="w-6 h-6 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <Button type="submit" disabled={isLoading || !user} className="mt-4 w-full">
-                            {isLoading ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                    Updating Preferences...
+                    ) : (
+                        <form onSubmit={handleUpdateUserData}>
+                            <div className="grid gap-4">
+                                <div>
+                                    <Label className="block mb-2">Preferences</Label>
+                                    <CustomCheckbox 
+                                        initialOptions={preferences.length > 0 ? preferences : []}
+                                        endpoint="preferences"
+                                        onSelectionChange={setPreferences}
+                                    />
                                 </div>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <UserCheck className="w-4 h-4" />
-                                    Update Preferences
+                                <div>
+                                    <Label className="block mb-2">Dietary Restrictions</Label>
+                                    <CustomCheckbox 
+                                        initialOptions={dietaryRestrictions.length > 0 ? dietaryRestrictions : []}
+                                        endpoint="dietary-restrictions"
+                                        onSelectionChange={setDietaryRestrictions}
+                                    />
                                 </div>
-                            )}
-                        </Button>
-                    </form>
+                            </div>
+                            <Button type="submit" disabled={isLoading || !user} className="mt-4 w-full">
+                                {isLoading ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                        Updating Preferences...
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <UserCheck className="w-4 h-4" />
+                                        Update Preferences
+                                    </div>
+                                )}
+                            </Button>
+                        </form>
+                    )}
                 </CardContent>
             </Card>
 

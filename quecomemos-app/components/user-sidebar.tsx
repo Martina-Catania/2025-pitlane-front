@@ -76,24 +76,24 @@ export function UserSidebar() {
 
       {/* Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-25 z-40 transition-opacity" />
+        <div className="fixed inset-0 bg-black/25 dark:bg-black/50 z-40 transition-opacity" />
       )}
 
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 right-0 h-full w-80 bg-neutral-900 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-80 bg-card shadow-xl z-50 transform transition-transform duration-300 ease-in-out border-l border-border ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-amber-800/30">
-          <h2 className="text-lg font-semibold text-amber-100">User Menu</h2>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-card-foreground">User Menu</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsOpen(false)}
-            className="w-8 h-8 p-0 text-amber-200 hover:text-amber-100 hover:bg-amber-800/20"
+            className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent"
             aria-label="Close menu"
           >
             <X className="w-4 h-4" />
@@ -101,16 +101,16 @@ export function UserSidebar() {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-b border-amber-800/30 bg-neutral-800">
+        <div className="p-4 border-b border-border bg-muted/50">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-amber-800/30 border border-amber-700/50 rounded-full flex items-center justify-center">
               <User className="w-6 h-6 text-amber-200" />
             </div>
             <div>
-              <div className="font-medium text-sm text-amber-100">
+              <div className="font-medium text-sm text-card-foreground">
                 {profile.username || 'User'}
               </div>
-              <div className="text-xs text-neutral-400">{profile.email}</div>
+              <div className="text-xs text-muted-foreground">{profile.email}</div>
               <div className="text-xs text-amber-400 capitalize font-medium">
                 {profile.role}
               </div>
@@ -127,8 +127,8 @@ export function UserSidebar() {
           >
             <Home className="w-5 h-5 text-amber-300" />
             <div>
-              <div className="font-medium text-sm text-amber-100">Home</div>
-              <div className="text-xs text-neutral-400">
+              <div className="font-medium text-sm text-card-foreground">Home</div>
+              <div className="text-xs text-muted-foreground">
                 Go to main dashboard
               </div>
             </div>
@@ -141,14 +141,14 @@ export function UserSidebar() {
           >
             <Settings className="w-5 h-5 text-amber-300" />
             <div>
-              <div className="font-medium text-sm text-amber-100">Settings</div>
-              <div className="text-xs text-neutral-400">
+              <div className="font-medium text-sm text-card-foreground">Settings</div>
+              <div className="text-xs text-muted-foreground">
                 Update your profile and preferences
               </div>
             </div>
           </Link>
 
-          <div className="mt-2 pt-2 border-t border-amber-800/30">
+          <div className="mt-2 pt-2 border-t border-border">
             <button 
               className="flex items-center gap-3 w-full p-3 text-left hover:bg-red-900/40 rounded-lg transition-colors text-red-400"
               onClick={() => {

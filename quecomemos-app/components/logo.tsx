@@ -9,7 +9,7 @@ export function Logo() {
         alt="QueComemos Logo"
         width={160}
         height={56}
-        className="h-12 w-auto brightness-0 invert"
+        className="h-12 w-auto dark:brightness-0 dark:invert"
         priority
       />
     </div>

@@ -11,7 +11,7 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { createClient } from '@/lib/supabase/client';
 import { AddUserDataForm } from './custom-components/add-user-data-form';
 import { validatePasswordWithBreachCheck } from '@/lib/utils/password-validation';
-import { User, Mail, Lock, Shield, Settings } from 'lucide-react';
+import { User, Mail, Lock, Shield, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 
 
@@ -35,7 +35,15 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const [authEmail, setAuthEmail] = useState('');
   const [isPasswordBreached, setIsPasswordBreached] = useState(false);
   
+  // Collapsible sections state (only preferences is collapsible, starts collapsed)
+  const [preferencesCollapsed, setPreferencesCollapsed] = useState(true);
+  
   const supabase = createClient();
+
+  // Toggle function for preferences section
+  const togglePreferences = () => {
+    setPreferencesCollapsed(prev => !prev);
+  };
 
   // Estados para cada sección
   const [profileData, setProfileData] = useState({
@@ -251,6 +259,33 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         </div>
       </div>
 
+      {/* User Preferences Section - Now First */}
+      <Card className="transition-all duration-200 hover:shadow-md">
+        <CardHeader className="pb-4 cursor-pointer" onClick={togglePreferences}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Food Preferences</CardTitle>
+            </div>
+            {preferencesCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform" />
+            )}
+          </div>
+          <CardDescription>
+            Configure your food preferences and dietary requirements first.
+          </CardDescription>
+        </CardHeader>
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          preferencesCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100'
+        }`}>
+          <CardContent>
+            <AddUserDataForm />
+          </CardContent>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Information */}
         <Card className="transition-all duration-200 hover:shadow-md">
@@ -394,22 +429,6 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Additional Settings Section */}
-      <Card className="transition-all duration-200 hover:shadow-md">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Additional Preferences</CardTitle>
-          </div>
-          <CardDescription>
-            Configure your food preferences and dietary requirements.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AddUserDataForm />
-        </CardContent>
-      </Card>
 
 
     </div>

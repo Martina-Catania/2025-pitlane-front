@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { UserSidebar } from "./user-sidebar";
+import { ThemeSwitcher } from "./theme-switcher";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -49,10 +50,12 @@ export function AuthButton() {
       ) : (
         <span>Hey, {profile?.username || profile?.email || 'User'}!</span>
       )}
+      <ThemeSwitcher />
       <UserSidebar />
     </div>
   ) : (
-    <div className="flex gap-2">
+    <div className="flex items-center gap-2">
+      <ThemeSwitcher />
       <Button asChild size="sm" variant={"outline"}>
         <Link href="/auth/login">Sign in</Link>
       </Button>
