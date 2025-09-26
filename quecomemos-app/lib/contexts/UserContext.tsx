@@ -59,6 +59,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const supabase = createClient();
 
   const fetchUserData = async (forceRefresh = false) => {
@@ -261,31 +262,53 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           
           setUserData(updatedUserData);
           setLoading(false);
+          setIsInitialized(true);
           return; // No hacer fetch si el cache es válido
         }
       }
       
       // Solo hacer fetch si no hay cache válido
       await fetchUserData();
+      setIsInitialized(true);
     };
 
     initializeUserData();
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          fetchUserData(true); // Forzar refresh en cambios de auth
+      (event, session) => {
+        // Solo responder a eventos de auth después de la inicialización
+        if (!isInitialized) return;
+
+        if (event === 'SIGNED_IN') {
+          // Solo refrescar si realmente hay un cambio de usuario o es un nuevo login
+          const currentUserId = userData.profile?.id;
+          const newUserId = session?.user?.id;
+          
+          // Si no hay usuario actual o el usuario cambió, hacer refresh
+          if (!currentUserId || currentUserId !== newUserId) {
+            fetchUserData(true); // Forzar refresh para nuevo usuario
+          }
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Solo actualizar si hay cambios significativos en la sesión
+          // En la mayoría de casos, el token refresh no requiere refetch completo
+          const currentUserId = userData.profile?.id;
+          const sessionUserId = session?.user?.id;
+          
+          if (currentUserId !== sessionUserId) {
+            fetchUserData(false);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUserData({ profile: null, preferences: null });
-          setLoading(false);
+          setLoading(true);
+          setIsInitialized(false);
           userDataCache.clear();
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase]);
+  }, [supabase, isInitialized, userData.profile?.id]);
 
 
   const value: UserContextType = {
