@@ -3,8 +3,8 @@
 import { useUser } from '@/lib/contexts/UserContext';
 
 interface UserPreferences {
-  preferences: any[];
-  dietaryRestrictions: any[];
+  preferences: number[];
+  dietaryRestrictions: number[];
   hasPreferences: boolean;
 }
 

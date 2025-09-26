@@ -51,7 +51,7 @@ export function useConfirmation() {
       // Let the component handle the error (it will be thrown)
       throw error;
     }
-  }, [confirmation.onConfirm]);
+  }, [confirmation]);
 
   const closeConfirmation = useCallback(() => {
     if (!confirmation.isLoading) {

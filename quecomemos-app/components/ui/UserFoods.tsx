@@ -1,17 +1,18 @@
 "use client";
-import { FoodCard } from "./FoodCard";
 import { FoodModal } from "./food-modal";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { Utensils } from "lucide-react";
+import Image from "next/image";
 
 interface Food {
   FoodID: number;
   name: string;
   svgLink?: string;
-  dietaryRestrictions?: any[];
-  preferences?: any[];
+  dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
+  preferences?: { name?: string; PreferenceID?: number }[] | number[];
+  [key: string]: unknown;
 }
 
 interface UserFoodsProps {
@@ -51,9 +52,11 @@ const UniformFoodCard = ({ food, onCardClick }: { food: Food; onCardClick: (food
       >
         <div className="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 flex items-center justify-center flex-shrink-0">
           {food.svgLink ? (
-            <img 
+            <Image 
               src={food.svgLink} 
               alt={food.name} 
+              width={48}
+              height={48}
               className="w-full h-full object-contain" 
             />
           ) : (
@@ -126,15 +129,16 @@ export function UserFoods({ foods }: UserFoodsProps) {
       return { preferredFoods: [], otherFoods: foods };
     }
 
-    const userPrefIds = userPreferences.preferences?.map(p => p.PreferenceID || p) || [];
-    const userRestrictionsIds = userPreferences.dietaryRestrictions?.map(r => r.DietaryRestrictionID || r) || [];
+  const userPrefIds = userPreferences.preferences || [];
+  const userRestrictionsIds = userPreferences.dietaryRestrictions || [];
 
     const preferredFoods: Food[] = [];
     const otherFoods: Food[] = [];
 
     foods.forEach(food => {
-      const foodPrefIds = food.preferences?.map(p => p.PreferenceID || p) || [];
-      const foodRestrictionsIds = food.dietaryRestrictions?.map(r => r.DietaryRestrictionID || r) || [];
+
+  const foodPrefIds = food.preferences?.map(p => typeof p === 'number' ? p : p.PreferenceID ?? -1) || [];
+  const foodRestrictionsIds = food.dietaryRestrictions?.map(r => typeof r === 'number' ? r : r.DietaryRestrictionID ?? -1) || [];
 
       // Check if food matches user preferences AND doesn't conflict with dietary restrictions
       const hasMatchingPreference = foodPrefIds.some(prefId => userPrefIds.includes(prefId));

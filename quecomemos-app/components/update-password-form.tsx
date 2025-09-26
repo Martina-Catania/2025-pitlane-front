@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PasswordInput } from "@/components/ui/password-input";
 import { EnhancedPasswordInput } from "@/components/ui/enhanced-password-input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";

@@ -11,8 +11,8 @@ interface UserProfile {
 }
 
 interface UserPreferences {
-  preferences: any[];
-  dietaryRestrictions: any[];
+  preferences: number[];
+  dietaryRestrictions: number[];
   hasPreferences: boolean;
 }
 
@@ -62,7 +62,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const supabase = createClient();
 
-  const fetchUserData = async (forceRefresh = false) => {
+  const fetchUserData = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -143,8 +143,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const preferencesData = await preferencesResponse.json();
       
       // Extract preferences and dietary restrictions
-      const preferences = preferencesData.Preference?.map((pref: { PreferenceID: any }) => pref.PreferenceID) || [];
-      const dietaryRestrictions = preferencesData.DietaryRestriction?.map((dr: { DietaryRestrictionID: any }) => dr.DietaryRestrictionID) || [];
+      const preferences = preferencesData.Preference?.map((pref: { PreferenceID: number }) => pref.PreferenceID) || [];
+      const dietaryRestrictions = preferencesData.DietaryRestriction?.map((dr: { DietaryRestrictionID: number }) => dr.DietaryRestrictionID) || [];
       
       // Check if user has any preferences or dietary restrictions set
       const hasPreferences = preferences.length > 0 || dietaryRestrictions.length > 0;
@@ -173,7 +173,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   // Función para actualizar el perfil localmente (sin refetch)
   const updateProfile = useCallback((updates: Partial<UserProfile>) => {
@@ -308,7 +308,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase, isInitialized, userData.profile?.id]);
+  }, [supabase, isInitialized, userData.profile?.id, fetchUserData]);
 
 
   const value: UserContextType = {

@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Checkbox } from "../ui/checkbox";
 import React from "react";
 interface CustomCheckboxProps extends React.ComponentPropsWithoutRef<"div"> {
@@ -23,7 +23,7 @@ export function CustomCheckbox({
     const [isLoading, setIsLoading] = useState(false);
 
     const [options, setOptions] = useState<Array<{PreferenceID?: number, DietaryRestrictionID?: number, name: string}>>([]);
-    const handleEndpoint = async () => {
+    const handleEndpoint = useCallback(async () => {
         setIsLoading(true);
         onLoadingChange?.(true);
         setError(null);
@@ -45,7 +45,7 @@ export function CustomCheckbox({
             setIsLoading(false);
             onLoadingChange?.(false);
         }
-    };
+    }, [endpoint, onLoadingChange]);
 
     useEffect(() => {
         setSelectedOptions(initialOptions);
@@ -53,7 +53,7 @@ export function CustomCheckbox({
 
     useEffect(() => {
         handleEndpoint();
-    }, [endpoint]);
+    }, [endpoint, handleEndpoint]);
 
     return (
         <div className={cn("relative", className)} {...props}>

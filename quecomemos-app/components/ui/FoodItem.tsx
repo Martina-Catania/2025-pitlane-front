@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { Food } from '@/lib/contexts/FoodsContext';
+import Image from 'next/image';
 
 interface FoodItemProps {
   food: Food;
@@ -13,9 +14,11 @@ export const FoodItem = React.memo<FoodItemProps>(({ food, onEditClick }) => {
     <div className="bg-neutral-700 p-4 rounded-lg shadow-lg relative flex flex-col items-center border border-amber-800/30 hover:border-amber-700/50 transition-all">
       {/* Imagen */}
       {food.svgLink && (
-        <img
+        <Image
           src={food.svgLink}
           alt={food.name}
+          width={96}
+          height={96}
           className="w-full h-24 object-contain mb-2"
         />
       )}

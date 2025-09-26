@@ -24,7 +24,7 @@ interface EnhancedPasswordInputProps
 const EnhancedPasswordInput = React.forwardRef<
   HTMLInputElement,
   EnhancedPasswordInputProps
->(({ className, showToggle = true, showRequirements = false, label, onBreachStatusChange, ...props }, ref) => {
+>(({ className, showToggle = true, showRequirements = false, onBreachStatusChange, ...props }, ref) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   const [isBreachChecking, setIsBreachChecking] = React.useState(false);
@@ -85,7 +85,7 @@ const EnhancedPasswordInput = React.forwardRef<
         clearTimeout(debounceTimer);
       }
     };
-  }, [password, onBreachStatusChange]);
+  }, [password, onBreachStatusChange, debounceTimer]);
 
   const requirements: PasswordRequirement[] = [
     {

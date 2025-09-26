@@ -31,7 +31,7 @@ export function PreferencesWarning({ className }: PreferencesWarningProps) {
       <CardContent>
         <p className="text-sm text-amber-700 mb-4">
           By setting your preferences, we can show you foods that match your dietary needs and taste preferences, 
-          making it easier to find meals you'll love.
+          making it easier to find meals you&apos;ll love.
         </p>
         <Button 
           onClick={handleConfigurePreferences}

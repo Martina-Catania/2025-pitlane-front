@@ -16,20 +16,19 @@ import { useUser } from "@/lib/contexts/UserContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { UserCheck } from "lucide-react";
 
-interface AddUserDataFormProps extends React.ComponentPropsWithoutRef<"div"> {
-}
+type AddUserDataFormProps = React.ComponentPropsWithoutRef<"div">;
 
 export function AddUserDataForm({
     className,
     ...props
 }: AddUserDataFormProps) {
-    const { userData, updatePreferences } = useUser();
+    const { updatePreferences } = useUser();
     const { showSuccess, showError } = useGlobalNotification();
-    const [preferences, setPreferences] = useState<any[]>([]);
-    const [dietaryRestrictions, setDietaryRestrictions] = useState<any[]>([]);
+    const [preferences, setPreferences] = useState<number[]>([]);
+    const [dietaryRestrictions, setDietaryRestrictions] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
     const supabase = createClient();
 
     useEffect(() => {
@@ -57,8 +56,8 @@ export function AddUserDataForm({
 
                 if (response.ok) {
                     const data = await response.json();
-                    setPreferences(data.Preference.map((pref: { PreferenceID: any; }) => pref.PreferenceID));
-                    setDietaryRestrictions(data.DietaryRestriction.map((dr: { DietaryRestrictionID: any; }) => dr.DietaryRestrictionID));
+                    setPreferences(data.Preference.map((pref: { PreferenceID: number }) => pref.PreferenceID));
+                    setDietaryRestrictions(data.DietaryRestriction.map((dr: { DietaryRestrictionID: number }) => dr.DietaryRestrictionID));
                 }
             } catch (error) {
                 console.error('Error loading preferences:', error);

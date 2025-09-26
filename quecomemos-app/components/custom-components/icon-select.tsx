@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Checkbox } from "../ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
 import { FileObject } from "@supabase/storage-js";
+import Image from "next/image";
 
 interface IconSelectProps extends React.ComponentPropsWithoutRef<"div"> {
     onSelectionChange?: (selectedId: string) => void;
@@ -15,8 +16,7 @@ export function IconSelect({
     ...props
 }: IconSelectProps) {
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
-    const [error, setError] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
     const [data, setData] = useState<FileObject[] | null>(null);
     //bring images from supabase storage
     useEffect(() => {
@@ -35,7 +35,6 @@ export function IconSelect({
 
 return (
     <div className={cn("grid grid-cols-4 gap-4", className)} {...props}>
-        {isLoading && <p>Loading...</p>}
         {error && <p>Error: {error.message}</p>}
         {data?.map((file, index) => {
             const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/foodPhotos/${file.name}`;
@@ -52,9 +51,11 @@ return (
                                 onSelectionChange?.(newSelection ? imageUrl : '');
                             }}
                         >
-                            <img 
+                            <Image 
                                 src={imageUrl}
                                 alt={file.name}
+                                width={64}
+                                height={64}
                                 className="w-full h-full object-contain"
                             />
                         </div>

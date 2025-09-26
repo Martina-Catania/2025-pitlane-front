@@ -6,7 +6,10 @@ export interface Food {
   FoodID: number;
   name: string;
   svgLink?: string;
-  [key: string]: any; // Para otros campos que puedan existir
+  preferences?: { name?: string; PreferenceID?: number }[] | number[];
+  dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
+  // Para otros campos que puedan existir
+  [key: string]: unknown;
 }
 
 // Tipo para el contexto

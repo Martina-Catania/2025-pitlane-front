@@ -6,7 +6,7 @@ import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/custom-components/icon-select";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "./confirmation-modal";
@@ -24,10 +24,10 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   const { confirmation, showConfirmation, handleConfirm, closeConfirmation } = useConfirmation();
   const [foodName, setFoodName] = useState(food.name || "");
   const [preferences, setPreferences] = useState<number[]>(
-    food.preferences?.map((p: any) => p.PreferenceID || p) || []
+    food.preferences?.map((p: { PreferenceID?: number } | number) => typeof p === 'number' ? p : p.PreferenceID || 0) || []
   );
   const [restrictions, setRestrictions] = useState<number[]>(
-    food.dietaryRestrictions?.map((r: any) => r.DietaryRestrictionID || r) || []
+    food.dietaryRestrictions?.map((r: { DietaryRestrictionID?: number } | number) => typeof r === 'number' ? r : r.DietaryRestrictionID || 0) || []
   );
   const [icon, setIcon] = useState<string | null>(food.svgLink || "");
   const [isLoading, setIsLoading] = useState(false);

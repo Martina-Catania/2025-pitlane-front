@@ -1,12 +1,13 @@
 import { Utensils } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 interface Food {
   FoodID: number;
   name: string;
   svgLink?: string;
-  dietaryRestrictions?: any[];
-  preferences?: any[];
+  dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[];
+  preferences?: { name?: string; PreferenceID?: number }[];
 }
 
 interface FoodCardProps {
@@ -38,9 +39,11 @@ export function FoodCard({ food }: FoodCardProps) {
       >
         <div className="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 flex items-center justify-center">
           {food.svgLink ? (
-            <img 
+            <Image 
               src={food.svgLink} 
               alt={food.name} 
+              width={48}
+              height={48}
               className="w-full h-full object-contain" 
             />
           ) : (

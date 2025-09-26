@@ -2,13 +2,15 @@
 
 import { useEffect } from "react";
 import { X, Utensils } from "lucide-react";
+import Image from "next/image";
 
 interface Food {
   FoodID: number;
   name: string;
   svgLink?: string;
-  dietaryRestrictions?: any[];
-  preferences?: any[];
+  dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
+  preferences?: { name?: string; PreferenceID?: number }[] | number[];
+  [key: string]: unknown;
 }
 
 interface FoodModalProps {
@@ -41,8 +43,10 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
   if (!isOpen || !food) return null;
 
   // Función para obtener el nombre de las preferencias/restricciones
-  const getDisplayName = (item: any) => {
-    return item?.name || `ID: ${item?.PreferenceID || item?.DietaryRestrictionID || item}`;
+  const getDisplayName = (item: { name?: string; PreferenceID?: number; DietaryRestrictionID?: number } | string | number) => {
+    if (typeof item === 'string') return item;
+    if (typeof item === 'number') return `ID: ${item}`;
+    return item?.name || `ID: ${item?.PreferenceID || item?.DietaryRestrictionID || 'Unknown'}`;
   };
 
   return (
@@ -75,9 +79,11 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
           <div className="flex flex-col items-center text-center mb-8">
             <div className="w-20 h-20 mb-4 flex items-center justify-center bg-amber-800/30 rounded-full border border-amber-700/50">
               {food.svgLink ? (
-                <img 
+                <Image 
                   src={food.svgLink} 
                   alt={food.name} 
+                  width={48}
+                  height={48}
                   className="w-12 h-12 object-contain" 
                 />
               ) : (
