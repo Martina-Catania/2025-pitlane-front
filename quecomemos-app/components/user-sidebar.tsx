@@ -156,7 +156,11 @@ export function UserSidebar() {
                 import('@/lib/supabase/client').then(({ createClient }) => {
                   const supabase = createClient();
                   supabase.auth.signOut().then(() => {
-                    router.push('/auth/login');
+                    // Clear browser history and replace with login page
+                    if (typeof window !== 'undefined' && window.history) {
+                      window.history.replaceState(null, '', '/auth/login');
+                    }
+                    router.replace('/auth/login');
                   });
                 });
               }}

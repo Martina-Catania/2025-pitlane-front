@@ -70,6 +70,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const { data: claims, error: claimsError } = await supabase.auth.getClaims();
       
       if (claimsError || !claims?.claims) {
+        // Check if user is in the process of signing out by checking session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // User is signing out, don't show error
+          setUserData({ profile: null, preferences: null });
+          setLoading(false);
+          return;
+        }
         throw new Error('No authenticated user');
       }
 
@@ -168,8 +176,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       
       setUserData(completeUserData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setUserData({ profile: null, preferences: null });
+      // Double-check if user is signing out before setting error
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // User is signing out, don't show error
+        setUserData({ profile: null, preferences: null });
+      } else {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setUserData({ profile: null, preferences: null });
+      }
     } finally {
       setLoading(false);
     }
@@ -299,6 +314,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             fetchUserData(false);
           }
         } else if (event === 'SIGNED_OUT') {
+          setError(null); // Clear error immediately on logout
           setUserData({ profile: null, preferences: null });
           setLoading(true);
           setIsInitialized(false);

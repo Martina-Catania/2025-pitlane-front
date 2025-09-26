@@ -49,14 +49,20 @@ export function UserProfileSection() {
     );
   }
 
-  if (error || !profile) {
+  // Only show error when not loading and there's an actual error
+  if (!loading && error) {
     return (
       <div className="flex-1 w-full flex flex-col gap-12">
         <div className="text-red-500">
-          Error loading profile: {error || 'Unknown error'}
+          Error loading profile: {error}
         </div>
       </div>
     );
+  }
+
+  // If no profile but no error, just return null (user is signing out)
+  if (!profile) {
+    return null;
   }
 
   return (

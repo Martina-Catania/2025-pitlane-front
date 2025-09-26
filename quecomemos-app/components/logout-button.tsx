@@ -10,7 +10,11 @@ export function LogoutButton() {
   const logout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/auth/login");
+    // Clear browser history and replace with login page
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.replaceState(null, '', '/auth/login');
+    }
+    router.replace("/auth/login");
   };
 
   return <Button onClick={logout}>Logout</Button>;
