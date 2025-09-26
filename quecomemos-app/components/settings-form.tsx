@@ -11,6 +11,7 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { createClient } from '@/lib/supabase/client';
 import { AddUserDataForm } from './custom-components/add-user-data-form';
 import { validatePasswordWithBreachCheck } from '@/lib/utils/password-validation';
+import { User, Mail, Lock, Shield, Settings } from 'lucide-react';
 
 
 interface UserProfile {
@@ -26,8 +27,11 @@ interface SettingsFormProps {
 
 export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const { updateProfile: updateUserProfile } = useUser();
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [profileMessage, setProfileMessage] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [isPasswordBreached, setIsPasswordBreached] = useState(false);
   const supabase = createClient();
@@ -45,14 +49,20 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
     confirmPassword: '',
   });
 
-  // Fetch email from Supabase auth
+  // Fetch email from Supabase auth and initialize loading
   useEffect(() => {
     const fetchAuthEmail = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        const email = user.email;
-        setAuthEmail(email);
-        // Don't populate profileData.email - keep it empty for placeholder behavior
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const email = user.email;
+          setAuthEmail(email);
+          // Don't populate profileData.email - keep it empty for placeholder behavior
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -69,8 +79,8 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUpdating(true);
-    setMessage('');
+    setIsUpdatingProfile(true);
+    setProfileMessage('');
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -114,17 +124,17 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         email: profileData.email 
       });
 
-      setMessage('Profile updated successfully!');
+      setProfileMessage('Profile updated successfully!');
 
       // Opcional: pequeño delay para asegurar que los otros componentes se actualicen
       setTimeout(() => {
-        setMessage('Profile updated successfully! Changes are reflected across the app.');
+        setProfileMessage('Profile updated successfully! Changes are reflected across the app.');
       }, 500);
 
     } catch (error) {
-      setMessage('Error updating profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setProfileMessage('Error updating profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingProfile(false);
     }
   };
 
@@ -132,30 +142,30 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
     e.preventDefault();
 
     if (!passwordData.currentPassword) {
-      setMessage('Current password is required');
+      setPasswordMessage('Current password is required');
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage('New passwords do not match');
+      setPasswordMessage('New passwords do not match');
       return;
     }
 
     // Check if password is breached
     if (isPasswordBreached) {
-      setMessage('Cannot use a password that has been found in data breaches. Please choose a different password.');
+      setPasswordMessage('Cannot use a password that has been found in data breaches. Please choose a different password.');
       return;
     }
 
     // Validate password with breach check
     const passwordValidation = await validatePasswordWithBreachCheck(passwordData.newPassword);
     if (!passwordValidation.isValid) {
-      setMessage(passwordValidation.errors.join(". "));
+      setPasswordMessage(passwordValidation.errors.join(". "));
       return;
     }
 
-    setIsUpdating(true);
-    setMessage('');
+    setIsUpdatingPassword(true);
+    setPasswordMessage('');
 
     try {
       // First, verify the current password by attempting to sign in
@@ -188,127 +198,222 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         newPassword: '',
         confirmPassword: '',
       });
-      setMessage('Password updated successfully!');
+      setPasswordMessage('Password updated successfully!');
     } catch (error) {
-      setMessage('Error updating password: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setPasswordMessage('Error updating password: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingPassword(false);
     }
   };
 
-  return (
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
     <div className="space-y-6">
+      <div className="animate-pulse">
+        <div className="h-4 bg-muted rounded w-1/4 mb-6"></div>
+        <div className="space-y-4">
+          <div className="h-32 bg-muted rounded-xl"></div>
+          <div className="h-40 bg-muted rounded-xl"></div>
+          <div className="h-48 bg-muted rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+  );
 
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
-        <div className="mt-6">
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex items-center gap-3 pb-6 border-b border-border">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Settings className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Account Settings</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your account information and security preferences
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Profile Information */}
+        <Card className="transition-all duration-200 hover:shadow-md">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Profile Information</CardTitle>
+            </div>
+            <CardDescription>
+              Update your account's profile information and email address.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={updateProfile} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-sm font-medium">
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={profileData.username || ''}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder="Enter username"
+                  disabled={isUpdatingProfile}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profileData.email || ''}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder={authEmail || 'Enter email'}
+                  disabled={isUpdatingProfile}
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              {profileMessage && (
+                <div className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  profileMessage.includes('Error') || profileMessage.includes('Failed')
+                    ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                    : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
+                }`}>
+                  {profileMessage}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isUpdatingProfile}
+                className="w-full transition-all duration-200"
+                size="lg"
+              >
+                {isUpdatingProfile ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Updating Profile...
+                  </div>
+                ) : (
+                  'Update Profile'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Password Update */}
+        <Card className="transition-all duration-200 hover:shadow-md">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Security</CardTitle>
+            </div>
+            <CardDescription>
+              Update your password to keep your account secure.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={updatePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current-password" className="text-sm font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Current Password *
+                </Label>
+                <PasswordInput
+                  id="current-password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  placeholder="Enter current password"
+                  required
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-password" className="text-sm font-medium">
+                  New Password
+                </Label>
+                <EnhancedPasswordInput
+                  id="new-password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                  placeholder="Enter new password"
+                  showRequirements={true}
+                  onBreachStatusChange={setIsPasswordBreached}
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password" className="text-sm font-medium">
+                  Confirm New Password
+                </Label>
+                <PasswordInput
+                  id="confirm-password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="Confirm new password"
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+
+              {passwordMessage && (
+                <div className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  passwordMessage.includes('Error') || passwordMessage.includes('Failed')
+                    ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                    : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
+                }`}>
+                  {passwordMessage}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isUpdatingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || isPasswordBreached}
+                className="w-full transition-all duration-200"
+                size="lg"
+              >
+                {isUpdatingPassword ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Updating Password...
+                  </div>
+                ) : (
+                  'Update Password'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Settings Section */}
+      <Card className="transition-all duration-200 hover:shadow-md">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Additional Preferences</CardTitle>
+          </div>
+          <CardDescription>
+            Configure your food preferences and dietary requirements.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <AddUserDataForm />
-        </div>
-      {/* Profile Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>
-            Update your account's profile information and email address.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={updateProfile} className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={profileData.username || ''}
-                onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
-                placeholder="Enter username"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profileData.email || ''}
-                onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder={authEmail || 'Enter email'}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isUpdating}
-              className="w-full"
-            >
-              {isUpdating ? 'Updating...' : 'Update Profile'}
-            </Button>
-          </form>
         </CardContent>
       </Card>
-
-      {/* Password Update */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Update Password</CardTitle>
-          <CardDescription>
-            Enter your current password to confirm your identity, then set a new secure password.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={updatePassword} className="space-y-4">
-            <div>
-              <Label htmlFor="current-password">Current Password *</Label>
-              <PasswordInput
-                id="current-password"
-                value={passwordData.currentPassword}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                placeholder="Enter current password"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="new-password">New Password</Label>
-              <EnhancedPasswordInput
-                id="new-password"
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                placeholder="Enter new password"
-                showRequirements={true}
-                onBreachStatusChange={setIsPasswordBreached}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <PasswordInput
-                id="confirm-password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                placeholder="Confirm new password"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isUpdating || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || isPasswordBreached}
-              className="w-full"
-            >
-              {isUpdating ? 'Updating...' : 'Update Password'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Messages */}
-      {message && (
-        <div className={`p-4 rounded-lg ${message.includes('Error') || message.includes('Failed')
-            ? 'bg-red-50 text-red-700 border border-red-200'
-            : 'bg-green-50 text-green-700 border border-green-200'
-          }`}>
-          {message}
-        </div>
-      )}
     </div>
   );
 }
