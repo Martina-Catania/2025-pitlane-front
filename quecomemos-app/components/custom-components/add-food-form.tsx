@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/custom-components/icon-select";
 import { useState } from "react";
 import { useFoods } from "@/lib/contexts/FoodsContext";
+import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
+import { Plus } from "lucide-react";
 
 interface AddFoodFormProps {
   onSuccess?: () => void
@@ -23,17 +25,16 @@ interface AddFoodFormProps {
 
 export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps & React.ComponentPropsWithoutRef<"div">) {
   const { addFood } = useFoods();
+  const { showSuccess, showError } = useGlobalNotification();
   const [foodName, setFoodName] = useState("");
   const [preferences, setPreferences] = useState<number[]>([]);
   const [restrictions, setRestrictions] = useState<number[]>([]);
   const [icon, setIcon] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddFood = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await fetch("http://localhost:3005/foods", {
@@ -63,9 +64,26 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
       setRestrictions([]);
       setIcon(null);
 
-      if (onSuccess) onSuccess();
+      console.log('About to show success notification for:', foodName);
+      showSuccess(
+        "Food Added Successfully!",
+        `"${foodName}" has been added to your food list with all selected preferences and restrictions.`,
+        <Plus className="w-8 h-8" />
+      );
+      console.log('Success notification called');
+
+      // Delay onSuccess to allow notification to show
+      if (onSuccess) {
+        setTimeout(() => {
+          console.log('Calling onSuccess after delay');
+          onSuccess();
+        }, 1000);
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      showError(
+        "Failed to Add Food",
+        err instanceof Error ? err.message : "An unexpected error occurred while adding the food item."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -111,15 +129,23 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
               <IconSelect onSelectionChange={setIcon} />
             </div>
 
-            {error && <p className="text-red-300 bg-red-900/20 border border-red-800/30 rounded-lg px-3 py-2 text-sm">{error}</p>}
-
             <div className="flex justify-center mt-4">
               <Button 
                 type="submit" 
                 disabled={isLoading} 
                 className="mt-2 bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg"
               >
-                {isLoading ? "Adding..." : "Add Food"}
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Adding Food...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Food
+                  </div>
+                )}
               </Button>
             </div>
           </form>

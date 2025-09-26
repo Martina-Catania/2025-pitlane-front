@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/contexts/UserContext";
+import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
+import { UserCheck } from "lucide-react";
 
 interface AddUserDataFormProps extends React.ComponentPropsWithoutRef<"div"> {
 }
@@ -22,9 +24,9 @@ export function AddUserDataForm({
     ...props
 }: AddUserDataFormProps) {
     const { userData, updatePreferences } = useUser();
+    const { showSuccess, showError } = useGlobalNotification();
     const [preferences, setPreferences] = useState<any[]>([]);
     const [dietaryRestrictions, setDietaryRestrictions] = useState<any[]>([]);
-    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
     const supabase = createClient();
@@ -63,10 +65,9 @@ export function AddUserDataForm({
     const handleUpdateUserData = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError(null);
 
         if (!user) {
-            setError("User not authenticated");
+            showError("Authentication Required", "User not authenticated. Please log in and try again.");
             setIsLoading(false);
             return;
         }
@@ -77,7 +78,6 @@ export function AddUserDataForm({
             if (!session?.access_token) {
                 throw new Error("No valid session found");
             }
-
 
             // Use the preferences-and-restrictions endpoint
             const headers: HeadersInit = { 
@@ -95,7 +95,6 @@ export function AddUserDataForm({
                 }),
             });
             
-            
             if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.error || "Failed to update user preferences");
@@ -112,9 +111,18 @@ export function AddUserDataForm({
             };
             updatePreferences(updatedPreferences);
             
+            showSuccess(
+                "Preferences Updated!",
+                "Your food preferences and dietary restrictions have been successfully updated.",
+                <UserCheck className="w-8 h-8" />
+            );
+            
         } catch (error: unknown) {
             console.error("Error updating preferences:", error);
-            setError(error instanceof Error ? error.message : "An error occurred");
+            showError(
+                "Update Failed",
+                error instanceof Error ? error.message : "An unexpected error occurred while updating your preferences."
+            );
         } finally {
             setIsLoading(false);
         }
@@ -166,17 +174,24 @@ export function AddUserDataForm({
                                 />
                             </div>
                         </div>
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mt-4">
-                                {error}
-                            </div>
-                        )}
                         <Button type="submit" disabled={isLoading || !user} className="mt-4 w-full">
-                            {isLoading ? "Updating..." : "Update Preferences"}
+                            {isLoading ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                    Updating Preferences...
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <UserCheck className="w-4 h-4" />
+                                    Update Preferences
+                                </div>
+                            )}
                         </Button>
                     </form>
                 </CardContent>
             </Card>
+
+
         </div>
     );
 }

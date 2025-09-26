@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { AddUserDataForm } from './custom-components/add-user-data-form';
 import { validatePasswordWithBreachCheck } from '@/lib/utils/password-validation';
 import { User, Mail, Lock, Shield, Settings } from 'lucide-react';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 
 
 interface UserProfile {
@@ -27,15 +28,14 @@ interface SettingsFormProps {
 
 export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const { updateProfile: updateUserProfile } = useUser();
+  const { showSuccess, showError } = useGlobalNotification();
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [profileMessage, setProfileMessage] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [isPasswordBreached, setIsPasswordBreached] = useState(false);
+  
   const supabase = createClient();
-
 
   // Estados para cada sección
   const [profileData, setProfileData] = useState({
@@ -80,7 +80,6 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdatingProfile(true);
-    setProfileMessage('');
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -124,15 +123,17 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         email: profileData.email 
       });
 
-      setProfileMessage('Profile updated successfully!');
-
-      // Opcional: pequeño delay para asegurar que los otros componentes se actualicen
-      setTimeout(() => {
-        setProfileMessage('Profile updated successfully! Changes are reflected across the app.');
-      }, 500);
+      showSuccess(
+        'Profile Updated!',
+        'Your profile information has been successfully updated and changes are reflected across the app.',
+        <Settings className="w-8 h-8" />
+      );
 
     } catch (error) {
-      setProfileMessage('Error updating profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      showError(
+        'Update Failed',
+        'Error updating profile: ' + (error instanceof Error ? error.message : 'Unknown error')
+      );
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -142,30 +143,32 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
     e.preventDefault();
 
     if (!passwordData.currentPassword) {
-      setPasswordMessage('Current password is required');
+      showError('Validation Error', 'Current password is required');
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordMessage('New passwords do not match');
+      showError('Validation Error', 'New passwords do not match');
       return;
     }
 
     // Check if password is breached
     if (isPasswordBreached) {
-      setPasswordMessage('Cannot use a password that has been found in data breaches. Please choose a different password.');
+      showError(
+        'Security Warning', 
+        'Cannot use a password that has been found in data breaches. Please choose a different password.'
+      );
       return;
     }
 
     // Validate password with breach check
     const passwordValidation = await validatePasswordWithBreachCheck(passwordData.newPassword);
     if (!passwordValidation.isValid) {
-      setPasswordMessage(passwordValidation.errors.join(". "));
+      showError('Password Requirements', passwordValidation.errors.join(". "));
       return;
     }
 
     setIsUpdatingPassword(true);
-    setPasswordMessage('');
 
     try {
       // First, verify the current password by attempting to sign in
@@ -198,9 +201,18 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
         newPassword: '',
         confirmPassword: '',
       });
-      setPasswordMessage('Password updated successfully!');
+      
+      showSuccess(
+        'Password Updated!',
+        'Your password has been successfully updated. Please use your new password for future logins.',
+        <Lock className="w-8 h-8" />
+      );
+      
     } catch (error) {
-      setPasswordMessage('Error updating password: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      showError(
+        'Update Failed',
+        'Error updating password: ' + (error instanceof Error ? error.message : 'Unknown error')
+      );
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -284,15 +296,7 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
                 />
               </div>
 
-              {profileMessage && (
-                <div className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  profileMessage.includes('Error') || profileMessage.includes('Failed')
-                    ? 'bg-destructive/10 text-destructive border border-destructive/20'
-                    : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
-                }`}>
-                  {profileMessage}
-                </div>
-              )}
+
 
               <Button
                 type="submit"
@@ -369,15 +373,7 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
                 />
               </div>
 
-              {passwordMessage && (
-                <div className={`p-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  passwordMessage.includes('Error') || passwordMessage.includes('Failed')
-                    ? 'bg-destructive/10 text-destructive border border-destructive/20'
-                    : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
-                }`}>
-                  {passwordMessage}
-                </div>
-              )}
+
 
               <Button
                 type="submit"
@@ -414,6 +410,8 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
           <AddUserDataForm />
         </CardContent>
       </Card>
+
+
     </div>
   );
 }

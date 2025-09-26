@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { FoodsProvider } from "@/lib/contexts/FoodsContext";
 import { UserProvider } from "@/lib/contexts/UserContext";
+import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 
 
 const defaultUrl = process.env.VERCEL_URL
@@ -32,14 +33,16 @@ export default function RootLayout({
       <body className={`${geistSans.className} antialiased`}>
         <UserProvider>
           <FoodsProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
+            <NotificationProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+            </NotificationProvider>
           </FoodsProvider>
         </UserProvider>
       </body>
