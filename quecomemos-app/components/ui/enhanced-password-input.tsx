@@ -85,7 +85,7 @@ const EnhancedPasswordInput = React.forwardRef<
         clearTimeout(debounceTimer);
       }
     };
-  }, [password, onBreachStatusChange, debounceTimer]);
+  }, [password, onBreachStatusChange]);
 
   const requirements: PasswordRequirement[] = [
     {
