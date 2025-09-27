@@ -1,5 +1,8 @@
-import { updateSession } from "@/lib/supabase/middleware";
+import { updateSession } from "./lib/supabase/middleware";
 import { type NextRequest } from "next/server";
+
+// Specify Edge Runtime
+export const runtime = 'edge';
 
 export async function middleware(request: NextRequest) {
   return await updateSession(request);
