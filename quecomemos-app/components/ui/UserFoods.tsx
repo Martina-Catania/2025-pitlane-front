@@ -140,15 +140,22 @@ export function UserFoods({ foods }: UserFoodsProps) {
   const foodPrefIds = food.preferences?.map(p => typeof p === 'number' ? p : p.PreferenceID ?? -1) || [];
   const foodRestrictionsIds = food.dietaryRestrictions?.map(r => typeof r === 'number' ? r : r.DietaryRestrictionID ?? -1) || [];
 
-      // Check if food matches user preferences AND doesn't conflict with dietary restrictions
+      // Check if food matches user preferences
       const hasMatchingPreference = foodPrefIds.some(prefId => userPrefIds.includes(prefId));
-      const hasConflictingRestriction = foodRestrictionsIds.some(restrictionId => userRestrictionsIds.includes(restrictionId));
+      
+      // Check if food supports user's dietary restrictions (if user has any restrictions, food must support ALL of them)
+      const supportsUserRestrictions = userRestrictionsIds.length === 0 || 
+        userRestrictionsIds.every(restrictionId => foodRestrictionsIds.includes(restrictionId));
 
-      if (hasMatchingPreference && !hasConflictingRestriction) {
-        preferredFoods.push(food);
-      } else {
-        otherFoods.push(food);
+      // Only show foods that support the user's dietary restrictions
+      if (supportsUserRestrictions) {
+        if (hasMatchingPreference) {
+          preferredFoods.push(food);
+        } else {
+          otherFoods.push(food);
+        }
       }
+      // Foods that don't support user's dietary restrictions are completely filtered out
     });
 
     return { preferredFoods, otherFoods };
@@ -313,7 +320,7 @@ export function UserFoods({ foods }: UserFoodsProps) {
 
       {/* Other Foods Section */}
       <FoodSection
-        title="Other foods"
+        title="Other foods for you"
         foods={otherFoods}
         containerRef={scrollContainerRef2}
         canScrollLeft={canScrollLeft2}
