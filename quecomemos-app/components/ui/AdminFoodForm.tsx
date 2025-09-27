@@ -11,7 +11,7 @@ export function AdminFoodForm({ onAddClick }: AdminFoodFormProps) {
         onClick={onAddClick}
         className="bg-amber-700 text-white px-4 py-2 rounded font-semibold hover:bg-amber-600 transition shadow-lg border border-amber-800/30"
       >
-        Agregar comida
+        Add Food
       </button>
     </div>
   );

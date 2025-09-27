@@ -27,11 +27,11 @@ export const FoodItem = React.memo<FoodItemProps>(({ food, onEditClick }) => {
         {food.name}
       </span>
 
-      {/* Ícono lápiz para editar */}
+      {/* Edit icon */}
       <button
         className="absolute top-2 right-2 text-amber-300 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-1.5 rounded-full transition-all"
         onClick={() => onEditClick(food)}
-        aria-label="Editar comida"
+        aria-label="Edit food"
       >
         <svg
           width="16"

@@ -302,7 +302,7 @@ export function UserFoods({ foods }: UserFoodsProps) {
     <div className="w-full">
       {/* Preferred Foods Section */}
       <FoodSection
-        title="Comidas recomendadas para ti"
+        title="Recommended foods for you"
         foods={preferredFoods}
         containerRef={scrollContainerRef1}
         canScrollLeft={canScrollLeft1}
@@ -313,7 +313,7 @@ export function UserFoods({ foods }: UserFoodsProps) {
 
       {/* Other Foods Section */}
       <FoodSection
-        title="Otras comidas"
+        title="Other foods"
         foods={otherFoods}
         containerRef={scrollContainerRef2}
         canScrollLeft={canScrollLeft2}

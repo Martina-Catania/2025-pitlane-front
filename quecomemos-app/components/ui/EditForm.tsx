@@ -131,8 +131,8 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   return (
     <div className={cn("max-w-md mx-auto")}>
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-amber-100 mb-2">Editar Comida</h2>
-        <p className="text-gray-400 text-sm">Modifica la información de la comida</p>
+        <h2 className="text-xl font-bold text-amber-100 mb-2">Edit Food</h2>
+        <p className="text-gray-400 text-sm">Modify the food information</p>
       </div>
       
       <form onSubmit={handleEditFood}>

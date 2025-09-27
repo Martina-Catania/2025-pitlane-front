@@ -62,11 +62,11 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
         {/* Header */}
         <div className="sticky top-0 bg-neutral-900 rounded-t-2xl border-b border-amber-800/30 p-6 pb-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-amber-100">Información de la comida</h2>
+            <h2 className="text-xl font-bold text-amber-100">Food Information</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-amber-800/20 rounded-full transition-colors"
-              aria-label="Cerrar modal"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5 text-amber-200" />
             </button>
@@ -97,7 +97,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-amber-100 mb-3 flex items-center">
               <span className="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-              Preferencias
+              Preferences
             </h4>
             {food.preferences && food.preferences.length > 0 ? (
               <div className="space-y-2">
@@ -114,7 +114,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
               </div>
             ) : (
               <p className="text-gray-400 text-sm italic">
-                No tiene preferencias específicas asociadas
+                No specific preferences associated
               </p>
             )}
           </div>
@@ -123,7 +123,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-amber-100 mb-3 flex items-center">
               <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-              Restricciones Dietarias
+              Dietary Restrictions
             </h4>
             {food.dietaryRestrictions && food.dietaryRestrictions.length > 0 ? (
               <div className="space-y-2">
@@ -140,7 +140,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
               </div>
             ) : (
               <p className="text-gray-400 text-sm italic">
-                No tiene restricciones dietarias específicas
+                No specific dietary restrictions
               </p>
             )}
           </div>
@@ -151,7 +151,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
               onClick={onClose}
               className="w-full bg-amber-700 hover:bg-amber-600 text-white font-medium py-3 rounded-lg transition-colors shadow-lg"
             >
-              Cerrar
+              Close
             </button>
           </div>
         </div>
