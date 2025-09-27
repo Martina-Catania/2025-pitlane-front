@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { API_BASE_URL } from '@/lib/config/api';
 
 // Interfaces
 interface UserProfile {
@@ -113,7 +114,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       }
 
       // Fetch profile data
-      const profileResponse = await fetch(`http://localhost:3005/profile/${userId}`, {
+      const profileResponse = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         headers: {
           Authorization: `Bearer ${jwt}`,
           'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       };
 
       // Fetch preferences data
-      const preferencesResponse = await fetch(`http://localhost:3005/profile/${userId}/full`, {
+      const preferencesResponse = await fetch(`${API_BASE_URL}/profile/${userId}/full`, {
         headers: {
           Authorization: `Bearer ${jwt}`,
           'Content-Type': 'application/json',

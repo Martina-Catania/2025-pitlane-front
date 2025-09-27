@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "@/components/settings-form";
+import { API_BASE_URL } from "@/lib/config/api";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -16,7 +17,7 @@ export default async function SettingsPage() {
 
   if (data.claims) {
     const profileRes = await fetch(
-      `http://localhost:3005/profile/${data.claims.sub}`,
+      `${API_BASE_URL}/profile/${data.claims.sub}`,
       {
         cache: "no-store",
         headers: {

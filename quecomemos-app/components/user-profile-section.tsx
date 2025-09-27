@@ -7,6 +7,7 @@ import { PreferencesWarning } from './custom-components/preferences-warning';
 import { useEffect, useState } from 'react';
 import { AdminSection } from './ui/AdminSection';
 import { useFoods } from '@/lib/contexts/FoodsContext';
+import { API_BASE_URL } from '@/lib/config/api';
 
 export function UserProfileSection() {
   const { userData, loading, error } = useUser();
@@ -21,7 +22,7 @@ export function UserProfileSection() {
     const fetchFoods = async () => {
       if (profile && (profile.role === "user" || profile.role === "admin")) {
         try {
-          const response = await fetch("http://localhost:3005/foods");
+          const response = await fetch(`${API_BASE_URL}/foods`);
           if (response.ok) {
             const foodsData = await response.json();
             setFoods(foodsData);

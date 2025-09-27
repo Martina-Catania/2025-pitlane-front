@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
 import { Checkbox } from "../ui/checkbox";
 import React from "react";
+import { API_BASE_URL } from "@/lib/config/api";
 interface CustomCheckboxProps extends React.ComponentPropsWithoutRef<"div"> {
     endpoint: string;
     initialOptions?: number[];
@@ -29,7 +30,7 @@ export function CustomCheckbox({
         setError(null);
 
         try {
-            const response = await fetch(`http://localhost:3005/${endpoint}`, {
+            const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });

@@ -12,6 +12,7 @@ import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "./confirmation-modal";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
 import { Edit3, Trash2 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/config/api";
 
 interface EditFoodFormProps {
   food: Food;
@@ -37,7 +38,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3005/foods/${food.FoodID}`, {
+      const response = await fetch(`${API_BASE_URL}/foods/${food.FoodID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,7 +89,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   };
 
   const handleDeleteFood = async () => {
-    const response = await fetch(`http://localhost:3005/foods/${food.FoodID}`, {
+    const response = await fetch(`${API_BASE_URL}/foods/${food.FoodID}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
     });

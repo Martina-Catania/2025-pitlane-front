@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/contexts/UserContext";
+import { API_BASE_URL } from "@/lib/config/api";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { UserCheck } from "lucide-react";
 
@@ -48,7 +49,7 @@ export function AddUserDataForm({
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.access_token) return;
 
-                const response = await fetch(`http://localhost:3005/profile/${user.id}/full`, {
+                const response = await fetch(`${API_BASE_URL}/profile/${user.id}/full`, {
                     headers: {
                         "Authorization": `Bearer ${session.access_token}`
                     }
@@ -93,7 +94,7 @@ export function AddUserDataForm({
             };
 
             // Use the profile ID from the authenticated user and the preferences-and-restrictions endpoint
-            const response = await fetch(`http://localhost:3005/profile/${user.id}/preferences-and-restrictions`, {
+            const response = await fetch(`${API_BASE_URL}/profile/${user.id}/preferences-and-restrictions`, {
                 method: "PUT",
                 headers,
                 body: JSON.stringify({

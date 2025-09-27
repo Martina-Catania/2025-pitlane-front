@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/custom-components/icon-select";
+import { API_BASE_URL } from "@/lib/config/api";
 import { useState } from "react";
 import { useFoods } from "@/lib/contexts/FoodsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
@@ -37,7 +38,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3005/foods", {
+      const response = await fetch(`${API_BASE_URL}/foods`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
