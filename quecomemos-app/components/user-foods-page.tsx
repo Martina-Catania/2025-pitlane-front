@@ -4,6 +4,7 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { RoleGate } from './ui/role-based';
 import { UserFoods } from './ui/UserFoods';
 import { PreferencesWarning } from './custom-components/preferences-warning';
+import { UserPreferenceCards } from './user-preference-cards';
 import { useEffect, useState } from 'react';
 import { AdminSection } from './ui/AdminSection';
 import { useFoods } from '@/lib/contexts/FoodsContext';
@@ -87,6 +88,11 @@ export function UserFoodsPage() {
           <PreferencesWarning className="mb-6" />
         )}
         
+        {/* User Preference Cards - only show if user has preferences */}
+        {!preferencesLoading && userPreferences && userPreferences.hasPreferences && (
+          <UserPreferenceCards />
+        )}
+        
         {loadingFoods ? (
           <div className="text-gray-500">Loading foods...</div>
         ) : (
@@ -96,6 +102,11 @@ export function UserFoodsPage() {
 
       {/* UI for admin - also show foods */}
       <RoleGate role="admin" userRole={profile.role}>
+        {/* Admin preference cards - show if admin has preferences */}
+        {!preferencesLoading && userPreferences && userPreferences.hasPreferences && (
+          <UserPreferenceCards />
+        )}
+        
         {loadingFoods ? (
           <div className="text-gray-500">Loading foods...</div>
         ) : (

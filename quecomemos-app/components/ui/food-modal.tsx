@@ -122,7 +122,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
           {/* Dietary Restrictions Section */}
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-amber-100 mb-3 flex items-center">
-              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
               Dietary Restrictions
             </h4>
             {food.dietaryRestrictions && food.dietaryRestrictions.length > 0 ? (
@@ -130,9 +130,9 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
                 {food.dietaryRestrictions.map((restriction, index) => (
                   <div 
                     key={index} 
-                    className="bg-red-900/40 border border-red-700/50 rounded-lg px-3 py-2"
+                    className="bg-green-900/40 border border-green-700/50 rounded-lg px-3 py-2"
                   >
-                    <span className="text-red-300 text-sm font-medium">
+                    <span className="text-green-300 text-sm font-medium">
                       {getDisplayName(restriction)}
                     </span>
                   </div>
