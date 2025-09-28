@@ -5,6 +5,7 @@ import Image from "next/image";
 interface Food {
   FoodID: number;
   name: string;
+  kCal: number;
   svgLink?: string;
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[];
   preferences?: { name?: string; PreferenceID?: number }[];
@@ -74,6 +75,9 @@ export function FoodCard({ food }: FoodCardProps) {
           <div className="bg-gray-900 text-white text-sm rounded-lg px-4 py-3 shadow-2xl border border-gray-700 min-w-max max-w-64 text-center relative">
             <div className="whitespace-normal break-words leading-relaxed font-medium">
               {food.name}
+            </div>
+            <div className="text-xs text-gray-300 mt-1">
+              {food.kCal} kCal
             </div>
             {/* Tooltip arrow */}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-gray-900"></div>

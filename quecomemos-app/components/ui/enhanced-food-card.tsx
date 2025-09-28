@@ -9,6 +9,7 @@ import { Badge } from './badge';
 interface Food {
   FoodID: number;
   name: string;
+  kCal: number;
   svgLink?: string;
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
   preferences?: { name?: string; PreferenceID?: number }[] | number[];
@@ -100,6 +101,14 @@ export function EnhancedFoodCard({
           <h3 className="text-lg font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
             {food.name}
           </h3>
+
+          {/* Calories */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-amber-200">Calories:</span>
+            <Badge variant="outline" className="text-sm border-amber-400 text-amber-100 font-bold">
+              {food.kCal} kCal
+            </Badge>
+          </div>
 
           {/* Preferences */}
           {preferenceNamesList.length > 0 && (

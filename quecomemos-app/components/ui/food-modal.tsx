@@ -7,6 +7,7 @@ import Image from "next/image";
 interface Food {
   FoodID: number;
   name: string;
+  kCal: number;
   svgLink?: string;
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
   preferences?: { name?: string; PreferenceID?: number }[] | number[];
@@ -91,6 +92,9 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
               )}
             </div>
             <h3 className="text-2xl font-bold text-amber-100 mb-2">{food.name}</h3>
+            <div className="inline-flex items-center bg-amber-800/30 border border-amber-700/50 rounded-full px-3 py-1 mb-4">
+              <span className="text-amber-200 font-semibold">{food.kCal} kCal</span>
+            </div>
           </div>
 
           {/* Preferences Section */}

@@ -24,6 +24,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   const { showSuccess, showError } = useGlobalNotification();
   const { confirmation, showConfirmation, handleConfirm, closeConfirmation } = useConfirmation();
   const [foodName, setFoodName] = useState(food.name || "");
+  const [kCal, setKCal] = useState<number>(food.kCal || 0);
   const [preferences, setPreferences] = useState<number[]>(
     food.preferences?.map((p: { PreferenceID?: number } | number) => typeof p === 'number' ? p : p.PreferenceID || 0) || []
   );
@@ -43,6 +44,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: foodName,
+          kCal: kCal,
           svgLink: icon,
           preferences: preferences,
           dietaryRestrictions: restrictions
@@ -59,6 +61,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
       // Actualizar la comida en el contexto inmediatamente
       updateFood(food.FoodID, {
         name: foodName,
+        kCal: kCal,
         svgLink: icon,
         preferences: preferences,
         dietaryRestrictions: restrictions,
@@ -145,6 +148,20 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
               onChange={(e) => setFoodName(e.target.value)}
               required
               className="bg-neutral-800 border-amber-800/30 text-amber-100 placeholder:text-gray-400 focus:border-amber-600 focus:ring-amber-600/20"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="kcal" className="text-amber-200">Calories (kCal)</Label>
+            <Input
+              id="kcal"
+              type="number"
+              min="0"
+              value={kCal}
+              onChange={(e) => setKCal(Math.max(0, parseInt(e.target.value) || 0))}
+              required
+              className="bg-neutral-800 border-amber-800/30 text-amber-100 placeholder:text-gray-400 focus:border-amber-600 focus:ring-amber-600/20"
+              placeholder="Enter calories"
             />
           </div>
 

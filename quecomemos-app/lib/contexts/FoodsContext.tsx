@@ -6,6 +6,7 @@ import { API_BASE_URL } from '@/lib/config/api';
 export interface Food {
   FoodID: number;
   name: string;
+  kCal: number;
   svgLink?: string;
   preferences?: { name?: string; PreferenceID?: number }[] | number[];
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];

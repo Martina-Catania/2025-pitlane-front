@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 interface Food {
   FoodID: number;
   name: string;
+  kCal: number;
   svgLink?: string;
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
   preferences?: { name?: string; PreferenceID?: number }[] | number[];

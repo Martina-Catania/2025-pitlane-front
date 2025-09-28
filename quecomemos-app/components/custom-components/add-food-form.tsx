@@ -28,6 +28,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
   const { addFood } = useFoods();
   const { showSuccess, showError } = useGlobalNotification();
   const [foodName, setFoodName] = useState("");
+  const [kCal, setKCal] = useState<number>(0);
   const [preferences, setPreferences] = useState<number[]>([]);
   const [restrictions, setRestrictions] = useState<number[]>([]);
   const [icon, setIcon] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: foodName,
+          kCal: kCal,
           svgLink: icon ?? "",
           preferences,
           dietaryRestrictions: hasNoRestrictions ? [] : restrictions,
@@ -66,6 +68,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
       
       // Limpiar el formulario
       setFoodName("");
+      setKCal(0);
       setPreferences([]);
       setRestrictions([]);
       setIcon(null);
@@ -114,6 +117,20 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
                   onChange={(e) => setFoodName(e.target.value)}
                   required
                   className="bg-neutral-700 border-amber-800/30 text-amber-100 placeholder:text-gray-400 focus:border-amber-600 focus:ring-amber-600/20"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="kcal" className="text-amber-200">Calories (kCal)</Label>
+                <Input
+                  id="kcal"
+                  type="number"
+                  min="0"
+                  value={kCal}
+                  onChange={(e) => setKCal(Math.max(0, parseInt(e.target.value) || 0))}
+                  required
+                  className="bg-neutral-700 border-amber-800/30 text-amber-100 placeholder:text-gray-400 focus:border-amber-600 focus:ring-amber-600/20"
+                  placeholder="Enter calories"
                 />
               </div>
 
