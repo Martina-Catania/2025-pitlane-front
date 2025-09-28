@@ -182,7 +182,7 @@ export function AddUserDataForm({
                                     <Label className="block mb-2">Dietary Restrictions</Label>
                                     <CustomCheckbox 
                                         initialOptions={dietaryRestrictions.length > 0 ? dietaryRestrictions : []}
-                                        endpoint="dietary-restrictions"
+                                        endpoint="dietary-restrictions/excluding-for-everyone"
                                         onSelectionChange={setDietaryRestrictions}
                                     />
                                 </div>

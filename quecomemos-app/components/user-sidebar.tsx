@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Settings, LogOut, X, Home, Utensils } from 'lucide-react';
+import { User, Settings, LogOut, X, Home, Utensils, ChefHat } from 'lucide-react';
 import { Button } from './ui/button';
 import { useUser } from '@/lib/contexts/UserContext';
 
@@ -144,6 +144,20 @@ export function UserSidebar() {
               <div className="font-medium text-sm text-card-foreground">Foods</div>
               <div className="text-xs text-muted-foreground">
                 Browse and manage foods
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/protected/meals"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-3 w-full p-3 text-left hover:bg-amber-800/20 rounded-lg transition-colors"
+          >
+            <ChefHat className="w-5 h-5 text-amber-300" />
+            <div>
+              <div className="font-medium text-sm text-card-foreground">My Meals</div>
+              <div className="text-xs text-muted-foreground">
+                View and manage your created meals
               </div>
             </div>
           </Link>

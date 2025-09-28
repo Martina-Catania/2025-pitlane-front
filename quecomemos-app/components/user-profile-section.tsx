@@ -1,19 +1,14 @@
 'use client';
 
 import { useUser } from '@/lib/contexts/UserContext';
-import { RoleGate } from './ui/role-based';
-import { UserMeals } from './user-meals';
-import { PreferencesWarning } from './custom-components/preferences-warning';
-import { AdminSection } from './ui/AdminSection';
+import { AllMeals } from './all-meals';
 
 export function UserProfileSection() {
   const { userData, loading, error } = useUser();
   
   const profile = userData.profile;
-  const userPreferences = userData.preferences;
-  const preferencesLoading = loading;
 
-  if (loading || preferencesLoading) {
+  if (loading) {
     return (
       <div className="flex-1 w-full flex flex-col gap-12">
         <div className="mb-4">
@@ -47,22 +42,8 @@ export function UserProfileSection() {
         <div className="text-sm text-gray-500 capitalize">{profile.role}</div>
       </div>
 
-      {/* UI solo para admin */}
-      <RoleGate role="admin" userRole={profile.role}>
-        <div className="mt-6">
-          <AdminSection />
-        </div>
-      </RoleGate>
-
-      {/* UI solo para user */}
-      <RoleGate role="user" userRole={profile.role}>
-        {/* Show preferences warning if user doesn't have preferences set */}
-        {!preferencesLoading && userPreferences && !userPreferences.hasPreferences && (
-          <PreferencesWarning className="mb-6" />
-        )}
-        
-        <UserMeals />
-      </RoleGate>
+      {/* Show all meals from all users for both admin and regular users */}
+      <AllMeals />
     </div>
   );
 }

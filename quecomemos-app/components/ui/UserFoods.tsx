@@ -17,6 +17,14 @@ interface Food {
 
 interface UserFoodsProps {
   foods: Food[];
+  mockUserData?: {
+    profile: { role: string };
+    preferences: {
+      preferences: number[];
+      dietaryRestrictions: number[];
+      hasPreferences: boolean;
+    };
+  };
 }
 
 // Componente de carta uniforme
@@ -96,9 +104,12 @@ interface UserFoodsProps {
   foods: Food[];
 }
 
-export function UserFoods({ foods }: UserFoodsProps) {
+export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
   const { userData } = useUser();
-  const userPreferences = userData.preferences;
+  
+  // Use mock data if provided (for admin preview), otherwise use real user data
+  const userPreferences = mockUserData?.preferences || userData.preferences;
+  const userProfile = mockUserData?.profile || userData.profile;
   
   // Estados para el modal
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
@@ -125,37 +136,68 @@ export function UserFoods({ foods }: UserFoodsProps) {
 
   // Filter foods based on user preferences and dietary restrictions
   const filterFoods = () => {
-    if (!userPreferences || !userPreferences.hasPreferences) {
+    // Admin users see all foods without any filtering
+    if (userProfile?.role === "admin") {
       return { preferredFoods: [], otherFoods: foods };
     }
 
-  const userPrefIds = userPreferences.preferences || [];
-  const userRestrictionsIds = userPreferences.dietaryRestrictions || [];
+    // If user has no preferences set, show all foods
+    if (!userPreferences || !userPreferences.hasPreferences) {
+      return { preferredFoods: [], otherFoods: foods };
+    }
+    
+    // If user has no dietary restrictions, they can see all foods (no restriction filtering)
+    const userRestrictionsIds = userPreferences.dietaryRestrictions || [];
+    if (userRestrictionsIds.length === 0) {
+      // No restrictions = can eat anything, just organize by preferences
+      const userPrefIds = userPreferences.preferences || [];
+      const preferredFoods: Food[] = [];
+      const otherFoods: Food[] = [];
+      
+      foods.forEach(food => {
+        const foodPrefIds = food.preferences?.map(p => typeof p === 'number' ? p : p.PreferenceID ?? -1) || [];
+        const hasMatchingPreference = foodPrefIds.some(prefId => userPrefIds.includes(prefId));
+        
+        if (hasMatchingPreference) {
+          preferredFoods.push(food);
+        } else {
+          otherFoods.push(food);
+        }
+      });
+      
+      return { preferredFoods, otherFoods };
+    }
 
+    // User has dietary restrictions - can only eat foods that match their restrictions OR "For Everyone" foods
+    const userPrefIds = userPreferences.preferences || [];
     const preferredFoods: Food[] = [];
     const otherFoods: Food[] = [];
 
     foods.forEach(food => {
-
-  const foodPrefIds = food.preferences?.map(p => typeof p === 'number' ? p : p.PreferenceID ?? -1) || [];
-  const foodRestrictionsIds = food.dietaryRestrictions?.map(r => typeof r === 'number' ? r : r.DietaryRestrictionID ?? -1) || [];
+      const foodPrefIds = food.preferences?.map(p => typeof p === 'number' ? p : p.PreferenceID ?? -1) || [];
+      const foodRestrictionsIds = food.dietaryRestrictions?.map(r => typeof r === 'number' ? r : r.DietaryRestrictionID ?? -1) || [];
 
       // Check if food matches user preferences
       const hasMatchingPreference = foodPrefIds.some(prefId => userPrefIds.includes(prefId));
       
-      // Check if food supports user's dietary restrictions (if user has any restrictions, food must support ALL of them)
-      const supportsUserRestrictions = userRestrictionsIds.length === 0 || 
-        userRestrictionsIds.every(restrictionId => foodRestrictionsIds.includes(restrictionId));
+      // Check if food is compatible with user's dietary restrictions:
+      // 1. Food has "For Everyone" restriction (id = 0)
+      // 2. Food has at least one restriction that matches user's restrictions
+      const isForEveryone = foodRestrictionsIds.includes(0);
+      const hasMatchingRestriction = foodRestrictionsIds.some(restrictionId => 
+        userRestrictionsIds.includes(restrictionId)
+      );
+      const isCompatible = isForEveryone || hasMatchingRestriction;
 
-      // Only show foods that support the user's dietary restrictions
-      if (supportsUserRestrictions) {
+      // Only show foods that are compatible with user's dietary restrictions
+      if (isCompatible) {
         if (hasMatchingPreference) {
           preferredFoods.push(food);
         } else {
           otherFoods.push(food);
         }
       }
-      // Foods that don't support user's dietary restrictions are completely filtered out
+      // Foods that don't match user's dietary restrictions are filtered out
     });
 
     return { preferredFoods, otherFoods };

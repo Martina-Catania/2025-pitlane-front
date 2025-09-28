@@ -32,12 +32,16 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
   const [restrictions, setRestrictions] = useState<number[]>([]);
   const [icon, setIcon] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasRestrictions, setHasRestrictions] = useState<boolean | null>(null);
 
   const handleAddFood = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      // Determine if this food has no restrictions (should get "For Everyone")
+      const hasNoRestrictions = hasRestrictions === false;
+      
       const response = await fetch(`${API_BASE_URL}/foods`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,7 +49,8 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
           name: foodName,
           svgLink: icon ?? "",
           preferences,
-          dietaryRestrictions: restrictions,
+          dietaryRestrictions: hasNoRestrictions ? [] : restrictions,
+          hasNoRestrictions: hasNoRestrictions,
         }),
       });
 
@@ -64,6 +69,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
       setPreferences([]);
       setRestrictions([]);
       setIcon(null);
+      setHasRestrictions(null);
 
       console.log('About to show success notification for:', foodName);
       showSuccess(
@@ -119,13 +125,43 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
                 />
               </DropdownWrapper>
 
-              <DropdownWrapper label="Dietary Restrictions">
-                <CustomCheckbox
-                  initialOptions={restrictions.length > 0 ? restrictions : []}
-                  endpoint="dietary-restrictions"
-                  onSelectionChange={setRestrictions}
-                />
-              </DropdownWrapper>
+              <div>
+                <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
+                <div className="flex gap-4 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setHasRestrictions(false)}
+                    className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                      hasRestrictions === false
+                        ? 'bg-amber-700 border-amber-600 text-white'
+                        : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                    }`}
+                  >
+                    No restrictions (For Everyone)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHasRestrictions(true)}
+                    className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                      hasRestrictions === true
+                        ? 'bg-amber-700 border-amber-600 text-white'
+                        : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                    }`}
+                  >
+                    Has restrictions
+                  </button>
+                </div>
+                
+                {hasRestrictions === true && (
+                  <DropdownWrapper label="Select Dietary Restrictions">
+                    <CustomCheckbox
+                      initialOptions={restrictions.length > 0 ? restrictions : []}
+                      endpoint="dietary-restrictions/excluding-for-everyone"
+                      onSelectionChange={setRestrictions}
+                    />
+                  </DropdownWrapper>
+                )}
+              </div>
 
               <IconSelect onSelectionChange={setIcon} />
             </div>

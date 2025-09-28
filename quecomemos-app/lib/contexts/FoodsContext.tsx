@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { API_BASE_URL } from '@/lib/config/api';
 
 // Tipo para una comida
 export interface Food {
@@ -20,6 +21,7 @@ interface FoodsContextType {
   updateFood: (foodId: number, updatedFood: Partial<Food>) => void;
   removeFood: (foodId: number) => void;
   getFoodById: (foodId: number) => Food | undefined;
+  fetchFoodsForUser: (userRestrictions: number[]) => Promise<Food[]>;
 }
 
 // Crear el contexto
@@ -77,6 +79,28 @@ export const FoodsProvider: React.FC<FoodsProviderProps> = ({ children, initialF
     return foods.find(food => food.FoodID === foodId);
   }, [foods]);
 
+  // Función para obtener comidas filtradas por restricciones del usuario
+  const fetchFoodsForUser = useCallback(async (userRestrictions: number[]): Promise<Food[]> => {
+    try {
+      const restrictionsParam = userRestrictions.length > 0 ? `?restrictions=${userRestrictions.join(',')}` : '';
+      const response = await fetch(`${API_BASE_URL}/foods/for-user${restrictionsParam}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const fetchedFoods = await response.json();
+        setFoods(fetchedFoods); // Update the context with filtered foods
+        return fetchedFoods;
+      }
+      throw new Error(`Failed to fetch foods: ${response.status}`);
+    } catch (error) {
+      console.error('Error fetching foods for user:', error);
+      throw error;
+    }
+  }, [setFoods]);
+
   const value: FoodsContextType = {
     foods,
     setFoods,
@@ -84,6 +108,7 @@ export const FoodsProvider: React.FC<FoodsProviderProps> = ({ children, initialF
     updateFood,
     removeFood,
     getFoodById,
+    fetchFoodsForUser,
   };
 
   return (

@@ -56,9 +56,13 @@ export function PreferenceFilteredFoodsPage({ preferenceId }: PreferenceFiltered
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.access_token) return;
 
-                // Fetch all foods if not already loaded
+                // Fetch foods filtered by user's dietary restrictions if not already loaded
                 if (foods.length === 0) {
-                    const foodsResponse = await fetch(`${API_BASE_URL}/foods`, {
+                    const userRestrictions = userPreferences?.dietaryRestrictions || [];
+                    const restrictionsParam = userRestrictions.length > 0 ? `?restrictions=${userRestrictions.join(',')}` : '';
+                    
+                    const foodsResponse = await fetch(`${API_BASE_URL}/foods/for-user${restrictionsParam}`, {
+                        method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${session.access_token}`,
                             'Content-Type': 'application/json',
@@ -116,9 +120,9 @@ export function PreferenceFilteredFoodsPage({ preferenceId }: PreferenceFiltered
         if (!userLoading) {
             fetchData();
         }
-    }, [userLoading, supabase, prefId, foods.length, setFoods]);
+    }, [userLoading, supabase, prefId, foods.length, setFoods, userPreferences?.dietaryRestrictions]);
 
-    // Filter foods based on preference and user restrictions
+    // Filter foods based on preference (dietary restrictions already handled by backend)
     useEffect(() => {
         if (foods.length === 0) return;
 
@@ -128,26 +132,11 @@ export function PreferenceFilteredFoodsPage({ preferenceId }: PreferenceFiltered
                 typeof p === 'number' ? p : p.PreferenceID ?? -1
             ) || [];
 
-            const hasMatchingPreference = foodPrefIds.includes(prefId);
-
-            // Check if food supports user's dietary restrictions
-            if (userPreferences && userPreferences.dietaryRestrictions.length > 0) {
-                const foodRestrictionsIds = food.dietaryRestrictions?.map(r =>
-                    typeof r === 'number' ? r : r.DietaryRestrictionID ?? -1
-                ) || [];
-
-                const supportsUserRestrictions = userPreferences.dietaryRestrictions.every(
-                    restrictionId => foodRestrictionsIds.includes(restrictionId)
-                );
-
-                return hasMatchingPreference && supportsUserRestrictions;
-            }
-
-            return hasMatchingPreference;
+            return foodPrefIds.includes(prefId);
         });
 
         setFilteredFoods(filtered);
-    }, [foods, prefId, userPreferences]);
+    }, [foods, prefId]);
 
     const openModal = (food: Food) => {
         setSelectedFood(food);

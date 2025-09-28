@@ -32,17 +32,22 @@ export function UserMeals() {
                     setLoadingMeals(true);
                     setError(null);
 
-                    // Assuming there's an endpoint to get meals by user
-                    const response = await fetch(`${API_BASE_URL}/meals?profileId=${profile.id}`);
+                    // Use the user endpoint with profileId as query parameter
+                    const response = await fetch(`${API_BASE_URL}/meals/user?profileId=${profile.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
 
                     if (response.ok) {
                         const mealsData = await response.json();
-                        setMeals(mealsData);
-                    } else if (response.status === 404) {
-                        // No meals found for user
-                        setMeals([]);
+                        setMeals(Array.isArray(mealsData) ? mealsData : []);
                     } else {
-                        throw new Error(`Error fetching meals: ${response.status}`);
+                        const errorData = await response.json().catch(() => ({}));
+                        const errorMessage = errorData.error || `Server error (${response.status})`;
+                        setError(`Failed to load meals: ${errorMessage}`);
+                        return;
                     }
                 } catch (error) {
                     console.error('Error fetching user meals:', error);
@@ -78,8 +83,14 @@ export function UserMeals() {
         return (
             <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-amber-200">Your Meals</h2>
-                <div className="text-red-400 bg-red-900/20 p-4 rounded-lg">
-                    {error}
+                <div className="text-center py-12 bg-red-900/20 rounded-lg border border-red-700/50">
+                    <div className="text-red-400 mb-4">
+                        <svg className="mx-auto h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <p className="text-lg font-medium">Unable to load meals</p>
+                        <p className="text-sm text-red-300 mt-1">{error}</p>
+                    </div>
                 </div>
             </div>
         );

@@ -7,12 +7,13 @@ import { PreferencesWarning } from './custom-components/preferences-warning';
 import { UserPreferenceCards } from './user-preference-cards';
 import { useEffect, useState } from 'react';
 import { AdminSection } from './ui/AdminSection';
+import { AdminUserPreview } from './admin-user-preview';
 import { useFoods } from '@/lib/contexts/FoodsContext';
 import { API_BASE_URL } from '@/lib/config/api';
 
 export function UserFoodsPage() {
   const { userData, loading, error } = useUser();
-  const { setFoods, foods } = useFoods();
+  const { fetchFoodsForUser, setFoods, foods } = useFoods();
   const [loadingFoods, setLoadingFoods] = useState(true);
   
   const profile = userData.profile;
@@ -23,10 +24,22 @@ export function UserFoodsPage() {
     const fetchFoods = async () => {
       if (profile && (profile.role === "user" || profile.role === "admin")) {
         try {
-          const response = await fetch(`${API_BASE_URL}/foods`);
-          if (response.ok) {
-            const foodsData = await response.json();
-            setFoods(foodsData);
+          // For admin users, fetch all foods regardless of their preferences
+          if (profile.role === "admin") {
+            const response = await fetch(`${API_BASE_URL}/foods`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            if (response.ok) {
+              const foodsData = await response.json();
+              setFoods(foodsData);
+            }
+          } else {
+            // For regular users, use the new efficient filtering
+            const userRestrictions = userPreferences?.dietaryRestrictions || [];
+            await fetchFoodsForUser(userRestrictions);
           }
         } catch (error) {
           console.error('Error fetching foods:', error);
@@ -35,10 +48,16 @@ export function UserFoodsPage() {
       setLoadingFoods(false);
     };
 
+    // Admin users can fetch foods immediately when profile is loaded
+    // Regular users need to wait for userPreferences to be loaded
     if (!loading && profile) {
-      fetchFoods();
+      if (profile.role === "admin") {
+        fetchFoods();
+      } else if (userPreferences) {
+        fetchFoods();
+      }
     }
-  }, [profile, loading, setFoods]);
+  }, [profile, loading, userPreferences, fetchFoodsForUser, setFoods]);
 
   if (loading || preferencesLoading) {
     return (
@@ -76,8 +95,9 @@ export function UserFoodsPage() {
 
       {/* UI solo para admin */}
       <RoleGate role="admin" userRole={profile.role}>
-        <div className="mt-6">
+        <div className="space-y-8 mt-6">
           <AdminSection />
+          <AdminUserPreview />
         </div>
       </RoleGate>
 
@@ -100,19 +120,7 @@ export function UserFoodsPage() {
         )}
       </RoleGate>
 
-      {/* UI for admin - also show foods */}
-      <RoleGate role="admin" userRole={profile.role}>
-        {/* Admin preference cards - show if admin has preferences */}
-        {!preferencesLoading && userPreferences && userPreferences.hasPreferences && (
-          <UserPreferenceCards />
-        )}
-        
-        {loadingFoods ? (
-          <div className="text-gray-500">Loading foods...</div>
-        ) : (
-          <UserFoods foods={foods} />
-        )}
-      </RoleGate>
+
     </div>
   );
 }
