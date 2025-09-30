@@ -10,6 +10,7 @@ import { AdminSection } from './ui/AdminSection';
 import { AdminUserPreview } from './admin-user-preview';
 import { useFoods } from '@/lib/contexts/FoodsContext';
 import { API_BASE_URL } from '@/lib/config/api';
+import { AddFoodForm } from './user-add-meal-form';
 
 export function UserFoodsPage() {
   const { userData, loading, error } = useUser();
@@ -112,7 +113,7 @@ export function UserFoodsPage() {
         {!preferencesLoading && userPreferences && userPreferences.hasPreferences && (
           <UserPreferenceCards />
         )}
-        
+          
         {loadingFoods ? (
           <div className="text-gray-500">Loading foods...</div>
         ) : (

@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
 import { Card } from './ui/card';
 import { Clock, Users, ChefHat } from 'lucide-react';
+import { AddFoodForm } from './user-add-meal-form';
+import { AddFoodModal } from './add-food-user-modal';
 
 interface Meal {
     MealID: number;
@@ -22,10 +24,9 @@ export function UserMeals() {
     const [meals, setMeals] = useState<Meal[]>([]);
     const [loadingMeals, setLoadingMeals] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    
     const profile = userData.profile;
 
-    useEffect(() => {
         const fetchUserMeals = async () => {
             if (profile && profile.id) {
                 try {
@@ -60,10 +61,8 @@ export function UserMeals() {
                 setLoadingMeals(false);
             }
         };
-
-        if (profile) {
-            fetchUserMeals();
-        }
+        useEffect(() => {
+        fetchUserMeals();
     }, [profile]);
 
     if (loadingMeals) {
@@ -105,6 +104,11 @@ export function UserMeals() {
                 </span>
             </div>
 
+            <div className="flex justify-end mb-4">
+                <AddFoodModal onFoodAdded={fetchUserMeals} />
+            </div>
+
+            
             {meals.length === 0 ? (
                 <div className="text-center py-12 bg-amber-900/20 rounded-lg border-2 border-dashed border-amber-700/50">
                     <ChefHat className="mx-auto h-12 w-12 text-amber-600 mb-4" />
