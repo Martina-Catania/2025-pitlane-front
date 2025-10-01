@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Plus, Trash, Calculator, ChevronDown, ChevronUp } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
+import { useUser } from "@/lib/contexts/UserContext";
 
 type FoodItem = {
   id?: number;
@@ -144,6 +145,7 @@ const AddFoodCard = ({
 }: { 
   onFoodAdded: (food: Omit<FoodItem, 'quantity'>) => void 
 }) => {
+  const { userData } = useUser();
   const [foodName, setFoodName] = useState("");
   const [kCal, setKCal] = useState<number | "">("");
   const [preferences, setPreferences] = useState<number[]>([]);
@@ -160,6 +162,11 @@ const AddFoodCard = ({
       return;
     }
 
+    if (!userData?.profile?.id) {
+      alert("You must be logged in to add foods");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -169,7 +176,8 @@ const AddFoodCard = ({
         svgLink: icon,
         preferences: preferences,
         dietaryRestrictions: hasRestrictions ? restrictions : [],
-        hasNoRestrictions: hasRestrictions === false
+        hasNoRestrictions: hasRestrictions === false,
+        profileId: userData.profile.id,
       };
 
       const response = await fetch(`${API_BASE_URL}/foods`, {

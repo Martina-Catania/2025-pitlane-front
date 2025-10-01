@@ -3,7 +3,7 @@ import { useState } from "react";
 import { API_BASE_URL } from "@/lib/config/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { IconSelect } from "@/components/custom-components/icon-select";
+import { useUser } from "@/lib/contexts/UserContext";
 import { useMealNameSuggestion } from "./hooks/useMealNameSuggestion";
 import { AddMealFormProps, FoodItem } from "./types";
 import FoodsList from "./FoodsList";
@@ -12,6 +12,8 @@ import FoodModal from "./FoodModal";
 
 type Props = AddMealFormProps & { onClose?: () => void };
 export default function AddMealForm({ onFoodAdded, onClose }: Props) {
+  const { userData } = useUser();
+  
   // meal
   const [mealName, setMealName] = useState("");
   const [description, setDescription] = useState("");
@@ -22,7 +24,6 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const [mealPreferences, setMealPreferences] = useState<number[]>([]);
   const [mealRestrictions, setMealRestrictions] = useState<number[]>([]);
   const [mealHasRestrictions, setMealHasRestrictions] = useState(false);
-  const [mealIcon, setMealIcon] = useState<string>("");
 
   const [openModal, setOpenModal] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -72,27 +73,107 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
       alert("Poné un nombre y al menos un alimento.");
       return;
     }
+
+    if (!userData?.profile?.id) {
+      alert("You must be logged in to create meals");
+      return;
+    }
+
     setLoading(true);
     try {
-      await fetch(`${API_BASE_URL}/meals`, {
+      // First, create all foods that don't exist yet and collect their IDs
+      const foodIds: number[] = [];
+      
+      for (const food of foods) {
+        // If the food has an id, it's an existing food
+        if (food.id) {
+          foodIds.push(Number(food.id));
+        } else {
+          // Check if food with this name already exists
+          try {
+            const existingFoodsResponse = await fetch(`${API_BASE_URL}/foods`, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            });
+            
+            if (existingFoodsResponse.ok) {
+              const existingFoods = await existingFoodsResponse.json();
+              const existingFood = existingFoods.find((f: { name: string; FoodID: number }) => f.name.toLowerCase() === food.name.toLowerCase());
+              
+              if (existingFood) {
+                // Food already exists, use its ID
+                foodIds.push(existingFood.FoodID);
+                continue;
+              }
+            }
+          } catch (error) {
+            console.warn('Error checking existing foods:', error);
+          }
+          
+          // Create new food only if it doesn't exist
+          const foodResponse = await fetch(`${API_BASE_URL}/foods`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: food.name,
+              kCal: food.kCal,
+              svgLink: food.svgLink || "",
+              preferences: [],
+              dietaryRestrictions: [],
+              hasNoRestrictions: true,
+              profileId: userData.profile.id,
+            }),
+          });
+          
+          if (!foodResponse.ok) {
+            const errorData = await foodResponse.json().catch(() => ({}));
+            if (foodResponse.status === 409) {
+              // Food already exists, try to get it by name
+              try {
+                const allFoodsResponse = await fetch(`${API_BASE_URL}/foods`);
+                if (allFoodsResponse.ok) {
+                  const allFoods = await allFoodsResponse.json();
+                  const existingFood = allFoods.find((f: { name: string; FoodID: number }) => f.name.toLowerCase() === food.name.toLowerCase());
+                  if (existingFood) {
+                    foodIds.push(existingFood.FoodID);
+                    continue;
+                  }
+                }
+              } catch (retryError) {
+                console.error('Error retrieving existing food:', retryError);
+              }
+            }
+            throw new Error(`Failed to create food: ${food.name} - ${errorData.error || 'Unknown error'}`);
+          }
+          
+          const createdFood = await foodResponse.json();
+          foodIds.push(createdFood.FoodID);
+        }
+      }
+
+      // Now create the meal with the food IDs
+      const mealResponse = await fetch(`${API_BASE_URL}/meals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: mealName,
           description,
-          foods,
-          preferences: mealPreferences,
-          dietaryRestrictions: mealHasRestrictions ? mealRestrictions : [],
-          svgLink: mealIcon ?? "",
-          hasNoRestrictions: !mealHasRestrictions,
+          profileId: userData.profile.id,
+          foodIds: foodIds,
         }),
       });
+
+      if (!mealResponse.ok) {
+        throw new Error("Failed to create meal");
+      }
+
       alert("Meal guardada con éxito");
       if (onFoodAdded) onFoodAdded();
       if (onClose) onClose();
 
-      setMealName(""); setDescription(""); setFoods([]);
-      if (onFoodAdded) onFoodAdded();
+      setMealName(""); 
+      setDescription(""); 
+      setFoods([]);
     } catch (err) {
       console.error(err);
       alert("Error guardando la meal");
@@ -154,12 +235,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
             setMealHasRestrictions={setMealHasRestrictions}
             mealRestrictions={mealRestrictions}
             setMealRestrictions={setMealRestrictions}
-            MealIconSlot={
-              <div>
-                <label className="text-amber-200 mb-2 block">Icon (SVG link) – meal</label>
-                <IconSelect onSelectionChange={setMealIcon} />
-              </div>
-            }
+            MealIconSlot={<div></div>}
           />
         )}
 

@@ -1,7 +1,9 @@
 export type FoodItem = {
+  id?: number;
   name: string;
   quantity: number;
-  kCal: number; 
+  kCal: number;
+  svgLink?: string;
 };
 
 export type ExistingFood = {

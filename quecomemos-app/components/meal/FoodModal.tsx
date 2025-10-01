@@ -43,7 +43,7 @@ export default function FoodModal(props: Props) {
     createPreferences, setCreatePreferences,
     createRestrictions, setCreateRestrictions,
     createHasRestrictions, setCreateHasRestrictions,
-    setCreateIcon,
+    createIcon, setCreateIcon,
     quantity,
     kcalPer100, setKcalPer100,
     name, setName,
@@ -145,7 +145,12 @@ export default function FoodModal(props: Props) {
       if (!quantity) { alert("Enter the quantity."); return; }
       const k = kcalSelected;
       if (typeof k !== "number") { alert("kcal per unit not found."); return; }
-      onConfirm({ name: selected.name, quantity: Number(quantity), kCal: Math.round(k * Number(quantity)) });
+      onConfirm({ 
+        name: selected.name, 
+        quantity: Number(quantity), 
+        kCal: Math.round(k * Number(quantity)),
+        svgLink: selected.svgLink || selected.icon || createIcon || ""
+      });
       onClose(); return;
     }
     // crear
@@ -153,7 +158,12 @@ export default function FoodModal(props: Props) {
       alert("Complete name, quantity and kcal per unit.");
       return;
     }
-    onConfirm({ name, quantity: Number(quantity), kCal: Math.round(Number(kcalPer100) * Number(quantity)) });
+    onConfirm({ 
+      name, 
+      quantity: Number(quantity), 
+      kCal: Math.round(Number(kcalPer100) * Number(quantity)),
+      svgLink: createIcon || ""
+    });
     onClose();
   };
 

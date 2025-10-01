@@ -17,6 +17,7 @@ import { API_BASE_URL } from "@/lib/config/api";
 import { useState } from "react";
 import { useFoods } from "@/lib/contexts/FoodsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
+import { useUser } from "@/lib/contexts/UserContext";
 import { Plus } from "lucide-react";
 
 interface AddFoodFormProps {
@@ -27,6 +28,7 @@ interface AddFoodFormProps {
 export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps & React.ComponentPropsWithoutRef<"div">) {
   const { addFood } = useFoods();
   const { showSuccess, showError } = useGlobalNotification();
+  const { userData } = useUser();
   const [foodName, setFoodName] = useState("");
   const [kCal, setKCal] = useState<number>(0);
   const [preferences, setPreferences] = useState<number[]>([]);
@@ -40,6 +42,11 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
     setIsLoading(true);
 
     try {
+      // Validate that user is logged in and has a profile
+      if (!userData?.profile?.id) {
+        throw new Error('You must be logged in to add foods');
+      }
+
       // Determine if this food has no restrictions (should get "For Everyone")
       const hasNoRestrictions = hasRestrictions === false;
       
@@ -53,6 +60,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
           preferences,
           dietaryRestrictions: hasNoRestrictions ? [] : restrictions,
           hasNoRestrictions: hasNoRestrictions,
+          profileId: userData.profile.id,
         }),
       });
 

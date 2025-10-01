@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
-import AddMealForm from "@/components/meal";
+import { AddFoodForm } from "@/components/custom-components/add-food-form";
 import { EditFoodForm } from "@/components/ui/EditForm";
 import { FoodItem } from "@/components/ui/FoodItem";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
@@ -53,7 +53,7 @@ export function AdminSection() {
               ✖
             </button>
             <div className="mt-4">
-              <AddMealForm onFoodAdded={handleCloseAddModal} />
+              <AddFoodForm onSuccess={handleCloseAddModal} />
             </div>
           </div>
         </div>
