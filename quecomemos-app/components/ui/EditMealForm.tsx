@@ -115,7 +115,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
   // FoodModal state
   const [createPreferences, setCreatePreferences] = useState<number[]>([]);
   const [createRestrictions, setCreateRestrictions] = useState<number[]>([]);
-  const [createHasRestrictions, setCreateHasRestrictions] = useState(false);
+  const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
   const [createIcon, setCreateIcon] = useState("");
   const [modalQuantity, setModalQuantity] = useState<number | "">(1);
   const [modalKcalPer100, setModalKcalPer100] = useState<number | "">(100);
@@ -532,7 +532,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
           setCreateIcon("");
           setCreatePreferences([]);
           setCreateRestrictions([]);
-          setCreateHasRestrictions(false);
+          setCreateHasRestrictions(null);
         }}
         onConfirm={async (foodItem) => {
           await addMealFood(foodItem);

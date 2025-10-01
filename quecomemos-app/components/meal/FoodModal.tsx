@@ -25,8 +25,8 @@ type Props = {
   setCreatePreferences: (v: number[]) => void;
   createRestrictions: number[];
   setCreateRestrictions: (v: number[]) => void;
-  createHasRestrictions: boolean;
-  setCreateHasRestrictions: (v: boolean) => void;
+  createHasRestrictions: boolean | null;
+  setCreateHasRestrictions: (v: boolean | null) => void;
   createIcon: string;
   setCreateIcon: (v: string) => void;
 
@@ -431,24 +431,44 @@ export default function FoodModal(props: Props) {
                       onSelectionChange={setCreatePreferences}
                     />
                   </DropdownWrapper>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={createHasRestrictions}
-                      onChange={(e) => setCreateHasRestrictions(e.target.checked)}
-                      className="rounded border-amber-600 bg-neutral-700 text-amber-600 focus:ring-amber-600"
-                    />
-                    <Label className="text-amber-200 text-sm">This food has dietary restrictions</Label>
+                  
+                  <div>
+                    <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
+                    <div className="flex gap-4 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setCreateHasRestrictions(false)}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                          createHasRestrictions === false
+                            ? 'bg-amber-700 border-amber-600 text-white'
+                            : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                        }`}
+                      >
+                        No restrictions (For Everyone)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCreateHasRestrictions(true)}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                          createHasRestrictions === true
+                            ? 'bg-amber-700 border-amber-600 text-white'
+                            : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                        }`}
+                      >
+                        Has restrictions
+                      </button>
+                    </div>
+                    
+                    {createHasRestrictions === true && (
+                      <DropdownWrapper label="Select Dietary Restrictions">
+                        <CustomCheckbox
+                          initialOptions={createRestrictions}
+                          endpoint="dietary-restrictions/excluding-for-everyone"
+                          onSelectionChange={setCreateRestrictions}
+                        />
+                      </DropdownWrapper>
+                    )}
                   </div>
-                  {createHasRestrictions && (
-                    <DropdownWrapper label="Dietary Restrictions">
-                      <CustomCheckbox
-                        initialOptions={createRestrictions}
-                        endpoint="dietary-restrictions"
-                        onSelectionChange={setCreateRestrictions}
-                      />
-                    </DropdownWrapper>
-                  )}
                 </div>
               </div>
             </div>

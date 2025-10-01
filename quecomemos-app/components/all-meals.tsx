@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
-import { Card } from './ui/card';
-import { Clock, ChefHat, User } from 'lucide-react';
+import { ChefHat } from 'lucide-react';
 import { MealModal } from './ui/meal-modal';
 import { EditMealForm } from './ui/EditMealForm';
 import { useUser } from '@/lib/contexts/UserContext';
+import { MealCard } from './meal';
 
 interface Meal {
     MealID: number;
@@ -178,67 +178,13 @@ export function AllMeals() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {meals.map((meal) => (
-                        <Card
+                        <MealCard
                             key={meal.MealID}
-                            className="bg-amber-800/30 border-amber-700/50 hover:bg-amber-700/40 transition-colors cursor-pointer"
-                            onClick={() => handleMealClick(meal)}
-                        >
-                            <div className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                    <h3 className="font-semibold text-amber-200 mb-1 line-clamp-1 flex-1">
-                                        {meal.name}
-                                    </h3>
-                                    <div className="flex items-center text-xs text-gray-400 ml-2">
-                                        <User className="h-3 w-3 mr-1" />
-                                        <span className="capitalize">{meal.profile.role}</span>
-                                    </div>
-                                </div>
-                                
-                                {meal.description && (
-                                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">
-                                        {meal.description}
-                                    </p>
-                                )}
-                                
-                                <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
-                                    <div className="flex items-center">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        <span>{new Date(meal.createdAt).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <ChefHat className="h-3 w-3 mr-1" />
-                                        <span>{meal.mealFoods?.length || 0} food{(meal.mealFoods?.length || 0) !== 1 ? 's' : ''}</span>
-                                    </div>
-                                </div>
-
-                                {/* Created by */}
-                                <div className="text-xs text-gray-400 mb-3">
-                                    Created by: {meal.profile.username || 'Anonymous'}
-                                </div>
-
-                                {/* Foods in meal */}
-                                {meal.mealFoods && meal.mealFoods.length > 0 && (
-                                    <div className="border-t border-amber-700/30 pt-3">
-                                        <div className="text-xs text-gray-400 mb-2">Foods:</div>
-                                        <div className="flex flex-wrap gap-1">
-                                            {meal.mealFoods.slice(0, 3).map((mealFood) => (
-                                                <span
-                                                    key={mealFood.food.FoodID}
-                                                    className="bg-amber-700/30 text-amber-200 px-2 py-1 rounded text-xs"
-                                                >
-                                                    {mealFood.food.name}
-                                                </span>
-                                            ))}
-                                            {meal.mealFoods.length > 3 && (
-                                                <span className="bg-amber-700/20 text-amber-300 px-2 py-1 rounded text-xs">
-                                                    +{meal.mealFoods.length - 3} more
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </Card>
+                            meal={meal}
+                            onClick={handleMealClick}
+                            showExtendedInfo={false}
+                            maxFoodsToShow={3}
+                        />
                     ))}
                 </div>
             )}

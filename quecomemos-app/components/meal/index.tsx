@@ -12,6 +12,9 @@ import MealExtras from "./MealExtras";
 import FoodModal from "./FoodModal";
 import FoodChoiceModal from "./FoodChoiceModal";
 
+// Export reusable components
+export { default as MealCard } from "./MealCard";
+
 type Props = AddMealFormProps & { onClose?: () => void };
 export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const { userData } = useUser();
@@ -38,7 +41,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const [modalKcal100, setModalKcal100] = useState<number | "">("");
   const [createPreferences, setCreatePreferences] = useState<number[]>([]);
   const [createRestrictions, setCreateRestrictions] = useState<number[]>([]);
-  const [createHasRestrictions, setCreateHasRestrictions] = useState(false);
+  const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
   const [createIcon, setCreateIcon] = useState<string>("");
 
   const inputClass =

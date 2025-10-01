@@ -1,0 +1,144 @@
+"use client";
+
+import { Card } from "@/components/ui/card";
+import { ChefHat, Clock, User, Users } from "lucide-react";
+
+interface MealFood {
+  food: {
+    FoodID: number;
+    name: string;
+    svgLink?: string;
+    kCal: number;
+  };
+  quantity: number;
+}
+
+interface Meal {
+  MealID: number;
+  name: string;
+  description?: string;
+  preparationTime?: number;
+  servings?: number;
+  createdAt: string;
+  updatedAt: string;
+  profileId: string;
+  profile: {
+    username?: string;
+    id: string;
+    role: string;
+  };
+  mealFoods: MealFood[];
+}
+
+interface MealCardProps {
+  meal: Meal;
+  onClick?: (meal: Meal) => void;
+  showExtendedInfo?: boolean; // Controls whether to show prep time, servings, etc.
+  maxFoodsToShow?: number; // How many foods to show before "X more"
+  className?: string;
+}
+
+export function MealCard({ 
+  meal, 
+  onClick, 
+  showExtendedInfo = true,
+  maxFoodsToShow = 3,
+  className = ""
+}: MealCardProps) {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(meal);
+    }
+  };
+
+  const totalFoods = meal.mealFoods?.length || 0;
+  const foodsToShow = meal.mealFoods?.slice(0, maxFoodsToShow) || [];
+  const remainingFoods = Math.max(0, totalFoods - maxFoodsToShow);
+
+  return (
+    <Card
+      className={`bg-amber-800/30 border-amber-700/50 hover:bg-amber-700/40 transition-colors ${
+        onClick ? 'cursor-pointer' : ''
+      } ${className}`}
+      onClick={handleClick}
+    >
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-semibold text-amber-200 mb-1 line-clamp-1 flex-1">
+            {meal.name}
+          </h3>
+          <div className="flex items-center text-xs text-gray-400 ml-2">
+            <User className="h-3 w-3 mr-1" />
+            <span className="capitalize">{meal.profile.role}</span>
+          </div>
+        </div>
+        
+        {/* Description */}
+        {meal.description && (
+          <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+            {meal.description}
+          </p>
+        )}
+        
+        {/* Metadata */}
+        <div className="flex items-center gap-4 text-xs text-gray-400 mb-3 flex-wrap">
+          <div className="flex items-center">
+            <Clock className="h-3 w-3 mr-1" />
+            <span>{new Date(meal.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center">
+            <ChefHat className="h-3 w-3 mr-1" />
+            <span>{totalFoods} food{totalFoods !== 1 ? 's' : ''}</span>
+          </div>
+          {showExtendedInfo && meal.preparationTime && (
+            <div className="flex items-center">
+              <Clock className="w-3 h-3 mr-1" />
+              <span>{meal.preparationTime} min</span>
+            </div>
+          )}
+          {showExtendedInfo && meal.servings && (
+            <div className="flex items-center">
+              <Users className="w-3 h-3 mr-1" />
+              <span>{meal.servings} serving{meal.servings !== 1 ? 's' : ''}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Created by */}
+        <div className="text-xs text-gray-400 mb-3">
+          Created by: {meal.profile.username || 'Anonymous'}
+        </div>
+
+        {/* Foods in meal */}
+        {totalFoods > 0 && (
+          <div className="border-t border-amber-700/30 pt-3">
+            <div className="text-xs text-gray-400 mb-2">Foods:</div>
+            <div className="flex flex-wrap gap-1">
+              {foodsToShow.map((mealFood) => (
+                <span
+                  key={mealFood.food.FoodID}
+                  className="bg-amber-700/30 text-amber-200 px-2 py-1 rounded text-xs"
+                >
+                  {mealFood.food.name}
+                  {mealFood.quantity > 1 && (
+                    <span className="ml-1 text-amber-300/70">
+                      ×{mealFood.quantity}
+                    </span>
+                  )}
+                </span>
+              ))}
+              {remainingFoods > 0 && (
+                <span className="bg-amber-700/20 text-amber-300 px-2 py-1 rounded text-xs">
+                  +{remainingFoods} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+export default MealCard;
