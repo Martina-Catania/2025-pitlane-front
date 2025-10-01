@@ -1,10 +1,14 @@
 "use client";
 import { useState } from "react";
 import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
-import  AddFoodForm  from "@/componentes/foods/AddFoodForm";
+import AddMealForm from "@/components/meal";
 import { EditFoodForm } from "@/components/ui/EditForm";
 import { FoodItem } from "@/components/ui/FoodItem";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
+
+interface AddMealFormProps {
+  onFoodAdded?: () => void;
+}
 
 export function AdminSection() {
   const { foods } = useFoods();
@@ -41,7 +45,7 @@ export function AdminSection() {
       </div>
 
       {/* MODAL: Agregar comida */}
-      {showAddModal && (
+      {showAddModal && ( 
         <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
           <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
             <button
@@ -52,7 +56,7 @@ export function AdminSection() {
               ✖
             </button>
             <div className="mt-4">
-              <AddFoodForm onSuccess={handleCloseAddModal} />
+              <AddMealForm onFoodAdded={handleCloseAddModal} />
             </div>
           </div>
         </div>

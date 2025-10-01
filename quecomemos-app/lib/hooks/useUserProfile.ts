@@ -14,11 +14,6 @@ interface UseUserProfileReturn {
   loading: boolean;
   error: string | null;
 }
-
-/**
- * Hook de compatibilidad que usa el UserContext.
- * Se mantiene para compatibilidad con componentes existentes.
- */
 export function useUserProfile(): UseUserProfileReturn {
   const { userData, loading, error } = useUser();
 
