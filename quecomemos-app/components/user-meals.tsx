@@ -131,7 +131,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-amber-800/40">
-              <h3 className="text-amber-100 font-semibold">Nueva comida</h3>
+              <h3 className="text-amber-100 font-semibold">New Meal</h3>
               <button
                 onClick={() => setOpenCreator(false)}
                 className="px-2 py-1 text-amber-200 hover:text-amber-50"
