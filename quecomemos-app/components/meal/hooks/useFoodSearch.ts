@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExistingFood } from "../types";
-import { kcal100 } from "../utils";
+import { getKcalFromFood } from "../utils";
 
 type UseFoodSearchParams = {
   apiBase: string;
@@ -56,7 +56,7 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
     }
   }, [q, allFoods, open]);
 
-  const kcalSelected = useMemo(() => kcal100(selected), [selected]);
+  const kcalSelected = useMemo(() => getKcalFromFood(selected), [selected]);
 
   return {
     query, setQuery,

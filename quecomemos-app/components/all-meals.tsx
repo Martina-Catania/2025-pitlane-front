@@ -202,7 +202,7 @@ export function AllMeals() {
                 <div className="fixed inset-0 z-[85] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                     {/* Overlay */}
                     <div
-                        className="absolute inset-0 bg-black/70 z-[85]"
+                        className="absolute inset-0 bg-black/70 backdrop-blur-sm z-[85]"
                         onClick={closeEditModal}
                     />
                     {/* Content */}

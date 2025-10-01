@@ -3,6 +3,7 @@ export type FoodItem = {
   name: string;
   quantity: number;
   kCal: number;
+  kcalPerUnit?: number; // Store original kcal per unit to avoid rounding errors
   svgLink?: string;
 };
 

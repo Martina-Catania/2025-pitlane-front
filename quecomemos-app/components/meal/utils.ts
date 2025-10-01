@@ -1,6 +1,6 @@
 import { ExistingFood } from "./types";
 
-export const kcal100 = (f?: ExistingFood | null): number | undefined => {
+export const getKcalFromFood = (f?: ExistingFood | null): number | undefined => {
   if (!f) return undefined;
   if (typeof f.kcalPer100g === "number") return f.kcalPer100g;
   if (typeof f.kCal === "number") return f.kCal;
@@ -20,5 +20,5 @@ export const namesFrom = (arr?: ExistingFood["preferences"]): string[] => {
 export const restrNames = (f: ExistingFood | null) =>
   namesFrom((f?.dietaryRestrictions ?? f?.restrictions) as ExistingFood["preferences"]);
 
-export const calcKcalFrom100g = (kcalPer100: number, grams: number) =>
-  Math.round((kcalPer100 * grams) / 100);
+export const calcKcalFromUnits = (kcalPerUnit: number, units: number) =>
+  Math.round(kcalPerUnit * units);

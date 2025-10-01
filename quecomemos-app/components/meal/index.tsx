@@ -38,7 +38,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
 
   const [modalName, setModalName] = useState("");
   const [modalQuantity, setModalQuantity] = useState<number | "">("");
-  const [modalKcal100, setModalKcal100] = useState<number | "">("");
+  const [modalKcalPerUnit, setModalKcalPerUnit] = useState<number | "">("");
   const [createPreferences, setCreatePreferences] = useState<number[]>([]);
   const [createRestrictions, setCreateRestrictions] = useState<number[]>([]);
   const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
@@ -58,9 +58,9 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
       setModalName(item.name);
       setModalQuantity(item.quantity);
       
-      // Calculate kcal per unit from existing food item
-      const kcalPerUnit = item.quantity > 0 ? Math.round(item.kCal / item.quantity) : 0;
-      setModalKcal100(kcalPerUnit);
+      // Use stored kcalPerUnit if available, otherwise default to 1 for editing
+      const kcalPerUnit = item.kcalPerUnit || 1;
+      setModalKcalPerUnit(kcalPerUnit);
       
       // Preserve the icon
       setCreateIcon(item.svgLink || "");
@@ -77,8 +77,8 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const handleCreateNew = () => {
     setFoodActionType('create');
     setModalName(""); 
-    setModalQuantity(""); 
-    setModalKcal100("");
+    setModalQuantity(1); 
+    setModalKcalPerUnit(1);
     setCreateIcon("");
     setOpenChoiceModal(false);
     setOpenModal(true);
@@ -87,8 +87,8 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const handleSearchExisting = () => {
     setFoodActionType('search');
     setModalName(""); 
-    setModalQuantity(""); 
-    setModalKcal100("");
+    setModalQuantity(1); 
+    setModalKcalPerUnit(1);
     setCreateIcon("");
     setOpenChoiceModal(false);
     setOpenModal(true);
@@ -377,8 +377,8 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         setCreateIcon={setCreateIcon}
         quantity={modalQuantity}
         setQuantity={setModalQuantity}
-        kcalPer100={modalKcal100}
-        setKcalPer100={setModalKcal100}
+        kcalPerUnit={modalKcalPerUnit}
+        setKcalPerUnit={setModalKcalPerUnit}
         name={modalName}
         setName={setModalName}
         actionType={foodActionType}

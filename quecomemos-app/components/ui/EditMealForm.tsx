@@ -118,7 +118,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
   const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
   const [createIcon, setCreateIcon] = useState("");
   const [modalQuantity, setModalQuantity] = useState<number | "">(1);
-  const [modalKcalPer100, setModalKcalPer100] = useState<number | "">(100);
+  const [modalKcalPerUnit, setModalKcalPerUnit] = useState<number | "">(1);
   const [modalName, setModalName] = useState("");
 
   const handleEditMeal = async (e: React.FormEvent) => {
@@ -351,10 +351,6 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
 
   return (
     <div className="space-y-6">
-      <div className="text-center border-b border-amber-800/30 pb-4">
-        <h3 className="text-xl font-bold text-amber-100">Edit Meal</h3>
-        <p className="text-sm text-gray-400">Update your meal details and foods</p>
-      </div>
 
       <form onSubmit={handleEditMeal} className="space-y-4">
         {/* Meal Name */}
@@ -528,7 +524,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
           // Reset modal state
           setModalName("");
           setModalQuantity(1);
-          setModalKcalPer100(100);
+          setModalKcalPerUnit(1);
           setCreateIcon("");
           setCreatePreferences([]);
           setCreateRestrictions([]);
@@ -549,8 +545,8 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
         setCreateIcon={setCreateIcon}
         quantity={modalQuantity}
         setQuantity={setModalQuantity}
-        kcalPer100={modalKcalPer100}
-        setKcalPer100={setModalKcalPer100}
+        kcalPerUnit={modalKcalPerUnit}
+        setKcalPerUnit={setModalKcalPerUnit}
         name={modalName}
         setName={setModalName}
       />

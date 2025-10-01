@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useRef, KeyboardEvent } from "react";
+import { useMemo, useRef, KeyboardEvent, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
 import { IconSelect } from "@/components/custom-components/icon-select";
 import { X, Utensils } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
-import { kcal100 } from "./utils";
+import { getKcalFromFood } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 
@@ -32,8 +32,8 @@ type Props = {
 
   quantity: number | "";
   setQuantity: (v: number | "") => void;
-  kcalPer100: number | "";
-  setKcalPer100: (v: number | "") => void;
+  kcalPerUnit: number | "";
+  setKcalPerUnit: (v: number | "") => void;
   name: string;
   setName: (v: string) => void;
   
@@ -48,7 +48,7 @@ export default function FoodModal(props: Props) {
     createHasRestrictions, setCreateHasRestrictions,
     createIcon, setCreateIcon,
     quantity,
-    kcalPer100, setKcalPer100,
+    kcalPerUnit, setKcalPerUnit,
     name, setName,
     actionType = 'create',
   } = props;
@@ -62,6 +62,15 @@ export default function FoodModal(props: Props) {
     activeIndex, setActiveIndex,
     kcalSelected,
   } = useFoodSearch({ apiBase, open });
+
+  // Clear selected food when switching to create mode
+  useEffect(() => {
+    if (actionType === 'create' && open) {
+      if (selected) {
+        setSelected(null);
+      }
+    }
+  }, [actionType, open, selected, setSelected]);
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -97,8 +106,11 @@ export default function FoodModal(props: Props) {
         setSelected(f);
         setName(f.name);
         setQuery(f.name);
-        const k = kcal100(f);
-        if (typeof k === "number") setKcalPer100(k);
+        // Only set kcal automatically in search mode, not in create mode
+        if (actionType === 'search') {
+          const k = getKcalFromFood(f);
+          if (typeof k === "number") setKcalPerUnit(k);
+        }
         await hydrateSelectedWithDetails(f);
         return;
       }
@@ -109,14 +121,14 @@ export default function FoodModal(props: Props) {
   };
 
   const liveKcal = useMemo(() => {
-    const base = selected ? kcalSelected : (typeof kcalPer100 === "number" ? kcalPer100 : undefined);
+    const base = selected ? kcalSelected : (typeof kcalPerUnit === "number" ? kcalPerUnit : undefined);
     const quantityNum = typeof quantity === "number" ? quantity : (quantity === "" ? 0 : Number(quantity));
     
     // Debug logging to help identify the issue
     console.log('liveKcal calculation:', { 
       selected: !!selected, 
       kcalSelected, 
-      kcalPer100, 
+      kcalPerUnit, 
       quantity, 
       quantityNum, 
       base 
@@ -124,27 +136,45 @@ export default function FoodModal(props: Props) {
     
     if (!base || quantityNum <= 0 || isNaN(quantityNum) || isNaN(base)) return undefined;
     return Math.round(base * quantityNum);
-  }, [selected, kcalSelected, kcalPer100, quantity]);
+  }, [selected, kcalSelected, kcalPerUnit, quantity]);
 
   const handleConfirm = () => {
     // When editing an existing food item
     if (editingItem) {
-      if (!quantity || !kcalPer100) {
+      if (!quantity || !kcalPerUnit) {
         showError("Incomplete Information", "Please complete the quantity and calories per unit.");
         return;
       }
       onConfirm({ 
         name, 
         quantity: Number(quantity), 
-        kCal: Math.round(Number(kcalPer100) * Number(quantity)),
+        kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
+        kcalPerUnit: Number(kcalPerUnit),
         svgLink: createIcon || editingItem.svgLink || ""
       });
       onClose(); 
       return;
     }
     
-    // When selecting an existing food from search
-    if (selected) {
+    // When in create mode, always create a new food regardless of selected state
+    if (actionType === 'create') {
+      if (!name || !quantity || !kcalPerUnit) {
+        showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
+        return;
+      }
+      onConfirm({ 
+        name, 
+        quantity: Number(quantity), 
+        kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
+        kcalPerUnit: Number(kcalPerUnit),
+        svgLink: createIcon || ""
+      });
+      onClose();
+      return;
+    }
+    
+    // When in search mode and selecting an existing food from search
+    if (actionType === 'search' && selected) {
       if (!quantity) { 
         showError("Missing Quantity", "Please enter a quantity for the selected food.");
         return;
@@ -158,20 +188,23 @@ export default function FoodModal(props: Props) {
         name: selected.name, 
         quantity: Number(quantity), 
         kCal: Math.round(k * Number(quantity)),
+        kcalPerUnit: k,
         svgLink: selected.svgLink || selected.icon || createIcon || ""
       });
-      onClose(); return;
+      onClose(); 
+      return;
     }
     
-    // When creating a new food
-    if (!name || !quantity || !kcalPer100) {
+    // Fallback: When creating a new food (legacy compatibility)
+    if (!name || !quantity || !kcalPerUnit) {
       showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
       return;
     }
     onConfirm({ 
       name, 
       quantity: Number(quantity), 
-      kCal: Math.round(Number(kcalPer100) * Number(quantity)),
+      kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
+      kcalPerUnit: Number(kcalPerUnit),
       svgLink: createIcon || ""
     });
     onClose();
@@ -181,7 +214,7 @@ export default function FoodModal(props: Props) {
 
   return createPortal(
     <div className="fixed inset-0 z-[95] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full max-w-2xl bg-neutral-900 border border-amber-800/30 rounded-2xl shadow-2xl overflow-hidden"
         style={{ zIndex: 96 }}
@@ -217,7 +250,7 @@ export default function FoodModal(props: Props) {
                   {showDropdown && results.length > 0 && (
                     <div className="absolute z-20 w-full mt-1 bg-amber-800 border border-amber-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                       {results.map((food, i) => {
-                        const k = kcal100(food);
+                        const k = getKcalFromFood(food);
                         const active = i === activeIndex;
                         return (
                           <button
@@ -227,7 +260,10 @@ export default function FoodModal(props: Props) {
                             onClick={async () => {
                               setSelected(food);
                               onChangeName(food.name);
-                              if (typeof k === "number") setKcalPer100(k);
+                              // Only set kcal automatically in search mode
+                              if (actionType === 'search' && typeof k === "number") {
+                                setKcalPerUnit(k);
+                              }
                               await hydrateSelectedWithDetails(food);
                             }}
                             className={`w-full text-left px-4 py-2 border-b border-amber-700 last:border-b-0 transition-colors ${active ? "bg-amber-700 text-white" : "hover:bg-amber-700/60 text-amber-100"}`}
@@ -395,16 +431,16 @@ export default function FoodModal(props: Props) {
                   <input
                     type="number"
                     min={0}
-                    placeholder="kcal per unit"
-                    value={kcalPer100}
+                    placeholder={actionType === 'create' ? "1" : "kcal per unit"}
+                    value={kcalPerUnit}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        props.setKcalPer100('');
+                        props.setKcalPerUnit('');
                       } else {
                         const num = Number(val);
-                        if (!isNaN(num)) {
-                          props.setKcalPer100(num);
+                        if (!isNaN(num) && num >= 0) {
+                          props.setKcalPerUnit(num);
                         }
                       }
                     }}
