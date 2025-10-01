@@ -199,11 +199,11 @@ export default function FoodModal(props: Props) {
               <div className="mt-2">
                 {selected ? (
                   <div className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700 rounded-lg p-2">
-                    Usando alimento existente: <strong>{selected.name}</strong>.
+                    Using existing food: <strong>{selected.name}</strong>.
                   </div>
                 ) : (name.trim().length > 0 && results.length === 0) ? (
                   <div className="text-sm text-amber-200 bg-neutral-700/50 border border-amber-700/50 rounded-lg p-2">
-                    No hay coincidencias. Vas a <strong>crear</strong> un alimento nuevo con este nombre.
+                   There are no matches. You are going to <strong>create</strong> a new food with this name.
                   </div>
                 ) : null}
               </div>
