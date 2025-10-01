@@ -148,7 +148,7 @@ export default function FoodModal(props: Props) {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-amber-800/40">
           <h4 className="text-amber-100 font-semibold text-sm md:text-base">
-            {editingItem ? "Editar alimento" : "Add new food"}
+            {editingItem ? "Edit food" : "Add new food"}
           </h4>
           <button onClick={onClose} className="p-2 text-amber-200 hover:text-amber-50">
             <X className="w-5 h-5" />
@@ -223,7 +223,7 @@ export default function FoodModal(props: Props) {
                     className={inputClass}
                   />
                   {liveKcal !== undefined && (
-                    <p className="mt-1 text-xs text-amber-300">Esto suma aprox. <b>{liveKcal}</b> kcal.</p>
+                    <p className="mt-1 text-xs text-amber-300">This adds up to approx. <b>{liveKcal}</b> kcal.</p>
                   )}
                 </div>
                 <div>
@@ -354,7 +354,7 @@ export default function FoodModal(props: Props) {
 
               <div className="pt-1">
                 <Button type="button" onClick={handleConfirm} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
-                  {editingItem ? "Actualizar alimento" : "Confirm and add food"}
+                  {editingItem ? "Update food" : "Confirm and add food"}
                 </Button>
               </div>
             </div>
