@@ -252,7 +252,7 @@ export default function FoodModal(props: Props) {
               {selected ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">Icono (BDD)</Label>
+                    <Label className="text-amber-200 text-sm">Icon (BDD)</Label>
                     <div className="mt-2 flex items-center gap-3">
                       <div className="w-10 h-10 rounded bg-neutral-700 flex items-center justify-center overflow-hidden">
                         {iconUrl(selected) ? (
@@ -274,7 +274,7 @@ export default function FoodModal(props: Props) {
                   </div>
 
                   <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">Preferencias (BDD)</Label>
+                    <Label className="text-amber-200 text-sm">Preferences (BDD)</Label>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {namesFrom((selected as any)?.preferences).length
                         ? namesFrom((selected as any)?.preferences).map((v, i) => (
@@ -290,7 +290,7 @@ export default function FoodModal(props: Props) {
                   </div>
 
                   <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">Restricciones (BDD)</Label>
+                    <Label className="text-amber-200 text-sm">Dietary restrictions (BDD)</Label>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {restrictionNames.length
                         ? restrictionNames.map((v, i) => (
