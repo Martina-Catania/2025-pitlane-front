@@ -244,7 +244,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
                   </div>
                   <div className="flex items-center">
                     <ChefHat className="h-3 w-3 mr-1" />
-                    <span>{meal.mealFoods?.length || 0} ingredient{(meal.mealFoods?.length || 0) !== 1 ? 's' : ''}</span>
+                    <span>{meal.mealFoods?.length || 0} food{(meal.mealFoods?.length || 0) !== 1 ? 's' : ''}</span>
                   </div>
                   {meal.preparationTime && (
                     <div className="flex items-center">
@@ -268,7 +268,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
                 {/* Foods in meal */}
                 {meal.mealFoods && meal.mealFoods.length > 0 && (
                   <div className="border-t border-amber-700/30 pt-3">
-                    <div className="text-xs text-gray-400 mb-2">Ingredients:</div>
+                    <div className="text-xs text-gray-400 mb-2">Foods:</div>
                     <div className="flex flex-wrap gap-1">
                       {meal.mealFoods.slice(0, 3).map((mealFood) => (
                         <span

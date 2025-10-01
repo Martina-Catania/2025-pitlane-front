@@ -1,6 +1,7 @@
 'use client';
 import { Button } from "@/components/ui/button";
-import { Trash } from "lucide-react";
+import { Trash, Utensils } from "lucide-react";
+import Image from "next/image";
 import { FoodItem } from "./types";
 
 type Props = {
@@ -18,36 +19,54 @@ export default function FoodsList({ foods, onEdit, onRemove }: Props) {
     );
   }
 
-  const pill =
-    "text-xs bg-neutral-800/60 border border-amber-800/40 text-amber-300 px-2 py-0.5 rounded";
-
   return (
     <div className="space-y-2">
       {foods.map((food, i) => (
         <div
           key={`${food.name}-${i}`}
-          className="flex items-center justify-between gap-2 bg-neutral-800/60 border border-amber-800/40 rounded-lg p-2"
+          className="bg-amber-900/30 border border-amber-700/50 rounded-lg p-4 flex items-center gap-4"
         >
-          <div className="flex items-center gap-3">
-            <span className="text-amber-100 font-medium">{food.name}</span>
-            <span className={pill}>{food.quantity} units</span>
-            <span className={pill}>{food.kCal} kcal</span>
+          <div className="w-10 h-10 flex items-center justify-center bg-amber-800/30 rounded-full border border-amber-700/50 flex-shrink-0">
+            {food.svgLink ? (
+              <Image 
+                src={food.svgLink} 
+                alt={food.name} 
+                width={24}
+                height={24}
+                className="w-6 h-6 object-contain" 
+              />
+            ) : (
+              <Utensils className="w-5 h-5 text-amber-400" />
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex-grow">
+            <div className="flex items-center justify-between mb-1">
+              <h5 className="font-semibold text-amber-200">{food.name}</h5>
+              <div className="text-sm text-amber-300">
+                {food.kCal} kCal
+              </div>
+            </div>
+            <div className="text-sm text-gray-400">
+              Quantity: {food.quantity} units • {Math.round(food.kCal / food.quantity)} kCal per unit
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               type="button"
               onClick={() => onEdit(i)}
-              className="bg-neutral-700 hover:bg-neutral-600 text-amber-50"
+              className="bg-amber-700 hover:bg-amber-600 text-white text-sm px-3 py-1"
             >
               Edit
             </Button>
             <button
               type="button"
               onClick={() => onRemove(i)}
-              className="text-red-400 hover:text-red-300 p-2"
-              title="Eliminar"
+              className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900/20 rounded"
+              title="Remove"
             >
-              <Trash className="w-5 h-5" />
+              <Trash className="w-4 h-4" />
             </button>
           </div>
         </div>

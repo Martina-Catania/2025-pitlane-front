@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper";
 import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
 import { IconSelect } from "@/components/custom-components/icon-select";
-import { X } from "lucide-react";
+import { X, Utensils } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
-import { iconUrl, kcal100, namesFrom } from "./utils";
+import { kcal100 } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
+import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 
 type Props = {
   apiBase: string;
@@ -35,6 +36,8 @@ type Props = {
   setKcalPer100: (v: number | "") => void;
   name: string;
   setName: (v: string) => void;
+  
+  actionType?: 'create' | 'search';
 };
 
 export default function FoodModal(props: Props) {
@@ -47,7 +50,10 @@ export default function FoodModal(props: Props) {
     quantity,
     kcalPer100, setKcalPer100,
     name, setName,
+    actionType = 'create',
   } = props;
+
+  const { showError } = useGlobalNotification();
 
   const {
     setQuery,
@@ -120,31 +126,34 @@ export default function FoodModal(props: Props) {
     return Math.round(base * quantityNum);
   }, [selected, kcalSelected, kcalPer100, quantity]);
 
-  // nombres de restricciones (robusto a distintos formatos del backend)
-  const restrictionNames = useMemo(() => {
-    const r =
-      selected?.dietaryRestrictions ??
-      selected?.restrictions ??
-      [];
-    if (!Array.isArray(r)) return [];
-    return r
-      .map((x) => {
-        if (typeof x === 'object' && x !== null) {
-          return (x as { name?: string; label?: string; Nombre?: string; title?: string })?.name ?? 
-                 (x as { name?: string; label?: string; Nombre?: string; title?: string })?.label ?? 
-                 (x as { name?: string; label?: string; Nombre?: string; title?: string })?.Nombre ?? 
-                 (x as { name?: string; label?: string; Nombre?: string; title?: string })?.title;
-        }
-        return String(x);
-      })
-      .filter(Boolean);
-  }, [selected]);
-
   const handleConfirm = () => {
+    // When editing an existing food item
+    if (editingItem) {
+      if (!quantity || !kcalPer100) {
+        showError("Incomplete Information", "Please complete the quantity and calories per unit.");
+        return;
+      }
+      onConfirm({ 
+        name, 
+        quantity: Number(quantity), 
+        kCal: Math.round(Number(kcalPer100) * Number(quantity)),
+        svgLink: createIcon || editingItem.svgLink || ""
+      });
+      onClose(); 
+      return;
+    }
+    
+    // When selecting an existing food from search
     if (selected) {
-      if (!quantity) { alert("Enter the quantity."); return; }
+      if (!quantity) { 
+        showError("Missing Quantity", "Please enter a quantity for the selected food.");
+        return;
+      }
       const k = kcalSelected;
-      if (typeof k !== "number") { alert("kcal per unit not found."); return; }
+      if (typeof k !== "number") { 
+        showError("Calorie Information Missing", "Calorie information per unit was not found for this food.");
+        return;
+      }
       onConfirm({ 
         name: selected.name, 
         quantity: Number(quantity), 
@@ -153,9 +162,10 @@ export default function FoodModal(props: Props) {
       });
       onClose(); return;
     }
-    // crear
+    
+    // When creating a new food
     if (!name || !quantity || !kcalPer100) {
-      alert("Complete name, quantity and kcal per unit.");
+      showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
       return;
     }
     onConfirm({ 
@@ -170,16 +180,17 @@ export default function FoodModal(props: Props) {
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[95] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <div
         className="relative w-full max-w-2xl bg-neutral-900 border border-amber-800/30 rounded-2xl shadow-2xl overflow-hidden"
-        style={{ zIndex: 121 }}
+        style={{ zIndex: 96 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-amber-800/40">
           <h4 className="text-amber-100 font-semibold text-sm md:text-base">
-            {editingItem ? "Edit food" : "Add new food"}
+            {editingItem ? "Edit food" : 
+             actionType === 'create' ? "Create New Food" : "Search Existing Food"}
           </h4>
           <button onClick={onClose} className="p-2 text-amber-200 hover:text-amber-50">
             <X className="w-5 h-5" />
@@ -187,68 +198,139 @@ export default function FoodModal(props: Props) {
         </div>
 
         <div className="p-4 max-h-[75vh] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr,1.2fr] gap-4">
-            {/* Izquierda: buscador */}
-            <div className="relative">
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder="Search food by name..."
-                value={name}
-                onChange={(e) => onChangeName(e.target.value)}
-                onKeyDown={onKeyDownSearch}
-                className={inputClass}
-              />
-              {showDropdown && results.length > 0 && (
-                <div className="absolute z-20 w-full mt-1 bg-amber-800 border border-amber-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-                  {results.map((food, i) => {
-                    const k = kcal100(food);
-                    const active = i === activeIndex;
-                    return (
-                      <button
-                        key={`${food.id ?? food.name}-${i}`}
-                        type="button"
-                        onMouseEnter={() => setActiveIndex(i)}
-                        onClick={async () => {
-                          setSelected(food);
-                          onChangeName(food.name);
-                          if (typeof k === "number") setKcalPer100(k);
-                          await hydrateSelectedWithDetails(food);
-                        }}
-                        className={`w-full text-left px-4 py-2 border-b border-amber-700 last:border-b-0 transition-colors ${active ? "bg-amber-700 text-white" : "hover:bg-amber-700/60 text-amber-100"}`}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="truncate">{food.name}</span>
-                          <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "s/kcal"}</span>
+          {actionType === 'search' ? (
+            // Search Mode - Focus on finding existing foods
+            <div className="space-y-4">
+              {/* Search Section */}
+              <div>
+                <Label className="text-amber-200 text-sm mb-2 block">Search for existing food</Label>
+                <div className="relative">
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    placeholder="Type food name to search..."
+                    value={name}
+                    onChange={(e) => onChangeName(e.target.value)}
+                    onKeyDown={onKeyDownSearch}
+                    className={inputClass}
+                  />
+                  {showDropdown && results.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-amber-800 border border-amber-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                      {results.map((food, i) => {
+                        const k = kcal100(food);
+                        const active = i === activeIndex;
+                        return (
+                          <button
+                            key={`${food.id ?? food.name}-${i}`}
+                            type="button"
+                            onMouseEnter={() => setActiveIndex(i)}
+                            onClick={async () => {
+                              setSelected(food);
+                              onChangeName(food.name);
+                              if (typeof k === "number") setKcalPer100(k);
+                              await hydrateSelectedWithDetails(food);
+                            }}
+                            className={`w-full text-left px-4 py-2 border-b border-amber-700 last:border-b-0 transition-colors ${active ? "bg-amber-700 text-white" : "hover:bg-amber-700/60 text-amber-100"}`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="truncate">{food.name}</span>
+                              <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "s/kcal"}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Search Status */}
+                <div className="mt-2">
+                  {selected ? (
+                    <div className="text-sm text-green-200 bg-green-900/30 border border-green-700 rounded-lg p-3">
+                      ✓ Selected: <strong>{selected.name}</strong>
+                      {kcalSelected && <span className="text-xs block mt-1">{kcalSelected} kcal per unit</span>}
+                    </div>
+                  ) : name.trim().length > 2 ? (
+                    results.length === 0 ? (
+                      <div className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700 rounded-lg p-3">
+                        No existing foods found. Try a different search term.
+                      </div>
+                    ) : (
+                      <div className="text-sm text-blue-200 bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                        {results.length} food{results.length !== 1 ? 's' : ''} found. Click one to select it.
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-sm text-gray-400 bg-gray-900/30 border border-gray-700 rounded-lg p-3">
+                      Start typing to search for existing foods...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Food Details - Show when food is selected */}
+              {selected && (
+                <div className="border-t border-amber-800/30 pt-4">
+                  <Label className="text-amber-200 text-sm mb-3 block">Food Details</Label>
+                  <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 flex items-center justify-center bg-amber-800/30 rounded-full border border-amber-700/50 flex-shrink-0">
+                        {selected.svgLink ? (
+                          <Image 
+                            src={selected.svgLink} 
+                            alt={selected.name} 
+                            width={24}
+                            height={24}
+                            className="w-6 h-6 object-contain" 
+                          />
+                        ) : (
+                          <Utensils className="w-5 h-5 text-amber-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-amber-100">{selected.name}</h4>
+                        <p className="text-sm text-amber-300">{kcalSelected} kcal per unit</p>
+                      </div>
+                    </div>
+                    
+                    {/* Show preferences and restrictions if available */}
+                    {selected.preferences && selected.preferences.length > 0 && (
+                      <div>
+                        <p className="text-xs text-amber-200 mb-1">Preferences:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {selected.preferences.map((pref, index) => (
+                            <span key={index} className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded">
+                              {typeof pref === 'string' ? pref : (typeof pref === 'object' && pref && 'name' in pref ? pref.name : `ID: ${typeof pref === 'number' ? pref : 'Unknown'}`)}
+                            </span>
+                          ))}
                         </div>
-                      </button>
-                    );
-                  })}
+                      </div>
+                    )}
+                    
+                    {selected.dietaryRestrictions && selected.dietaryRestrictions.length > 0 && (
+                      <div>
+                        <p className="text-xs text-amber-200 mb-1">Dietary Restrictions:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {selected.dietaryRestrictions.map((restriction, index) => (
+                            <span key={index} className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded">
+                              {typeof restriction === 'string' ? restriction : (typeof restriction === 'object' && restriction && 'name' in restriction ? restriction.name : `ID: ${typeof restriction === 'number' ? restriction : 'Unknown'}`)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              {/* Estado */}
-              <div className="mt-2">
-                {selected ? (
-                  <div className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700 rounded-lg p-2">
-                    Using existing food: <strong>{selected.name}</strong>.
-                  </div>
-                ) : (name.trim().length > 0 && results.length === 0) ? (
-                  <div className="text-sm text-amber-200 bg-neutral-700/50 border border-amber-700/50 rounded-lg p-2">
-                   There are no matches. You are going to <strong>create</strong> a new food with this name.
-                  </div>
-                ) : null}
-              </div>
-            </div>
 
-            {/* Derecha: detalle */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
+              {/* Quantity Section - Only show if food is selected */}
+              {selected && (
                 <div>
-                  <Label className="text-amber-200 text-sm">Quantity</Label>
+                  <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
                   <input
                     type="number"
                     min={1}
-                    placeholder="units"
+                    placeholder="Enter quantity"
                     value={quantity === "" ? "" : quantity}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -264,102 +346,84 @@ export default function FoodModal(props: Props) {
                     className={inputClass}
                   />
                   {liveKcal !== undefined && (
-                    <p className="mt-1 text-xs text-amber-300">This adds up to approx. <b>{liveKcal}</b> kcal.</p>
+                    <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            // Create Mode - Focus on creating new food
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-amber-200 text-sm mb-2 block">Food Name</Label>
+                  <input
+                    type="text"
+                    placeholder="Enter food name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Enter quantity"
+                    value={quantity === "" ? "" : quantity}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        props.setQuantity('');
+                      } else {
+                        const num = Number(val);
+                        if (!isNaN(num)) {
+                          props.setQuantity(num);
+                        }
+                      }
+                    }}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-amber-200 text-sm mb-2 block">Calories per unit</Label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="kcal per unit"
+                    value={kcalPer100}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        props.setKcalPer100('');
+                      } else {
+                        const num = Number(val);
+                        if (!isNaN(num)) {
+                          props.setKcalPer100(num);
+                        }
+                      }
+                    }}
+                    className={inputClass}
+                  />
+                  {liveKcal !== undefined && (
+                    <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
                   )}
                 </div>
                 <div>
-                  <Label className="text-amber-200 text-sm">Kcal per unit</Label>
-                  {selected ? (
-                    <input
-                      type="number"
-                      value={kcalSelected ?? ""}
-                      disabled
-                      className={inputClass + " opacity-70 cursor-not-allowed"}
-                    />
-                  ) : (
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="kcal per unit"
-                      value={kcalPer100}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') {
-                          props.setKcalPer100('');
-                        } else {
-                          const num = Number(val);
-                          if (!isNaN(num)) {
-                            props.setKcalPer100(num);
-                          }
-                        }
-                      }}
-                      className={inputClass}
-                    />
-                  )}
+                  <Label className="text-amber-200 text-sm mb-2 block">Icon</Label>
+                  <IconSelect onSelectionChange={setCreateIcon} />
                 </div>
               </div>
-                  
-              {/* Meta según exista o crear */}
-              {selected ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">Icon (BDD)</Label>
-                    <div className="mt-2 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded bg-neutral-700 flex items-center justify-center overflow-hidden">
-                        {iconUrl(selected) ? (
-                          <Image
-                            src={iconUrl(selected)!}
-                            alt="icon"
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 object-contain"
-                          />
-                        ) : (
-                          <span className="text-xs text-amber-300">N/A</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">kcal per unit (BDD)</Label>
-                    <div className="mt-2 text-amber-100 text-sm">{kcalSelected ?? "N/D"}</div>
-                  </div>
-
-                  <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">Preferences (BDD)</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {namesFrom(selected?.preferences).length
-                        ? namesFrom(selected?.preferences).map((v, i) => (
-                            <span
-                              key={i}
-                              className="text-xs bg-neutral-700 border border-amber-700/60 text-amber-100 px-2 py-1 rounded"
-                            >
-                              {v}
-                            </span>
-                          ))
-                        : <span className="text-amber-300 text-xs">No data</span>}
-                    </div>
-                  </div>
-
-                  <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">Dietary restrictions (BDD)</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {restrictionNames.length
-                        ? restrictionNames.map((v, i) => (
-                            <span
-                              key={i}
-                              className="text-xs bg-neutral-700 border border-amber-700/60 text-amber-100 px-2 py-1 rounded"
-                            >
-                              {v}
-                            </span>
-                          ))
-                        : <span className="text-amber-300 text-xs">No data</span>}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
+              {/* Advanced Options */}
+              <div className="border-t border-amber-800/30 pt-4">
+                <Label className="text-amber-200 text-sm mb-3 block">Dietary Information (Optional)</Label>
+                <div className="space-y-3">
                   <DropdownWrapper label="Preferences">
                     <CustomCheckbox
                       initialOptions={createPreferences}
@@ -367,50 +431,33 @@ export default function FoodModal(props: Props) {
                       onSelectionChange={setCreatePreferences}
                     />
                   </DropdownWrapper>
-
-                  <div>
-                    <Label className="text-amber-200 mb-3 block">Dietary Restrictions</Label>
-                    <div className="flex gap-4 mb-4">
-                      <button
-                        type="button"
-                        onClick={() => setCreateHasRestrictions(false)}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${!createHasRestrictions ? 'bg-amber-700 border-amber-600 text-white' : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'}`}
-                      >
-                        No restrictions
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCreateHasRestrictions(true)}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${createHasRestrictions ? 'bg-amber-700 border-amber-600 text-white' : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'}`}
-                      >
-                        Has restrictions
-                      </button>
-                    </div>
-
-                    {createHasRestrictions && (
-                      <DropdownWrapper label="Select Dietary Restrictions)">
-                        <CustomCheckbox
-                          initialOptions={createRestrictions}
-                          endpoint="dietary-restrictions/excluding-for-everyone"
-                          onSelectionChange={setCreateRestrictions}
-                        />
-                      </DropdownWrapper>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={createHasRestrictions}
+                      onChange={(e) => setCreateHasRestrictions(e.target.checked)}
+                      className="rounded border-amber-600 bg-neutral-700 text-amber-600 focus:ring-amber-600"
+                    />
+                    <Label className="text-amber-200 text-sm">This food has dietary restrictions</Label>
                   </div>
-
-                  <div>
-                    <Label className="text-amber-200 mb-2 block">Icon (SVG link)</Label>
-                    <IconSelect onSelectionChange={setCreateIcon} />
-                  </div>
-                </>
-              )}
-
-              <div className="pt-1">
-                <Button type="button" onClick={handleConfirm} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
-                  {editingItem ? "Update food" : "Confirm and add food"}
-                </Button>
+                  {createHasRestrictions && (
+                    <DropdownWrapper label="Dietary Restrictions">
+                      <CustomCheckbox
+                        initialOptions={createRestrictions}
+                        endpoint="dietary-restrictions"
+                        onSelectionChange={setCreateRestrictions}
+                      />
+                    </DropdownWrapper>
+                  )}
+                </div>
               </div>
             </div>
+          )}
+
+          <div className="pt-1">
+            <Button type="button" onClick={handleConfirm} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+              {editingItem ? "Update food" : "Confirm and add food"}
+            </Button>
           </div>
         </div>
       </div>

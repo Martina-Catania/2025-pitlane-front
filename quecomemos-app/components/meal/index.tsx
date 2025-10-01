@@ -5,14 +5,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useMealNameSuggestion } from "./hooks/useMealNameSuggestion";
+import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { AddMealFormProps, FoodItem } from "./types";
 import FoodsList from "./FoodsList";
 import MealExtras from "./MealExtras";
 import FoodModal from "./FoodModal";
+import FoodChoiceModal from "./FoodChoiceModal";
 
 type Props = AddMealFormProps & { onClose?: () => void };
 export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const { userData } = useUser();
+  const { showSuccess, showError } = useGlobalNotification();
   
   // meal
   const [mealName, setMealName] = useState("");
@@ -26,6 +29,8 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const [mealHasRestrictions, setMealHasRestrictions] = useState(false);
 
   const [openModal, setOpenModal] = useState(false);
+  const [openChoiceModal, setOpenChoiceModal] = useState(false);
+  const [foodActionType, setFoodActionType] = useState<'create' | 'search'>('create');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const [modalName, setModalName] = useState("");
@@ -45,24 +50,83 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const openAddFoodModal = (index: number | null = null) => {
     setEditingIndex(index);
     if (index !== null) {
+      // When editing, go directly to the food modal
       const item = foods[index];
       setModalName(item.name);
       setModalQuantity(item.quantity);
-      setModalKcal100("");
+      
+      // Calculate kcal per unit from existing food item
+      const kcalPerUnit = item.quantity > 0 ? Math.round(item.kCal / item.quantity) : 0;
+      setModalKcal100(kcalPerUnit);
+      
+      // Preserve the icon
+      setCreateIcon(item.svgLink || "");
+      
+      setOpenModal(true);
     } else {
-      setModalName(""); setModalQuantity(""); setModalKcal100("");
+      // When adding new, show choice modal first
+      setOpenChoiceModal(true);
     }
+  };
+
+  const closeChoiceModal = () => setOpenChoiceModal(false);
+  
+  const handleCreateNew = () => {
+    setFoodActionType('create');
+    setModalName(""); 
+    setModalQuantity(""); 
+    setModalKcal100("");
+    setCreateIcon("");
+    setOpenChoiceModal(false);
+    setOpenModal(true);
+  };
+
+  const handleSearchExisting = () => {
+    setFoodActionType('search');
+    setModalName(""); 
+    setModalQuantity(""); 
+    setModalKcal100("");
+    setCreateIcon("");
+    setOpenChoiceModal(false);
     setOpenModal(true);
   };
   const closeModal = () => setOpenModal(false);
 
   const handleConfirmFood = (payload: FoodItem) => {
-    setFoods(prev => {
-      if (editingIndex !== null) {
-        const clone = [...prev]; clone[editingIndex] = payload; return clone;
-      }
-      return [...prev, payload];
-    });
+    if (editingIndex !== null) {
+      // Editing existing food
+      setFoods(prev => {
+        const clone = [...prev]; 
+        clone[editingIndex] = payload; 
+        return clone;
+      });
+      showSuccess(
+        "Food Updated",
+        `"${payload.name}" has been updated.`
+      );
+      return;
+    }
+    
+    // Adding new food - check for duplicates
+    const existingFood = foods.find(food => 
+      food.name.toLowerCase() === payload.name.toLowerCase()
+    );
+    
+    if (existingFood) {
+      // Food already exists, show error
+      showError(
+        "Food Already Added",
+        `"${payload.name}" is already in this meal.`
+      );
+      return;
+    }
+    
+    // New food, add to list
+    setFoods(prev => [...prev, payload]);
+    showSuccess(
+      "Food Added Successfully",
+      `"${payload.name}" has been added to the meal.`
+    );
   };
 
   const removeFood = (index: number) => setFoods(foods.filter((_, i) => i !== index));
@@ -70,12 +134,18 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mealName || foods.length === 0) {
-      alert("Poné un nombre y al menos un alimento.");
+      showError(
+        "Incomplete Meal Information",
+        "Please provide a meal name and add at least one food item."
+      );
       return;
     }
 
     if (!userData?.profile?.id) {
-      alert("You must be logged in to create meals");
+      showError(
+        "Authentication Required",
+        "You must be logged in to create meals."
+      );
       return;
     }
 
@@ -167,7 +237,10 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         throw new Error("Failed to create meal");
       }
 
-      alert("Meal guardada con éxito");
+      showSuccess(
+        "Meal Created Successfully!",
+        `"${mealName}" has been saved with ${foods.length} food${foods.length !== 1 ? 's' : ''}.`
+      );
       if (onFoodAdded) onFoodAdded();
       if (onClose) onClose();
 
@@ -176,7 +249,10 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
       setFoods([]);
     } catch (err) {
       console.error(err);
-      alert("Error guardando la meal");
+      showError(
+        "Failed to Create Meal",
+        err instanceof Error ? err.message : "An unexpected error occurred while creating the meal."
+      );
     } finally {
       setLoading(false);
     }
@@ -239,10 +315,10 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
           />
         )}
 
-        {/* lista + agregar */}
+        {/* Foods */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-amber-100 font-semibold">Foods</h3>
+            <h3 className="text-amber-100 font-semibold">Foods ({foods.length})</h3>
             <Button
               type="button"
               onClick={() => openAddFoodModal(null)}
@@ -272,7 +348,16 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         </button>
       </form>
 
-      {/* Modal */}
+      {/* Choice Modal */}
+      <FoodChoiceModal
+        open={openChoiceModal}
+        onClose={closeChoiceModal}
+        onCreateNew={handleCreateNew}
+        onSearchExisting={handleSearchExisting}
+        title="Add Food to Meal"
+      />
+
+      {/* Food Modal */}
       <FoodModal
         apiBase={API_BASE_URL}
         open={openModal}
@@ -293,6 +378,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         setKcalPer100={setModalKcal100}
         name={modalName}
         setName={setModalName}
+        actionType={foodActionType}
       />
     </Card>
   );

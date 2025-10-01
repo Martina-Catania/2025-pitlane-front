@@ -164,7 +164,7 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
           <div className="mb-6">
             <h4 className="text-lg font-semibold text-amber-100 mb-4 flex items-center">
               <span className="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-              Ingredients ({meal.mealFoods.length})
+              Foods ({meal.mealFoods.length})
             </h4>
             
             {meal.mealFoods.length > 0 ? (
@@ -236,7 +236,7 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
               </div>
             ) : (
               <p className="text-gray-400 text-sm italic">
-                No ingredients found for this meal
+                No foods found for this meal
               </p>
             )}
           </div>
