@@ -112,7 +112,7 @@ export function UserFoodsPage() {
         {!preferencesLoading && userPreferences && userPreferences.hasPreferences && (
           <UserPreferenceCards />
         )}
-        
+          
         {loadingFoods ? (
           <div className="text-gray-500">Loading foods...</div>
         ) : (
