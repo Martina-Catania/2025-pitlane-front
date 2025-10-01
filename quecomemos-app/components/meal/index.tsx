@@ -18,7 +18,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [showMealExtras, setShowMealExtras] = useState(false);
+  const [showMealExtras] = useState(false);
   const [mealPreferences, setMealPreferences] = useState<number[]>([]);
   const [mealRestrictions, setMealRestrictions] = useState<number[]>([]);
   const [mealHasRestrictions, setMealHasRestrictions] = useState(false);
@@ -88,8 +88,8 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         }),
       });
       alert("Meal guardada con éxito");
-if (onFoodAdded) onFoodAdded();
-if (onClose) onClose();
+      if (onFoodAdded) onFoodAdded();
+      if (onClose) onClose();
 
       setMealName(""); setDescription(""); setFoods([]);
       if (onFoodAdded) onFoodAdded();
@@ -103,18 +103,18 @@ if (onClose) onClose();
 
   return (
     <Card className="bg-amber-900/40 border-amber-700/30 rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-2">
-  <div />
-  {onClose && (
-    <button
-      type="button"
-      onClick={onClose}
-      className="text-amber-300 hover:text-amber-100 text-sm underline"
-    >
-      Cancelar
-    </button>
-  )}
-</div>
+      <div className="flex items-center justify-between mb-2">
+        <div />
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-amber-300 hover:text-amber-100 text-sm underline"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* nombre + sugerencia */}
@@ -128,7 +128,7 @@ if (onClose) onClose();
           />
           {!mealName && suggestedMealName && (
             <div className="mt-1 text-sm text-amber-300 flex items-center gap-2">
-              <span className="opacity-80">Sugerencia:</span>
+              <span className="opacity-80">Suggestion:</span>
               <span className="px-2 py-0.5 rounded bg-neutral-800 border border-amber-800/40 text-amber-100">
                 {suggestedMealName}
               </span>
@@ -137,7 +137,7 @@ if (onClose) onClose();
                 onClick={() => setMealName(suggestedMealName)}
                 className="text-xs px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-700 text-white"
               >
-                Usar
+                Use
               </button>
             </div>
           )}

@@ -13,7 +13,7 @@ export default function FoodsList({ foods, onEdit, onRemove }: Props) {
   if (foods.length === 0) {
     return (
       <div className="text-amber-300/90 text-sm bg-neutral-800/60 border border-amber-800/40 rounded-lg p-3">
-        You haven't added any food yet. Use the <b>Add Food</b> button.
+        You haven&apos;t added any food yet. Use the <b>Add Food</b> button.
       </div>
     );
   }
@@ -30,7 +30,7 @@ export default function FoodsList({ foods, onEdit, onRemove }: Props) {
         >
           <div className="flex items-center gap-3">
             <span className="text-amber-100 font-medium">{food.name}</span>
-            <span className={pill}>{food.quantity} g</span>
+            <span className={pill}>{food.quantity} units</span>
             <span className={pill}>{food.kCal} kcal</span>
           </div>
           <div className="flex items-center gap-2">
@@ -39,7 +39,7 @@ export default function FoodsList({ foods, onEdit, onRemove }: Props) {
               onClick={() => onEdit(i)}
               className="bg-neutral-700 hover:bg-neutral-600 text-amber-50"
             >
-              Editar
+              Edit
             </Button>
             <button
               type="button"

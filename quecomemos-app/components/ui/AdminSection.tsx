@@ -6,9 +6,6 @@ import { EditFoodForm } from "@/components/ui/EditForm";
 import { FoodItem } from "@/components/ui/FoodItem";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 
-interface AddMealFormProps {
-  onFoodAdded?: () => void;
-}
 
 export function AdminSection() {
   const { foods } = useFoods();

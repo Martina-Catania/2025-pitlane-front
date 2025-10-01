@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useRef, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper";
@@ -8,7 +9,7 @@ import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
 import { IconSelect } from "@/components/custom-components/icon-select";
 import { X } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
-import { calcKcalFrom100g, iconUrl, kcal100, namesFrom } from "./utils";
+import { iconUrl, kcal100, namesFrom } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
 
 type Props = {
@@ -42,14 +43,14 @@ export default function FoodModal(props: Props) {
     createPreferences, setCreatePreferences,
     createRestrictions, setCreateRestrictions,
     createHasRestrictions, setCreateHasRestrictions,
-    createIcon, setCreateIcon,
-    quantity, setQuantity,
+    setCreateIcon,
+    quantity,
     kcalPer100, setKcalPer100,
     name, setName,
   } = props;
 
   const {
-    query, setQuery,
+    setQuery,
     results, showDropdown,
     selected, setSelected,
     activeIndex, setActiveIndex,
@@ -65,7 +66,7 @@ export default function FoodModal(props: Props) {
   const onChangeName = (v: string) => { setName(v); setQuery(v); };
 
   // helper: cargar detalle (relaciones) cuando hay id
-  const hydrateSelectedWithDetails = async (food: ExistingFood | any) => {
+  const hydrateSelectedWithDetails = async (food: ExistingFood) => {
     if (!food?.id) return;
     try {
       const res = await fetch(`${apiBase}/foods/${food.id}?include=preferences,dietaryRestrictions`);
@@ -103,36 +104,56 @@ export default function FoodModal(props: Props) {
 
   const liveKcal = useMemo(() => {
     const base = selected ? kcalSelected : (typeof kcalPer100 === "number" ? kcalPer100 : undefined);
-    if (!base || !quantity) return undefined;
-    return calcKcalFrom100g(base, Number(quantity));
+    const quantityNum = typeof quantity === "number" ? quantity : (quantity === "" ? 0 : Number(quantity));
+    
+    // Debug logging to help identify the issue
+    console.log('liveKcal calculation:', { 
+      selected: !!selected, 
+      kcalSelected, 
+      kcalPer100, 
+      quantity, 
+      quantityNum, 
+      base 
+    });
+    
+    if (!base || quantityNum <= 0 || isNaN(quantityNum) || isNaN(base)) return undefined;
+    return Math.round(base * quantityNum);
   }, [selected, kcalSelected, kcalPer100, quantity]);
 
   // nombres de restricciones (robusto a distintos formatos del backend)
   const restrictionNames = useMemo(() => {
     const r =
-      (selected as any)?.dietaryRestrictions ??
-      (selected as any)?.restrictions ??
+      selected?.dietaryRestrictions ??
+      selected?.restrictions ??
       [];
     if (!Array.isArray(r)) return [];
     return r
-      .map((x: any) => x?.name ?? x?.label ?? x?.Nombre ?? x?.title)
+      .map((x) => {
+        if (typeof x === 'object' && x !== null) {
+          return (x as { name?: string; label?: string; Nombre?: string; title?: string })?.name ?? 
+                 (x as { name?: string; label?: string; Nombre?: string; title?: string })?.label ?? 
+                 (x as { name?: string; label?: string; Nombre?: string; title?: string })?.Nombre ?? 
+                 (x as { name?: string; label?: string; Nombre?: string; title?: string })?.title;
+        }
+        return String(x);
+      })
       .filter(Boolean);
   }, [selected]);
 
   const handleConfirm = () => {
     if (selected) {
-      if (!quantity) { alert("Enter the amount in grams."); return; }
+      if (!quantity) { alert("Enter the quantity."); return; }
       const k = kcalSelected;
-      if (typeof k !== "number") { alert("kcal/100g not found."); return; }
-      onConfirm({ name: selected.name, quantity: Number(quantity), kCal: calcKcalFrom100g(k, Number(quantity)) });
+      if (typeof k !== "number") { alert("kcal per unit not found."); return; }
+      onConfirm({ name: selected.name, quantity: Number(quantity), kCal: Math.round(k * Number(quantity)) });
       onClose(); return;
     }
     // crear
     if (!name || !quantity || !kcalPer100) {
-      alert("Complete name, quantity and kcal/100g.");
+      alert("Complete name, quantity and kcal per unit.");
       return;
     }
-    onConfirm({ name, quantity: Number(quantity), kCal: calcKcalFrom100g(Number(kcalPer100), Number(quantity)) });
+    onConfirm({ name, quantity: Number(quantity), kCal: Math.round(Number(kcalPer100) * Number(quantity)) });
     onClose();
   };
 
@@ -188,7 +209,7 @@ export default function FoodModal(props: Props) {
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span className="truncate">{food.name}</span>
-                          <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/100g` : "s/kcal"}</span>
+                          <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "s/kcal"}</span>
                         </div>
                       </button>
                     );
@@ -213,13 +234,23 @@ export default function FoodModal(props: Props) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-amber-200 text-sm">Quantity (g)</Label>
+                  <Label className="text-amber-200 text-sm">Quantity</Label>
                   <input
                     type="number"
                     min={1}
-                    placeholder="grams"
-                    value={quantity}
-                    onChange={(e) => props.setQuantity(Number(e.target.value))}
+                    placeholder="units"
+                    value={quantity === "" ? "" : quantity}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        props.setQuantity('');
+                      } else {
+                        const num = Number(val);
+                        if (!isNaN(num)) {
+                          props.setQuantity(num);
+                        }
+                      }
+                    }}
                     className={inputClass}
                   />
                   {liveKcal !== undefined && (
@@ -227,7 +258,7 @@ export default function FoodModal(props: Props) {
                   )}
                 </div>
                 <div>
-                  <Label className="text-amber-200 text-sm">Kcal</Label>
+                  <Label className="text-amber-200 text-sm">Kcal per unit</Label>
                   {selected ? (
                     <input
                       type="number"
@@ -239,15 +270,25 @@ export default function FoodModal(props: Props) {
                     <input
                       type="number"
                       min={0}
-                      placeholder="kcal/100g"
+                      placeholder="kcal per unit"
                       value={kcalPer100}
-                      onChange={(e) => props.setKcalPer100(Number(e.target.value))}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          props.setKcalPer100('');
+                        } else {
+                          const num = Number(val);
+                          if (!isNaN(num)) {
+                            props.setKcalPer100(num);
+                          }
+                        }
+                      }}
                       className={inputClass}
                     />
                   )}
                 </div>
               </div>
-
+                  
               {/* Meta según exista o crear */}
               {selected ? (
                 <div className="grid grid-cols-2 gap-3">
@@ -256,9 +297,11 @@ export default function FoodModal(props: Props) {
                     <div className="mt-2 flex items-center gap-3">
                       <div className="w-10 h-10 rounded bg-neutral-700 flex items-center justify-center overflow-hidden">
                         {iconUrl(selected) ? (
-                          <img
+                          <Image
                             src={iconUrl(selected)!}
                             alt="icon"
+                            width={40}
+                            height={40}
                             className="w-10 h-10 object-contain"
                           />
                         ) : (
@@ -269,15 +312,15 @@ export default function FoodModal(props: Props) {
                   </div>
 
                   <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                    <Label className="text-amber-200 text-sm">kcal/100g (BDD)</Label>
+                    <Label className="text-amber-200 text-sm">kcal per unit (BDD)</Label>
                     <div className="mt-2 text-amber-100 text-sm">{kcalSelected ?? "N/D"}</div>
                   </div>
 
                   <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3">
                     <Label className="text-amber-200 text-sm">Preferences (BDD)</Label>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {namesFrom((selected as any)?.preferences).length
-                        ? namesFrom((selected as any)?.preferences).map((v, i) => (
+                      {namesFrom(selected?.preferences).length
+                        ? namesFrom(selected?.preferences).map((v, i) => (
                             <span
                               key={i}
                               className="text-xs bg-neutral-700 border border-amber-700/60 text-amber-100 px-2 py-1 rounded"
@@ -285,7 +328,7 @@ export default function FoodModal(props: Props) {
                               {v}
                             </span>
                           ))
-                        : <span className="text-amber-300 text-xs">Sin datos</span>}
+                        : <span className="text-amber-300 text-xs">No data</span>}
                     </div>
                   </div>
 
@@ -301,7 +344,7 @@ export default function FoodModal(props: Props) {
                               {v}
                             </span>
                           ))
-                        : <span className="text-amber-300 text-xs">Sin datos</span>}
+                        : <span className="text-amber-300 text-xs">No data</span>}
                     </div>
                   </div>
                 </div>

@@ -14,16 +14,6 @@ type FoodItem = {
   hasNoRestrictions?: boolean;
 };
 
-type Preference = {
-  id: number;
-  name: string;
-};
-
-type DietaryRestriction = {
-  id: number;
-  name: string;
-};
-
 type AddFoodFormProps = {
   initialMealName?: string;
   initialFoods?: FoodItem[];
@@ -117,7 +107,7 @@ const CustomCheckbox = ({
 
 // Componente para selección de íconos
 const IconSelect = ({ onSelectionChange }: { onSelectionChange: (icon: string) => void }) => {
-  const [icons, setIcons] = useState<string[]>([]);
+  const [icons] = useState<string[]>([]);
   const [selected, setSelected] = useState("");
 
   const selectIcon = (icon: string) => {
@@ -436,7 +426,7 @@ export default function AddFoodForm({ initialMealName = "", initialFoods = [], o
     if (onFoodChanged) onFoodChanged();
   };
 
-  const updateFoodField = (index: number, field: keyof FoodItem, value: any) => {
+  const updateFoodField = (index: number, field: keyof FoodItem, value: string | number) => {
     const updatedFoods = [...foods];
     updatedFoods[index] = { ...updatedFoods[index], [field]: value };
 
