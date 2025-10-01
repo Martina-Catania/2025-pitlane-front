@@ -5,8 +5,11 @@ import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
 import { Card } from './ui/card';
 import { Clock, Users, ChefHat } from 'lucide-react';
-import { AddFoodForm } from './user-add-meal-form';
-import { AddFoodModal } from './add-food-user-modal';
+import  {AddFoodModal } from "@/components/foods/AddFoodModal";
+
+interface UserMealsProps {
+    onfoodAdded?: () => void;
+}
 
 interface Meal {
     MealID: number;
@@ -19,7 +22,7 @@ interface Meal {
     [key: string]: unknown;
 }
 
-export function UserMeals() {
+export function UserMeals(onFoodAdded?: UserMealsProps) {
     const { userData } = useUser();
     const [meals, setMeals] = useState<Meal[]>([]);
     const [loadingMeals, setLoadingMeals] = useState(true);

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
-import { AddFoodForm } from "@/components/custom-components/add-food-form";
+import  AddFoodForm  from "@/componentes/foods/AddFoodForm";
 import { EditFoodForm } from "@/components/ui/EditForm";
 import { FoodItem } from "@/components/ui/FoodItem";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
