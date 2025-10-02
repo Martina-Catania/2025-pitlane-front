@@ -27,6 +27,7 @@ interface MealFood {
     svgLink?: string;
     preferences: number[];
     dietaryRestrictions: number[];
+    hasNoRestrictions?: boolean;
   };
 }
 
@@ -151,8 +152,8 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
                 kCal: food.tempData.kcal,
                 svgLink: food.tempData.svgLink || "",
                 preferences: food.tempData.preferences,
-                dietaryRestrictions: food.tempData.dietaryRestrictions,
-                hasNoRestrictions: food.tempData.dietaryRestrictions.length === 0,
+                dietaryRestrictions: food.tempData.hasNoRestrictions === true ? [0] : food.tempData.dietaryRestrictions,
+                hasNoRestrictions: food.tempData.hasNoRestrictions === true ? true : (food.tempData.dietaryRestrictions && food.tempData.dietaryRestrictions.length > 0 ? false : true),
                 profileId: userData.profile.id,
               }),
             });
@@ -258,7 +259,15 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     setMealFoods(prev => prev.filter(ing => ing.foodId !== foodId));
   };
 
-  const addMealFood = async (foodItem: { name: string; quantity: number; kCal: number; svgLink?: string }) => {
+  const addMealFood = async (foodItem: { 
+    name: string; 
+    quantity: number; 
+    kCal: number; 
+    svgLink?: string;
+    preferences?: number[];
+    dietaryRestrictions?: number[];
+    hasNoRestrictions?: boolean | null;
+  }) => {
     console.log('Adding food:', foodItem.name);
     console.log('Available foods:', foods.length, foods.map(f => f.name));
     
@@ -291,6 +300,11 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
       // New food - create temporary food that will be created when meal is saved
       console.log('Food not found, creating temporary food:', foodItem.name);
       
+      // Determine the correct restrictions based on hasNoRestrictions flag
+      const hasRestrictions = foodItem.dietaryRestrictions && foodItem.dietaryRestrictions.length > 0;
+      const finalRestrictions = foodItem.hasNoRestrictions === true ? [0] : (foodItem.dietaryRestrictions || []);
+      const finalHasNoRestrictions = foodItem.hasNoRestrictions === true ? true : (hasRestrictions ? false : true);
+      
       newFood = {
         foodId: Date.now(), // Temporary ID (will be replaced when food is created)
         quantity: foodItem.quantity,
@@ -302,8 +316,9 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
           name: foodItem.name,
           kcal: Math.round(foodItem.kCal / foodItem.quantity),
           svgLink: foodItem.svgLink || "",
-          preferences: [],
-          dietaryRestrictions: []
+          preferences: foodItem.preferences || [],
+          dietaryRestrictions: finalRestrictions,
+          hasNoRestrictions: finalHasNoRestrictions
         }
       };
     }
@@ -340,12 +355,28 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
   const handleCreateNewFood = () => {
     setShowFoodChoiceModal(false);
     setFoodModalAction('create');
+    // Reset modal state for creating new food
+    setModalName("");
+    setModalQuantity(1);
+    setModalKcalPerUnit(1);
+    setCreateIcon("");
+    setCreatePreferences([]);
+    setCreateRestrictions([]);
+    setCreateHasRestrictions(null);
     setShowFoodModal(true);
   };
 
   const handleSearchExistingFood = () => {
     setShowFoodChoiceModal(false);
     setFoodModalAction('search');
+    // Reset modal state for searching existing food
+    setModalName("");
+    setModalQuantity(1);
+    setModalKcalPerUnit(1);
+    setCreateIcon("");
+    setCreatePreferences([]);
+    setCreateRestrictions([]);
+    setCreateHasRestrictions(null);
     setShowFoodModal(true);
   };
 
@@ -531,7 +562,14 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
           setCreateHasRestrictions(null);
         }}
         onConfirm={async (foodItem) => {
-          await addMealFood(foodItem);
+          // Enrich the food item with preferences and restrictions from form state
+          const enrichedFoodItem = {
+            ...foodItem,
+            preferences: createPreferences,
+            dietaryRestrictions: createRestrictions,
+            hasNoRestrictions: createRestrictions && createRestrictions.length > 0 ? false : (createHasRestrictions === true ? true : createHasRestrictions)
+          };
+          await addMealFood(enrichedFoodItem);
           setShowFoodModal(false);
         }}
         actionType={foodModalAction}

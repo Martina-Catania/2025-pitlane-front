@@ -399,8 +399,12 @@ export default function FoodModal(props: Props) {
                     placeholder="Enter food name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className={inputClass}
+                    disabled={editingItem?.id !== undefined}
+                    className={`${inputClass} ${editingItem?.id ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''}`}
                   />
+                  {editingItem?.id && (
+                    <p className="mt-1 text-xs text-amber-400">Existing food name cannot be changed</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
@@ -444,68 +448,108 @@ export default function FoodModal(props: Props) {
                         }
                       }
                     }}
-                    className={inputClass}
+                    disabled={editingItem?.id !== undefined}
+                    className={`${inputClass} ${editingItem?.id ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''}`}
                   />
+                  {editingItem?.id && (
+                    <p className="mt-1 text-xs text-amber-400">Existing food calories cannot be changed</p>
+                  )}
                   {liveKcal !== undefined && (
                     <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
                   )}
                 </div>
                 <div>
                   <Label className="text-amber-200 text-sm mb-2 block">Icon</Label>
-                  <IconSelect onSelectionChange={setCreateIcon} />
+                  {editingItem?.id ? (
+                    <div className="text-amber-300 text-sm p-2 bg-amber-900/20 border border-amber-800/30 rounded-lg">
+                      Icon cannot be changed for existing foods
+                    </div>
+                  ) : (
+                    <IconSelect onSelectionChange={setCreateIcon} />
+                  )}
                 </div>
               </div>
 
               {/* Advanced Options */}
               <div className="border-t border-amber-800/30 pt-4">
-                <Label className="text-amber-200 text-sm mb-3 block">Dietary Information (Optional)</Label>
-                <div className="space-y-3">
-                  <DropdownWrapper label="Preferences">
-                    <CustomCheckbox
-                      initialOptions={createPreferences}
-                      endpoint="preferences"
-                      onSelectionChange={setCreatePreferences}
-                    />
-                  </DropdownWrapper>
-                  
-                  <div>
-                    <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
-                    <div className="flex gap-4 mb-4">
-                      <button
-                        type="button"
-                        onClick={() => setCreateHasRestrictions(false)}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                          createHasRestrictions === false
-                            ? 'bg-amber-700 border-amber-600 text-white'
-                            : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
-                        }`}
-                      >
-                        No restrictions (For Everyone)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCreateHasRestrictions(true)}
-                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                          createHasRestrictions === true
-                            ? 'bg-amber-700 border-amber-600 text-white'
-                            : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
-                        }`}
-                      >
-                        Has restrictions
-                      </button>
+                <Label className="text-amber-200 text-sm mb-3 block">Dietary Information {editingItem?.id ? '(Read-only)' : '(Optional)'}</Label>
+                {editingItem?.id ? (
+                  <div className="space-y-3 text-amber-300">
+                    <div className="bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
+                      <h4 className="text-sm font-medium mb-2">Current Preferences:</h4>
+                      {createPreferences && createPreferences.length > 0 ? (
+                        <div className="text-xs">
+                          {createPreferences.length} preference(s) set
+                        </div>
+                      ) : (
+                        <div className="text-xs text-amber-400">No preferences set</div>
+                      )}
                     </div>
-                    
-                    {createHasRestrictions === true && (
-                      <DropdownWrapper label="Select Dietary Restrictions">
-                        <CustomCheckbox
-                          initialOptions={createRestrictions}
-                          endpoint="dietary-restrictions/excluding-for-everyone"
-                          onSelectionChange={setCreateRestrictions}
-                        />
-                      </DropdownWrapper>
-                    )}
+                    <div className="bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
+                      <h4 className="text-sm font-medium mb-2">Current Restrictions:</h4>
+                      {createHasRestrictions === true ? (
+                        <div className="text-xs text-green-300">✓ For Everyone (No restrictions)</div>
+                      ) : createRestrictions && createRestrictions.length > 0 ? (
+                        <div className="text-xs text-orange-300">
+                          ⚠ {createRestrictions.length} restriction(s) set
+                        </div>
+                      ) : (
+                        <div className="text-xs text-amber-400">No restrictions defined</div>
+                      )}
+                    </div>
+                    <div className="text-xs text-amber-400 mt-2">
+                      Dietary information cannot be changed for existing foods. Only quantity can be modified.
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-3">
+                    <DropdownWrapper label="Preferences">
+                      <CustomCheckbox
+                        initialOptions={createPreferences}
+                        endpoint="preferences"
+                        onSelectionChange={setCreatePreferences}
+                      />
+                    </DropdownWrapper>
+                    
+                    <div>
+                      <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
+                      <div className="flex gap-4 mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setCreateHasRestrictions(true)}
+                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                            createHasRestrictions === true
+                              ? 'bg-amber-700 border-amber-600 text-white'
+                              : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                          }`}
+                        >
+                          No restrictions (For Everyone)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCreateHasRestrictions(false)}
+                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                            createHasRestrictions === false
+                              ? 'bg-amber-700 border-amber-600 text-white'
+                              : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                          }`}
+                        >
+                          Has restrictions
+                        </button>
+                      </div>
+                      
+                      {createHasRestrictions === false && (
+                        <DropdownWrapper label="Select Dietary Restrictions">
+                          <CustomCheckbox
+                            initialOptions={createRestrictions}
+                            endpoint="dietary-restrictions/excluding-for-everyone"
+                            onSelectionChange={setCreateRestrictions}
+                          />
+                        </DropdownWrapper>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

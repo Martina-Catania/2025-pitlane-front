@@ -65,6 +65,34 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
       // Preserve the icon
       setCreateIcon(item.svgLink || "");
       
+      // For existing foods (those with an ID), preserve their current restrictions
+      // and set hasNoRestrictions based on whether they have the "For All" restriction (ID 0)
+      if (item.id) {
+        // Existing food - preserve current state and check restrictions
+        setCreatePreferences(item.preferences || []);
+        setCreateRestrictions(item.dietaryRestrictions || []);
+        
+        // Check if food has "For All" restriction (ID 0) or no restrictions
+        const hasForAllRestriction = item.dietaryRestrictions?.includes(0);
+        const hasOtherRestrictions = item.dietaryRestrictions?.some(r => r !== 0);
+        
+        if (hasForAllRestriction && !hasOtherRestrictions) {
+          // Food is "For All" 
+          setCreateHasRestrictions(true);
+        } else if (hasOtherRestrictions) {
+          // Food has specific restrictions
+          setCreateHasRestrictions(false);
+        } else {
+          // Food has no restrictions defined
+          setCreateHasRestrictions(null);
+        }
+      } else {
+        // New food (temporary) - preserve existing state
+        setCreatePreferences(item.preferences || []);
+        setCreateRestrictions(item.dietaryRestrictions || []);
+        setCreateHasRestrictions(item.hasNoRestrictions ?? null);
+      }
+      
       setOpenModal(true);
     } else {
       // When adding new, show choice modal first
@@ -80,6 +108,9 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
     setModalQuantity(1); 
     setModalKcalPerUnit(1);
     setCreateIcon("");
+    setCreatePreferences([]);
+    setCreateRestrictions([]);
+    setCreateHasRestrictions(null);
     setOpenChoiceModal(false);
     setOpenModal(true);
   };
@@ -90,17 +121,30 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
     setModalQuantity(1); 
     setModalKcalPerUnit(1);
     setCreateIcon("");
+    setCreatePreferences([]);
+    setCreateRestrictions([]);
+    setCreateHasRestrictions(null);
     setOpenChoiceModal(false);
     setOpenModal(true);
   };
   const closeModal = () => setOpenModal(false);
 
   const handleConfirmFood = (payload: FoodItem) => {
+    // Add preferences and restrictions from form state to the food item
+    // Properly set hasNoRestrictions based on whether restrictions are selected
+    const hasRestrictions = createRestrictions && createRestrictions.length > 0;
+    const enrichedPayload = {
+      ...payload,
+      preferences: createPreferences,
+      dietaryRestrictions: createRestrictions,
+      hasNoRestrictions: hasRestrictions ? false : (createHasRestrictions === true ? true : createHasRestrictions)
+    };
+
     if (editingIndex !== null) {
       // Editing existing food
       setFoods(prev => {
         const clone = [...prev]; 
-        clone[editingIndex] = payload; 
+        clone[editingIndex] = enrichedPayload; 
         return clone;
       });
       showSuccess(
@@ -125,7 +169,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
     }
     
     // New food, add to list
-    setFoods(prev => [...prev, payload]);
+    setFoods(prev => [...prev, enrichedPayload]);
     showSuccess(
       "Food Added Successfully",
       `"${payload.name}" has been added to the meal.`
@@ -185,11 +229,11 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     name: food.name,
-                    kCal: Math.round(food.kCal / food.quantity * 100), // Store kCal per 100g
+                    kCal: food.kcalPerUnit || (food.kCal / food.quantity), // Use kcalPerUnit for API
                     svgLink: food.svgLink || "",
-                    preferences: [],
-                    dietaryRestrictions: [],
-                    hasNoRestrictions: true,
+                    preferences: food.preferences || [],
+                    dietaryRestrictions: food.hasNoRestrictions === true ? [0] : (food.dietaryRestrictions || []),
+                    hasNoRestrictions: food.hasNoRestrictions === true ? true : (food.dietaryRestrictions && food.dietaryRestrictions.length > 0 ? false : true),
                     profileId: userData.profile.id,
                   }),
                 });

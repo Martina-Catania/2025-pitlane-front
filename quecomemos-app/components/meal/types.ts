@@ -5,6 +5,9 @@ export type FoodItem = {
   kCal: number;
   kcalPerUnit?: number; // Store original kcal per unit to avoid rounding errors
   svgLink?: string;
+  preferences?: number[];
+  dietaryRestrictions?: number[];
+  hasNoRestrictions?: boolean | null;
 };
 
 export type ExistingFood = {
