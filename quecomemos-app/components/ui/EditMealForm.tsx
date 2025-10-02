@@ -169,6 +169,16 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
             // Add to the foods context for future use
             addFood(createdFood);
             
+            // Update the meal foods state to reflect that this food is no longer temporary
+            setMealFoods(prev => prev.map(mf => 
+              mf.foodId === food.foodId ? {
+                ...mf,
+                foodId: createdFood.FoodID,
+                isTemporary: false,
+                tempData: undefined
+              } : mf
+            ));
+            
             // Use the real food ID for the meal
             finalMealFoods.push({
               foodId: createdFood.FoodID,
