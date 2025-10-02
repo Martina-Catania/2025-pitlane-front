@@ -1,12 +1,11 @@
 "use client";
 import { FoodModal } from "./food-modal";
 import { EditFoodForm } from "./EditForm";
-import { ChevronLeft, ChevronRight, Utensils, Plus } from 'lucide-react';
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { API_BASE_URL } from "@/lib/config/api";
 import { AddFoodForm } from "../custom-components/add-food-form";
-import { EditableFoodCard } from "./EditableFoodCard";
+import { EditableFoodCarousel } from "../custom-components/editable-food-carousel";
 
 interface Food {
   FoodID: number;
@@ -36,11 +35,6 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  
-  // Carousel states
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Fetch user's own foods
   const fetchUserFoods = useCallback(async () => {
@@ -71,31 +65,7 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
     }
   }, [userData.profile?.id]);
 
-  // Check scroll capabilities
-  const checkScrollCapabilities = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      setCanScrollLeft(container.scrollLeft > 0);
-      setCanScrollRight(
-        container.scrollLeft < container.scrollWidth - container.clientWidth
-      );
-    }
-  };
 
-  // Scroll functions
-  const scrollLeft = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: -300, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: 300, behavior: 'smooth' });
-    }
-  };
 
   // Modal functions
   const openViewModal = (food: Food) => {
@@ -133,23 +103,6 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
     fetchUserFoods();
   }, [fetchUserFoods, refreshTrigger]);
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      checkScrollCapabilities();
-      container.addEventListener('scroll', checkScrollCapabilities);
-      
-      // Check on resize
-      const resizeObserver = new ResizeObserver(checkScrollCapabilities);
-      resizeObserver.observe(container);
-      
-      return () => {
-        container.removeEventListener('scroll', checkScrollCapabilities);
-        resizeObserver.disconnect();
-      };
-    }
-  }, [userFoods]);
-
   if (loading) {
     return (
       <div className="space-y-4">
@@ -176,75 +129,17 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-bold text-xl text-amber-200">Your Foods</h2>
-          <p className="text-sm text-gray-400">
-            {userFoods.length} food{userFoods.length !== 1 ? 's' : ''} created by you
-          </p>
-        </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Food
-        </button>
-      </div>
-
-      {/* Foods carousel */}
-      {userFoods.length > 0 ? (
-        <div className="relative py-4">
-          {/* Scroll buttons */}
-          {canScrollLeft && (
-            <button
-              onClick={scrollLeft}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-amber-800/80 hover:bg-amber-700/90 p-2 rounded-full shadow-lg transition-all"
-            >
-              <ChevronLeft className="w-5 h-5 text-white" />
-            </button>
-          )}
-          
-          {canScrollRight && (
-            <button
-              onClick={scrollRight}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-amber-800/80 hover:bg-amber-700/90 p-2 rounded-full shadow-lg transition-all"
-            >
-              <ChevronRight className="w-5 h-5 text-white" />
-            </button>
-          )}
-
-          {/* Foods container */}
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-2"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {userFoods.map((food) => (
-              <EditableFoodCard
-                key={food.FoodID}
-                food={food}
-                onCardClick={openViewModal}
-                onEditClick={openEditModal}
-                isOwner={true} // User always owns their own foods
-              />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-12 text-gray-400">
-          <Utensils className="w-16 h-16 mx-auto mb-4 text-gray-500" />
-          <h3 className="text-lg font-medium mb-2">No foods created yet</h3>
-          <p className="text-sm mb-4">Start by creating your first custom food!</p>
-          <button
-            onClick={openAddModal}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Create Your First Food
-          </button>
-        </div>
-      )}
+      <EditableFoodCarousel
+        title="Your Foods"
+        foods={userFoods}
+        onCardClick={openViewModal}
+        onEditClick={openEditModal}
+        onAddClick={openAddModal}
+        showAddButton={true}
+        emptyStateTitle="No foods created yet"
+        emptyStateDescription="Start by creating your first custom food!"
+        emptyStateButtonText="Create Your First Food"
+      />
 
       {/* View Modal */}
       <FoodModal
@@ -255,16 +150,33 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
 
       {/* Edit Modal */}
       {isEditModalOpen && selectedFood && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
-            <button
-              className="absolute top-4 right-4 text-amber-200 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-2 rounded-full transition-all"
-              onClick={closeEditModal}
-              aria-label="Close modal"
-            >
-              ✖
-            </button>
-            <div className="mt-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={closeEditModal}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-amber-800/30">
+            {/* Header */}
+            <div className="sticky top-0 bg-neutral-900 rounded-t-2xl border-b border-amber-800/30 p-6 pb-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-amber-100">Edit Food</h2>
+                <button
+                  onClick={closeEditModal}
+                  className="p-2 hover:bg-amber-800/20 rounded-full transition-colors"
+                  aria-label="Close modal"
+                >
+                  <svg className="w-5 h-5 text-amber-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 pt-4">
               <EditFoodForm
                 food={selectedFood}
                 onSuccess={closeEditModal}
@@ -276,16 +188,33 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
 
       {/* Add Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
-            <button
-              className="absolute top-4 right-4 text-amber-200 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-2 rounded-full transition-all"
-              onClick={closeAddModal}
-              aria-label="Close modal"
-            >
-              ✖
-            </button>
-            <div className="mt-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={closeAddModal}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-amber-800/30">
+            {/* Header */}
+            <div className="sticky top-0 bg-neutral-900 rounded-t-2xl border-b border-amber-800/30 p-6 pb-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-amber-100">Add New Food</h2>
+                <button
+                  onClick={closeAddModal}
+                  className="p-2 hover:bg-amber-800/20 rounded-full transition-colors"
+                  aria-label="Close modal"
+                >
+                  <svg className="w-5 h-5 text-amber-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 pt-4">
               <AddFoodForm onSuccess={closeAddModal} />
             </div>
           </div>

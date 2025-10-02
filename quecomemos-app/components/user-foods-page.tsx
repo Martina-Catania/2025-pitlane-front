@@ -88,10 +88,10 @@ export function UserFoodsPage() {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="mb-4">
-        <h1 className="font-bold text-2xl text-amber-200">Foods</h1>
-        <p className="text-sm text-gray-400">Manage your foods and explore all available options</p>
+    <div className="flex-1 w-full flex flex-col gap-8">
+      <div className="mb-6">
+        <h1 className="font-bold text-4xl text-amber-200 mb-2">Foods</h1>
+        <p className="text-gray-400">Manage your foods and explore all available options</p>
       </div>
 
       {/* UI solo para admin */}
@@ -107,13 +107,10 @@ export function UserFoodsPage() {
         {/* User's Own Foods Section */}
         <UserOwnFoods />
         
-        {/* Divider */}
-        <div className="border-t border-amber-800/30 my-8"></div>
-        
         {/* All Foods Section */}
-        <div className="mb-4">
-          <h2 className="font-bold text-xl text-amber-200">Discover Foods</h2>
-          <p className="text-sm text-gray-400">Explore all available foods based on your preferences</p>
+        <div className="mb-1 mt-1">
+          <h2 className="font-bold text-3xl text-amber-200 mb-2">Discover Foods</h2>
+          <p className="text-gray-400">Explore all available foods based on your preferences</p>
         </div>
         
         {/* Show preferences warning if user doesn't have preferences set */}
