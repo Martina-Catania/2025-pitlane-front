@@ -191,11 +191,11 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
               <IconSelect onSelectionChange={setIcon} />
             </div>
 
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center pt-4">
               <Button 
                 type="submit" 
                 disabled={isLoading} 
-                className="mt-2 bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg"
+                className="bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
