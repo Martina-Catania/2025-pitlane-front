@@ -154,13 +154,15 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
 
     setLoading(true);
     try {
-      // First, create all foods that don't exist yet and collect their IDs
-      const foodIds: number[] = [];
+      // First, create all foods that don't exist yet and collect meal foods with quantities
+      const mealFoods: { foodId: number; quantity: number }[] = [];
       
       for (const food of foods) {
-        // If the food has an id, it's an existing food
+        let foodId: number;
+
         if (food.id) {
-          foodIds.push(Number(food.id));
+          // Food already exists, use its ID
+          foodId = food.id;
         } else {
           // Check if food with this name already exists
           try {
@@ -175,56 +177,51 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
               
               if (existingFood) {
                 // Food already exists, use its ID
-                foodIds.push(existingFood.FoodID);
-                continue;
+                foodId = existingFood.FoodID;
+              } else {
+                // Create new food
+                const foodResponse = await fetch(`${API_BASE_URL}/foods`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: food.name,
+                    kCal: Math.round(food.kCal / food.quantity * 100), // Store kCal per 100g
+                    svgLink: food.svgLink || "",
+                    preferences: [],
+                    dietaryRestrictions: [],
+                    hasNoRestrictions: true,
+                    profileId: userData.profile.id,
+                  }),
+                });
+                
+                if (!foodResponse.ok) {
+                  const errorData = await foodResponse.json().catch(() => ({}));
+                  throw new Error(`Failed to create food: ${food.name} - ${errorData.error || 'Unknown error'}`);
+                }
+                
+                const createdFood = await foodResponse.json();
+                foodId = createdFood.FoodID;
               }
+            } else {
+              throw new Error('Failed to check existing foods');
             }
           } catch (error) {
-            console.warn('Error checking existing foods:', error);
+            console.error('Error processing food:', error);
+            throw new Error(`Failed to process food: ${food.name}`);
           }
-          
-          // Create new food only if it doesn't exist
-          const foodResponse = await fetch(`${API_BASE_URL}/foods`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: food.name,
-              kCal: food.kCal,
-              svgLink: food.svgLink || "",
-              preferences: [],
-              dietaryRestrictions: [],
-              hasNoRestrictions: true,
-              profileId: userData.profile.id,
-            }),
-          });
-          
-          if (!foodResponse.ok) {
-            const errorData = await foodResponse.json().catch(() => ({}));
-            if (foodResponse.status === 409) {
-              // Food already exists, try to get it by name
-              try {
-                const allFoodsResponse = await fetch(`${API_BASE_URL}/foods`);
-                if (allFoodsResponse.ok) {
-                  const allFoods = await allFoodsResponse.json();
-                  const existingFood = allFoods.find((f: { name: string; FoodID: number }) => f.name.toLowerCase() === food.name.toLowerCase());
-                  if (existingFood) {
-                    foodIds.push(existingFood.FoodID);
-                    continue;
-                  }
-                }
-              } catch (retryError) {
-                console.error('Error retrieving existing food:', retryError);
-              }
-            }
-            throw new Error(`Failed to create food: ${food.name} - ${errorData.error || 'Unknown error'}`);
-          }
-          
-          const createdFood = await foodResponse.json();
-          foodIds.push(createdFood.FoodID);
         }
+
+        // Add to meal foods with quantity
+        mealFoods.push({
+          foodId: foodId,
+          quantity: food.quantity
+        });
       }
 
-      // Now create the meal with the food IDs
+      console.log('=== FRONTEND MEAL CREATION DEBUG ===');
+      console.log('Sending meal with mealFoods:', mealFoods);
+
+      // Now create the meal with the food IDs and quantities
       const mealResponse = await fetch(`${API_BASE_URL}/meals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -232,12 +229,13 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
           name: mealName,
           description,
           profileId: userData.profile.id,
-          foodIds: foodIds,
+          mealFoods: mealFoods,
         }),
       });
 
       if (!mealResponse.ok) {
-        throw new Error("Failed to create meal");
+        const errorData = await mealResponse.json().catch(() => ({}));
+        throw new Error(`Failed to create meal: ${errorData.error || 'Unknown error'}`);
       }
 
       showSuccess(
