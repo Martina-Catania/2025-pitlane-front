@@ -64,5 +64,6 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
     selected, setSelected,
     activeIndex, setActiveIndex,
     kcalSelected,
+    allFoods, // Export allFoods so we can check for duplicates
   };
 }

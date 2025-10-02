@@ -129,6 +129,18 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   };
   const closeModal = () => setOpenModal(false);
 
+  const handleSwitchToCreate = () => {
+    // Switch from search mode to create mode, preserving the search term as the initial name
+    setFoodActionType('create');
+    // Keep the current name (search term) so user doesn't have to retype
+    // Reset other create fields but keep the name
+    setCreateIcon("");
+    setCreatePreferences([]);
+    setCreateRestrictions([]);
+    setCreateHasRestrictions(null);
+    // Modal stays open, just switches mode
+  };
+
   const handleConfirmFood = (payload: FoodItem) => {
     // Add preferences and restrictions from form state to the food item
     // Properly set hasNoRestrictions based on whether restrictions are selected
@@ -424,6 +436,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         name={modalName}
         setName={setModalName}
         actionType={foodActionType}
+        onSwitchToCreate={foodActionType === 'search' ? handleSwitchToCreate : undefined}
       />
     </Card>
   );

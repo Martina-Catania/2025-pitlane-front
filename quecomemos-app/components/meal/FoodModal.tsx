@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper";
 import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
 import { IconSelect } from "@/components/custom-components/icon-select";
-import { X, Utensils } from "lucide-react";
+import { X, Utensils, Plus } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
 import { getKcalFromFood } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
@@ -38,6 +38,7 @@ type Props = {
   setName: (v: string) => void;
   
   actionType?: 'create' | 'search';
+  onSwitchToCreate?: () => void;
 };
 
 export default function FoodModal(props: Props) {
@@ -51,6 +52,7 @@ export default function FoodModal(props: Props) {
     kcalPerUnit, setKcalPerUnit,
     name, setName,
     actionType = 'create',
+    onSwitchToCreate,
   } = props;
 
   const { showError } = useGlobalNotification();
@@ -61,6 +63,7 @@ export default function FoodModal(props: Props) {
     selected, setSelected,
     activeIndex, setActiveIndex,
     kcalSelected,
+    allFoods,
   } = useFoodSearch({ apiBase, open });
 
   // Clear selected food when switching to create mode
@@ -92,6 +95,12 @@ export default function FoodModal(props: Props) {
     } catch (e) {
       console.error("No se pudo cargar el detalle de la food", e);
     }
+  };
+
+  // helper: check if food name already exists
+  const checkFoodNameExists = (foodName: string): boolean => {
+    const trimmedName = foodName.trim().toLowerCase();
+    return allFoods.some(food => food.name?.toLowerCase() === trimmedName);
   };
 
   const onKeyDownSearch = async (e: KeyboardEvent<HTMLInputElement>) => {
@@ -162,6 +171,13 @@ export default function FoodModal(props: Props) {
         showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
         return;
       }
+      
+      // Check if food name already exists
+      if (checkFoodNameExists(name)) {
+        showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name or search for the existing food.`);
+        return;
+      }
+      
       onConfirm({ 
         name, 
         quantity: Number(quantity), 
@@ -288,8 +304,25 @@ export default function FoodModal(props: Props) {
                     </div>
                   ) : name.trim().length > 2 ? (
                     results.length === 0 ? (
-                      <div className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700 rounded-lg p-3">
-                        No existing foods found. Try a different search term.
+                      <div className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700 rounded-lg p-3 space-y-3">
+                        <div>No existing foods found for &ldquo;{name.trim()}&rdquo;.</div>
+                        {onSwitchToCreate && (
+                          checkFoodNameExists(name.trim()) ? (
+                            <div className="text-xs text-red-400 bg-red-900/30 border border-red-700 rounded p-2">
+                              ⚠️ A food named &ldquo;{name.trim()}&rdquo; already exists in the database. Try searching with the exact name or use a different search term.
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={() => {
+                                onSwitchToCreate();
+                              }}
+                              className="w-full bg-amber-700 hover:bg-amber-600 text-amber-100 border border-amber-600 text-sm py-2 flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Create &ldquo;{name.trim()}&rdquo; as new food
+                            </Button>
+                          )
+                        )}
                       </div>
                     ) : (
                       <div className="text-sm text-blue-200 bg-blue-900/30 border border-blue-700 rounded-lg p-3">
@@ -400,10 +433,24 @@ export default function FoodModal(props: Props) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={editingItem?.id !== undefined}
-                    className={`${inputClass} ${editingItem?.id ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''}`}
+                    className={`${inputClass} ${editingItem?.id ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''} ${
+                      actionType === 'create' && name.trim() && checkFoodNameExists(name) 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : ''
+                    }`}
                   />
                   {editingItem?.id && (
                     <p className="mt-1 text-xs text-amber-400">Existing food name cannot be changed</p>
+                  )}
+                  {actionType === 'create' && name.trim() && checkFoodNameExists(name) && (
+                    <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                      ⚠️ A food with this name already exists. Please choose a different name.
+                    </p>
+                  )}
+                  {actionType === 'create' && name.trim() && !checkFoodNameExists(name) && name.length > 2 && (
+                    <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
+                      ✓ Food name is available
+                    </p>
                   )}
                 </div>
                 <div>

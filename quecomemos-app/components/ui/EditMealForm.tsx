@@ -380,6 +380,18 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     setShowFoodModal(true);
   };
 
+  const handleSwitchToCreateInEdit = () => {
+    // Switch from search mode to create mode, preserving the search term as the initial name
+    setFoodModalAction('create');
+    // Keep the current name (search term) so user doesn't have to retype
+    // Reset other create fields but keep the name
+    setCreateIcon("");
+    setCreatePreferences([]);
+    setCreateRestrictions([]);
+    setCreateHasRestrictions(null);
+    // Modal stays open, just switches mode
+  };
+
   return (
     <div className="space-y-6">
 
@@ -587,6 +599,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
         setKcalPerUnit={setModalKcalPerUnit}
         name={modalName}
         setName={setModalName}
+        onSwitchToCreate={foodModalAction === 'search' ? handleSwitchToCreateInEdit : undefined}
       />
     </div>
   );
