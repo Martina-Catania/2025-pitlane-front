@@ -147,7 +147,6 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
 
   const handleEditSuccess = async () => {
     await fetchUserMeals();
-    await fetchRecommendedMeals();
     closeEditModal();
     onfoodAdded?.();
   };
@@ -279,7 +278,6 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
               <AddMealForm
                 onFoodAdded={async () => {
                   await fetchUserMeals();
-                  await fetchRecommendedMeals();
                   setOpenCreator(false);
                   onfoodAdded?.();
                 }}
