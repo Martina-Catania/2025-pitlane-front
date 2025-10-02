@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "./confirmation-modal";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
-import { Edit3, Trash2, Plus, Utensils } from "lucide-react";
+import { SquarePen, Trash2, Plus, Utensils } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
 import { useFoods } from "@/lib/contexts/FoodsContext";
 import { useUser } from "@/lib/contexts/UserContext";
@@ -206,7 +206,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
       showSuccess(
         "Meal Updated Successfully!",
         `"${mealName}" has been updated with your latest changes.`,
-        <Edit3 className="w-8 h-8" />
+        <SquarePen className="w-8 h-8" />
       );
       
       // Delay onSuccess to allow notification to show

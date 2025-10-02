@@ -3,7 +3,8 @@ import { useState } from "react";
 import { AdminFoodForm } from "@/components/ui/AdminFoodForm";
 import { AddFoodForm } from "@/components/custom-components/add-food-form";
 import { EditFoodForm } from "@/components/ui/EditForm";
-import { FoodItem } from "@/components/ui/FoodItem";
+import { EditableFoodCard } from "@/components/ui/EditableFoodCard";
+import { FoodModal } from "@/components/ui/food-modal";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 
 
@@ -11,11 +12,17 @@ export function AdminSection() {
   const { foods } = useFoods();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
 
   const handleEditClick = (food: Food) => {
     setSelectedFood(food);
     setShowEditModal(true);
+  };
+
+  const handleViewClick = (food: Food) => {
+    setSelectedFood(food);
+    setShowViewModal(true);
   };
 
   const handleCloseAddModal = () => {
@@ -27,16 +34,23 @@ export function AdminSection() {
     setSelectedFood(null);
   };
 
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedFood(null);
+  };
+
   return (
     <div className="mt-6">
       <AdminFoodForm onAddClick={() => setShowAddModal(true)} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {foods.map((food) => (
-          <FoodItem
+          <EditableFoodCard
             key={food.FoodID}
             food={food}
+            onCardClick={handleViewClick}
             onEditClick={handleEditClick}
+            isOwner={true} // Admin can edit all foods
           />
         ))}
       </div>
@@ -58,6 +72,13 @@ export function AdminSection() {
           </div>
         </div>
       )}
+
+      {/* MODAL: Ver comida */}
+      <FoodModal
+        food={selectedFood}
+        isOpen={showViewModal}
+        onClose={handleCloseViewModal}
+      />
 
       {/* MODAL: Editar comida */}
       {showEditModal && selectedFood && (

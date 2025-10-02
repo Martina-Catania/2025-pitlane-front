@@ -8,6 +8,7 @@ export interface Food {
   name: string;
   kCal: number;
   svgLink?: string;
+  profileId?: string;
   preferences?: { name?: string; PreferenceID?: number }[] | number[];
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
   // Para otros campos que puedan existir

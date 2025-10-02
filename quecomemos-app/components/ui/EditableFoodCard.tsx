@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Utensils, Heart, Eye } from 'lucide-react';
+import { Utensils, Heart, Eye, SquarePen } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent } from './card';
 import { Badge } from './badge';
@@ -11,26 +11,31 @@ interface Food {
   name: string;
   kCal: number;
   svgLink?: string;
+  profileId?: string;
   dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
   preferences?: { name?: string; PreferenceID?: number }[] | number[];
   [key: string]: unknown;
 }
 
-interface EnhancedFoodCardProps {
+interface EditableFoodCardProps {
   food: Food;
   onCardClick: (food: Food) => void;
+  onEditClick: (food: Food) => void;
+  isOwner: boolean;
   showPreferenceBadge?: boolean;
   preferenceNames?: { [key: number]: string };
   restrictionNames?: { [key: number]: string };
 }
 
-export function EnhancedFoodCard({ 
+export function EditableFoodCard({ 
   food, 
   onCardClick, 
+  onEditClick,
+  isOwner,
   showPreferenceBadge = false,
   preferenceNames = {},
   restrictionNames = {}
-}: EnhancedFoodCardProps) {
+}: EditableFoodCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +44,7 @@ export function EnhancedFoodCard({
     if (!food.preferences) return [];
     return food.preferences.map(p => {
       const id = typeof p === 'number' ? p : p.PreferenceID;
-      return preferenceNames[id!] || `Preference ${id}`;
+      return preferenceNames[id!] || (typeof p === 'object' && p.name ? p.name : `Preference ${id}`);
     }).filter(Boolean);
   };
 
@@ -47,7 +52,7 @@ export function EnhancedFoodCard({
     if (!food.dietaryRestrictions) return [];
     return food.dietaryRestrictions.map(r => {
       const id = typeof r === 'number' ? r : r.DietaryRestrictionID;
-      return restrictionNames[id!] || `Restriction ${id}`;
+      return restrictionNames[id!] || (typeof r === 'object' && r.name ? r.name : `Restriction ${id}`);
     }).filter(Boolean);
   };
 
@@ -57,24 +62,38 @@ export function EnhancedFoodCard({
   return (
     <Card
       ref={cardRef}
-      className="group bg-gradient-to-br from-amber-800 to-amber-900 border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden w-full max-w-sm mx-auto h-[400px] flex flex-col"
+      className="group bg-gradient-to-br from-amber-800 to-amber-900 border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden w-full max-w-xs mx-auto min-w-[240px] flex-shrink-0"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onCardClick(food)}
     >
-      <CardContent className="p-0 flex flex-col h-full">
+      <CardContent className="p-0 relative">
+        {/* Edit button - only show if user owns this food */}
+        {isOwner && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditClick(food);
+            }}
+            className="absolute top-2 right-2 z-20 bg-amber-600/20 hover:bg-amber-600/40 p-2 rounded-full transition-all"
+            title="Edit Food"
+          >
+            <SquarePen className="w-4 h-4 text-amber-200" />
+          </button>
+        )}
+
         {/* Image Section */}
-        <div className="relative h-32 flex items-center justify-center bg-gradient-to-b from-amber-700 to-amber-800 overflow-hidden">
+        <div className="relative h-28 flex items-center justify-center bg-gradient-to-b from-amber-700 to-amber-800 overflow-hidden">
           {food.svgLink ? (
             <Image 
               src={food.svgLink} 
               alt={food.name} 
-              width={80}
-              height={80}
+              width={70}
+              height={70}
               className="object-contain transition-transform duration-300 group-hover:scale-110" 
             />
           ) : (
-            <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
+            <Utensils className="w-14 h-14 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
           )}
           
           {/* Hover overlay */}
@@ -96,16 +115,16 @@ export function EnhancedFoodCard({
         </div>
 
         {/* Content Section */}
-        <div className="p-4 space-y-3 flex-1 flex flex-col">
+        <div className="p-3 space-y-2">
           {/* Title */}
-          <h3 className="text-lg font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
+          <h3 className="text-base font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
             {food.name}
           </h3>
 
           {/* Calories */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-amber-200">Calories:</span>
-            <Badge variant="outline" className="text-sm border-amber-400 text-amber-100 font-bold">
+            <span className="text-xs font-medium text-amber-200">Calories:</span>
+            <Badge variant="outline" className="text-xs border-amber-400 text-amber-100 font-bold">
               {food.kCal} kCal
             </Badge>
           </div>
@@ -149,7 +168,7 @@ export function EnhancedFoodCard({
           )}
 
           {/* Click to view more indicator */}
-          <div className="flex items-center justify-between pt-2 border-t border-amber-600/30 mt-auto">
+          <div className="flex items-center justify-between pt-2 border-t border-amber-600/30">
             <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
               Click for details
             </span>

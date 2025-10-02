@@ -55,7 +55,7 @@ const CarouselFoodCard = ({ food, onCardClick }: { food: Food; onCardClick: (foo
   return (
     <div
       ref={cardRef}
-      className="group bg-gradient-to-br from-amber-800 to-amber-900 border border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden rounded-lg w-[180px] md:w-[200px] flex-shrink-0 touch-manipulation"
+      className="group bg-gradient-to-br from-amber-800 to-amber-900 border border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden rounded-lg w-[180px] md:w-[200px] h-[280px] flex-shrink-0 touch-manipulation flex flex-col"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onCardClick(food)}
@@ -93,7 +93,7 @@ const CarouselFoodCard = ({ food, onCardClick }: { food: Food; onCardClick: (foo
       </div>
 
       {/* Content Section */}
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 flex-1 flex flex-col">
         {/* Title */}
         <h3 className="text-sm font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2 leading-tight">
           {food.name}
@@ -146,7 +146,7 @@ const CarouselFoodCard = ({ food, onCardClick }: { food: Food; onCardClick: (foo
         )}
 
         {/* Click indicator */}
-        <div className="flex items-center justify-between pt-1 border-t border-amber-600/30">
+        <div className="flex items-center justify-between pt-1 border-t border-amber-600/30 mt-auto">
           <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
             Click for details
           </span>

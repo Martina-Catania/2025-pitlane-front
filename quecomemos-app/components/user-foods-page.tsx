@@ -10,6 +10,7 @@ import { AdminSection } from './ui/AdminSection';
 import { AdminUserPreview } from './admin-user-preview';
 import { useFoods } from '@/lib/contexts/FoodsContext';
 import { API_BASE_URL } from '@/lib/config/api';
+import { UserOwnFoods } from './ui/UserOwnFoods';
 
 export function UserFoodsPage() {
   const { userData, loading, error } = useUser();
@@ -90,7 +91,7 @@ export function UserFoodsPage() {
     <div className="flex-1 w-full flex flex-col gap-12">
       <div className="mb-4">
         <h1 className="font-bold text-2xl text-amber-200">Foods</h1>
-        <p className="text-sm text-gray-400">Explore all available foods</p>
+        <p className="text-sm text-gray-400">Manage your foods and explore all available options</p>
       </div>
 
       {/* UI solo para admin */}
@@ -103,6 +104,18 @@ export function UserFoodsPage() {
 
       {/* UI for users */}
       <RoleGate role="user" userRole={profile.role}>
+        {/* User's Own Foods Section */}
+        <UserOwnFoods />
+        
+        {/* Divider */}
+        <div className="border-t border-amber-800/30 my-8"></div>
+        
+        {/* All Foods Section */}
+        <div className="mb-4">
+          <h2 className="font-bold text-xl text-amber-200">Discover Foods</h2>
+          <p className="text-sm text-gray-400">Explore all available foods based on your preferences</p>
+        </div>
+        
         {/* Show preferences warning if user doesn't have preferences set */}
         {!preferencesLoading && userPreferences && !userPreferences.hasPreferences && (
           <PreferencesWarning className="mb-6" />

@@ -11,7 +11,7 @@ import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "./confirmation-modal";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
-import { Edit3, Trash2 } from "lucide-react";
+import { SquarePen, Trash2 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
 
 interface EditFoodFormProps {
@@ -72,7 +72,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
       showSuccess(
         "Food Updated Successfully!",
         `"${foodName}" has been updated with your latest changes.`,
-        <Edit3 className="w-8 h-8" />
+        <SquarePen className="w-8 h-8" />
       );
       console.log('Update success notification called');
       
@@ -197,7 +197,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Edit3 className="w-4 h-4" />
+                <SquarePen className="w-4 h-4" />
                 Update Food
               </div>
             )}
