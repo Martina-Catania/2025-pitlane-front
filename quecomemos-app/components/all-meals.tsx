@@ -36,13 +36,48 @@ interface Meal {
 export function AllMeals() {
     const { userData } = useUser();
     const [meals, setMeals] = useState<Meal[]>([]);
+    const [recommendedMeals, setRecommendedMeals] = useState<Meal[]>([]);
     const [loadingMeals, setLoadingMeals] = useState(true);
+    const [loadingRecommended, setLoadingRecommended] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [recommendedError, setRecommendedError] = useState<string | null>(null);
     const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
     const [isMealModalOpen, setIsMealModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const profile = userData?.profile;
+    const userPreferences = userData?.preferences;
+
+    const fetchRecommendedMeals = async () => {
+        if (userPreferences && userPreferences.hasPreferences && profile?.id) {
+            try {
+                setLoadingRecommended(true);
+                setRecommendedError(null);
+
+                const response = await fetch(`${API_BASE_URL}/meals/recommended/${profile.id}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const mealsData = await response.json();
+                    setRecommendedMeals(Array.isArray(mealsData) ? mealsData : []);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error || `Server error (${response.status})`;
+                    setRecommendedError(`Failed to load recommended meals: ${errorMessage}`);
+                }
+            } catch (error) {
+                console.error('Error fetching recommended meals:', error);
+                setRecommendedError('Failed to load recommended meals');
+                setRecommendedMeals([]);
+            } finally {
+                setLoadingRecommended(false);
+            }
+        } else {
+            setLoadingRecommended(false);
+        }
+    };
 
     useEffect(() => {
         const fetchAllMeals = async () => {
@@ -81,6 +116,7 @@ export function AllMeals() {
 
         if (profile) {
             fetchAllMeals();
+            fetchRecommendedMeals();
         }
     }, [profile]);
 
@@ -127,6 +163,9 @@ export function AllMeals() {
         } finally {
             setLoadingMeals(false);
         }
+        
+        // Also refresh recommended meals
+        await fetchRecommendedMeals();
         closeEditModal();
     };
 
@@ -159,7 +198,55 @@ export function AllMeals() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-8">
+            {/* Recommended Meals Section */}
+            {userPreferences && userPreferences.hasPreferences && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-amber-200">Recommended for You</h2>
+                        <span className="text-sm text-gray-400">
+                            Based on your preferences
+                        </span>
+                    </div>
+
+                    {loadingRecommended ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {[...Array(3)].map((_, i) => (
+                                <div key={i} className="h-32 bg-amber-700/30 rounded-lg animate-pulse"></div>
+                            ))}
+                        </div>
+                    ) : recommendedError ? (
+                        <div className="text-center py-8 bg-red-900/20 rounded-lg border border-red-700/50">
+                            <div className="text-red-400">
+                                <p className="text-sm">{recommendedError}</p>
+                            </div>
+                        </div>
+                    ) : recommendedMeals.length === 0 ? (
+                        <div className="text-center py-8 bg-amber-900/20 rounded-lg border border-amber-700/50">
+                            <ChefHat className="mx-auto h-8 w-8 text-amber-600 mb-2" />
+                            <p className="text-amber-200 text-sm">No recommended meals found</p>
+                            <p className="text-gray-400 text-xs mt-1">
+                                Try creating meals with your preferred foods!
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {recommendedMeals.slice(0, 6).map((meal) => (
+                                <MealCard
+                                    key={meal.MealID}
+                                    meal={meal}
+                                    onClick={handleMealClick}
+                                    showExtendedInfo={true}
+                                    maxFoodsToShow={3}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Community Meals Section */}
+            <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-amber-200">Community Meals</h2>
                 <span className="text-sm text-gray-400">
@@ -188,6 +275,7 @@ export function AllMeals() {
                     ))}
                 </div>
             )}
+            </div>
 
             {/* Meal Details Modal */}
             <MealModal 
