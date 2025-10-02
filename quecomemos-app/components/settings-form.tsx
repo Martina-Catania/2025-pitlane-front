@@ -229,7 +229,7 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
-    <div className="space-y-6">
+    <div className="space-y-0">
       <div className="animate-pulse">
         <div className="h-4 bg-muted rounded w-1/4 mb-6"></div>
         <div className="space-y-4">
