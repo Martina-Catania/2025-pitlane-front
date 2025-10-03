@@ -16,6 +16,7 @@ export default function ProtectedLayout({
                 <div className="hidden md:block">
                 </div>
               </div>
+              <div className="w-24"></div>
               <AuthButton />
             </div>
           </nav>

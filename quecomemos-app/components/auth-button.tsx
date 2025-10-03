@@ -44,11 +44,11 @@ export function AuthButton() {
   }
 
   return isAuthenticated ? (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2">
       {loading ? (
         <div className="text-gray-500">Loading...</div>
       ) : (
-        <span>Hey, {profile?.username || profile?.email || 'User'}!</span>
+        <span className="text-sm inline-block">Hey, {profile?.username || profile?.email || 'User'}!</span>
       )}
       <ThemeSwitcher />
       <UserSidebar />

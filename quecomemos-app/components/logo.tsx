@@ -17,7 +17,7 @@ export function Logo({ size = 'md', className = '' }: LogoProps) {
   const { width, height, className: sizeClassName } = sizeMap[size];
   
   return (
-    <div className={`flex items-center ${className}`}>
+    <div className={`flex items-center p-2 ${className}`}>
       <Image
         src="/logo.svg"
         alt="QueComemos Logo"

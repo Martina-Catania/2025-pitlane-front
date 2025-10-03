@@ -198,7 +198,7 @@ export function AllMeals() {
     }
 
     return (
-        <div className="space-y-8">
+        <div >
             {/* Recommended Meals Section */}
             {userPreferences && userPreferences.hasPreferences && (
                 <div className="space-y-4">
