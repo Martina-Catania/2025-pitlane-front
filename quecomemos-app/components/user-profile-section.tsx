@@ -49,10 +49,6 @@ export function UserProfileSection() {
 
   return (
     <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="mb-4">
-        <div className="font-bold text-lg">{profile.username || profile.email}</div>
-      </div>
-
       {/* Show preferences warning if user doesn't have preferences set */}
       {(!userData.preferences || !userData.preferences.hasPreferences) && (
         <PreferencesWarning className="mb-6" />
