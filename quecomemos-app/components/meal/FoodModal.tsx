@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useRef, KeyboardEvent, useEffect } from "react";
+import { useMemo, useRef, KeyboardEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper";
 import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
 import { IconSelect } from "@/components/custom-components/icon-select";
-import { X, Utensils, Plus } from "lucide-react";
+import { X, Utensils, Plus, Loader2 } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
 import { getKcalFromFood } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
@@ -38,7 +38,7 @@ type Props = {
   setName: (v: string) => void;
   
   actionType?: 'create' | 'search';
-  onSwitchToCreate?: () => void;
+  onSwitchToCreate?: (initialName?: string) => void;
 };
 
 export default function FoodModal(props: Props) {
@@ -64,16 +64,56 @@ export default function FoodModal(props: Props) {
     activeIndex, setActiveIndex,
     kcalSelected,
     allFoods,
+    isLoadingFoods,
+    isLoadingDetails,
+    setIsLoadingDetails,
   } = useFoodSearch({ apiBase, open });
 
-  // Clear selected food when switching to create mode
+  // Loading state for form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Clear selected food and search when switching to create mode
+  // We intentionally avoid including `actionType` in the deps here so that
+  // switching modes while the modal is open (search -> create) does not
+  // immediately clear the `name` value the parent may have just set.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (actionType === 'create' && open) {
       if (selected) {
         setSelected(null);
       }
     }
-  }, [actionType, open, selected, setSelected]);
+  }, [actionType, open, selected, setSelected, setName, setQuery]);
+
+  // Clear all form state immediately when modal opens to prevent stale data
+  // NOTE: don't include `actionType` in deps here — we only want this to run
+  // when the modal is opened/closed or when editingItem changes. If we run
+  // this on actionType changes, switching from search -> create while the
+  // modal is open will clear the name that the parent may have just set.
+  useEffect(() => {
+    if (open && !editingItem) {
+      // Reset form state immediately to prevent old data from showing
+      setIsSubmitting(false);
+      setSelected(null);
+      setActiveIndex(-1);
+      setQuery('');
+      if (actionType !== 'search') {
+        setName('');
+      }
+    }
+  // Intentionally not watching `actionType` so this effect only runs on open/editingItem
+  }, [open, editingItem, setSelected, setActiveIndex, setQuery, setName]);
+
+  // Clear search history when modal closes
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setSelected(null);
+      setActiveIndex(-1);
+      setName('');
+      setIsSubmitting(false); // Reset submission state
+    }
+  }, [open, setQuery, setSelected, setActiveIndex, setName]);
 
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +126,7 @@ export default function FoodModal(props: Props) {
   // helper: cargar detalle (relaciones) cuando hay id
   const hydrateSelectedWithDetails = async (food: ExistingFood) => {
     if (!food?.id) return;
+    setIsLoadingDetails(true);
     try {
       const res = await fetch(`${apiBase}/foods/${food.id}?include=preferences,dietaryRestrictions`);
       if (res.ok) {
@@ -94,6 +135,8 @@ export default function FoodModal(props: Props) {
       }
     } catch (e) {
       console.error("No se pudo cargar el detalle de la food", e);
+    } finally {
+      setIsLoadingDetails(false);
     }
   };
 
@@ -147,37 +190,79 @@ export default function FoodModal(props: Props) {
     return Math.round(base * quantityNum);
   }, [selected, kcalSelected, kcalPerUnit, quantity]);
 
-  const handleConfirm = () => {
-    // When editing an existing food item
-    if (editingItem) {
-      if (!quantity || !kcalPerUnit) {
-        showError("Incomplete Information", "Please complete the quantity and calories per unit.");
+  const handleConfirm = async () => {
+    if (isSubmitting) return; // Prevent double submission
+    setIsSubmitting(true);
+    
+    try {
+      // When editing an existing food item
+      if (editingItem) {
+        if (!quantity || !kcalPerUnit) {
+          showError("Incomplete Information", "Please complete the quantity and calories per unit.");
+          return;
+        }
+        onConfirm({ 
+          name, 
+          quantity: Number(quantity), 
+          kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
+          kcalPerUnit: Number(kcalPerUnit),
+          svgLink: createIcon || editingItem.svgLink || ""
+        });
+        onClose(); 
         return;
       }
-      onConfirm({ 
-        name, 
-        quantity: Number(quantity), 
-        kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
-        kcalPerUnit: Number(kcalPerUnit),
-        svgLink: createIcon || editingItem.svgLink || ""
-      });
-      onClose(); 
-      return;
-    }
-    
-    // When in create mode, always create a new food regardless of selected state
-    if (actionType === 'create') {
+      
+      // When in create mode, always create a new food regardless of selected state
+      if (actionType === 'create') {
+        if (!name || !quantity || !kcalPerUnit) {
+          showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
+          return;
+        }
+        
+        // Check if food name already exists
+        if (checkFoodNameExists(name)) {
+          showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name or search for the existing food.`);
+          return;
+        }
+        
+        onConfirm({ 
+          name, 
+          quantity: Number(quantity), 
+          kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
+          kcalPerUnit: Number(kcalPerUnit),
+          svgLink: createIcon || ""
+        });
+        onClose();
+        return;
+      }
+      
+      // When in search mode and selecting an existing food from search
+      if (actionType === 'search' && selected) {
+        if (!quantity) { 
+          showError("Missing Quantity", "Please enter a quantity for the selected food.");
+          return;
+        }
+        const k = kcalSelected;
+        if (typeof k !== "number") { 
+          showError("Calorie Information Missing", "Calorie information per unit was not found for this food.");
+          return;
+        }
+        onConfirm({ 
+          name: selected.name, 
+          quantity: Number(quantity), 
+          kCal: Math.round(k * Number(quantity)),
+          kcalPerUnit: k,
+          svgLink: selected.svgLink || selected.icon || createIcon || ""
+        });
+        onClose(); 
+        return;
+      }
+      
+      // Fallback: When creating a new food (legacy compatibility)
       if (!name || !quantity || !kcalPerUnit) {
         showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
         return;
       }
-      
-      // Check if food name already exists
-      if (checkFoodNameExists(name)) {
-        showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name or search for the existing food.`);
-        return;
-      }
-      
       onConfirm({ 
         name, 
         quantity: Number(quantity), 
@@ -186,44 +271,9 @@ export default function FoodModal(props: Props) {
         svgLink: createIcon || ""
       });
       onClose();
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // When in search mode and selecting an existing food from search
-    if (actionType === 'search' && selected) {
-      if (!quantity) { 
-        showError("Missing Quantity", "Please enter a quantity for the selected food.");
-        return;
-      }
-      const k = kcalSelected;
-      if (typeof k !== "number") { 
-        showError("Calorie Information Missing", "Calorie information per unit was not found for this food.");
-        return;
-      }
-      onConfirm({ 
-        name: selected.name, 
-        quantity: Number(quantity), 
-        kCal: Math.round(k * Number(quantity)),
-        kcalPerUnit: k,
-        svgLink: selected.svgLink || selected.icon || createIcon || ""
-      });
-      onClose(); 
-      return;
-    }
-    
-    // Fallback: When creating a new food (legacy compatibility)
-    if (!name || !quantity || !kcalPerUnit) {
-      showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
-      return;
-    }
-    onConfirm({ 
-      name, 
-      quantity: Number(quantity), 
-      kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
-      kcalPerUnit: Number(kcalPerUnit),
-      svgLink: createIcon || ""
-    });
-    onClose();
   };
 
   if (!open) return null;
@@ -232,7 +282,7 @@ export default function FoodModal(props: Props) {
     <div className="fixed inset-0 z-[95] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative w-full max-w-2xl bg-neutral-900 border border-amber-800/30 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-4xl bg-neutral-900 border border-amber-800/30 rounded-2xl shadow-2xl overflow-hidden"
         style={{ zIndex: 96 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -246,14 +296,14 @@ export default function FoodModal(props: Props) {
           </button>
         </div>
 
-        <div className="p-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 max-h-[85vh] overflow-y-auto">
           {actionType === 'search' ? (
             // Search Mode - Focus on finding existing foods
             <div className="space-y-4">
-              {/* Search Section */}
+              {/* Search Section - Tall Rectangle */}
               <div>
                 <Label className="text-amber-200 text-sm mb-2 block">Search for existing food</Label>
-                <div className="relative">
+                <div className="border border-amber-700 rounded-lg bg-neutral-800 overflow-hidden">
                   <input
                     ref={searchRef}
                     type="text"
@@ -261,51 +311,65 @@ export default function FoodModal(props: Props) {
                     value={name}
                     onChange={(e) => onChangeName(e.target.value)}
                     onKeyDown={onKeyDownSearch}
-                    className={inputClass}
+                    disabled={isLoadingFoods || isSubmitting}
+                    className={`w-full px-4 py-3 bg-neutral-800 text-amber-100 border-b border-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-600 ${isLoadingFoods || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
-                  {showDropdown && results.length > 0 && (
-                    <div className="absolute z-20 w-full mt-1 bg-amber-800 border border-amber-700 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-                      {results.map((food, i) => {
-                        const k = getKcalFromFood(food);
-                        const active = i === activeIndex;
-                        return (
+                  {/* Results List - Inline, always visible when there are results */}
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {isLoadingFoods ? (
+                      <div className="px-4 py-6 text-center">
+                        <div className="flex items-center justify-center gap-2 text-amber-200">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-sm">Loading foods...</span>
+                        </div>
+                      </div>
+                    ) : results.length > 0 ? (
+                      <>
+                        {results.map((food, i) => {
+                          const k = getKcalFromFood(food);
+                          const active = i === activeIndex;
+                          return (
+                            <button
+                              key={`${food.id ?? food.name}-${i}`}
+                              type="button"
+                              onMouseEnter={() => setActiveIndex(i)}
+                              onClick={async () => {
+                                setSelected(food);
+                                onChangeName(food.name);
+                                // Only set kcal automatically in search mode
+                                if (actionType === 'search' && typeof k === "number") {
+                                  setKcalPerUnit(k);
+                                }
+                                await hydrateSelectedWithDetails(food);
+                              }}
+                              className={`w-full text-left px-4 py-3 border-b border-amber-800/50 transition-colors ${active ? "bg-amber-700 text-white" : "hover:bg-amber-700/60 text-amber-100"}`}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="truncate">{food.name}</span>
+                                <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "s/kcal"}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {/* Create option in dropdown */}
+                        {onSwitchToCreate && name.trim().length > 2 && !checkFoodNameExists(name.trim()) && (
                           <button
-                            key={`${food.id ?? food.name}-${i}`}
                             type="button"
-                            onMouseEnter={() => setActiveIndex(i)}
-                            onClick={async () => {
-                              setSelected(food);
-                              onChangeName(food.name);
-                              // Only set kcal automatically in search mode
-                              if (actionType === 'search' && typeof k === "number") {
-                                setKcalPerUnit(k);
-                              }
-                              await hydrateSelectedWithDetails(food);
+                            onClick={() => {
+                              const trimmed = name.trim();
+                              setName(trimmed);
+                              onSwitchToCreate?.(trimmed);
                             }}
-                            className={`w-full text-left px-4 py-2 border-b border-amber-700 last:border-b-0 transition-colors ${active ? "bg-amber-700 text-white" : "hover:bg-amber-700/60 text-amber-100"}`}
+                            className="w-full text-left px-4 py-3 border-t-2 border-amber-600 bg-amber-700/80 hover:bg-amber-600 text-amber-100 flex items-center gap-2 font-medium"
                           >
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="truncate">{food.name}</span>
-                              <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "s/kcal"}</span>
-                            </div>
+                            <Plus className="w-5 h-5" />
+                            <span>Create &ldquo;{name.trim()}&rdquo; as new food</span>
                           </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Search Status */}
-                <div className="mt-2">
-                  {selected ? (
-                    <div className="text-sm text-green-200 bg-green-900/30 border border-green-700 rounded-lg p-3">
-                      ✓ Selected: <strong>{selected.name}</strong>
-                      {kcalSelected && <span className="text-xs block mt-1">{kcalSelected} kcal per unit</span>}
-                    </div>
-                  ) : name.trim().length > 2 ? (
-                    results.length === 0 ? (
-                      <div className="text-sm text-amber-200 bg-amber-900/30 border border-amber-700 rounded-lg p-3 space-y-3">
-                        <div>No existing foods found for &ldquo;{name.trim()}&rdquo;.</div>
+                        )}
+                      </>
+                    ) : name.trim().length > 2 ? (
+                      <div className="px-4 py-6 text-center">
+                        <div className="text-sm text-amber-200 mb-3">No existing foods found for &ldquo;{name.trim()}&rdquo;.</div>
                         {onSwitchToCreate && (
                           checkFoodNameExists(name.trim()) ? (
                             <div className="text-xs text-red-400 bg-red-900/30 border border-red-700 rounded p-2">
@@ -314,7 +378,9 @@ export default function FoodModal(props: Props) {
                           ) : (
                             <Button
                               onClick={() => {
-                                onSwitchToCreate();
+                                const trimmed = name.trim();
+                                setName(trimmed);
+                                onSwitchToCreate?.(trimmed);
                               }}
                               className="w-full bg-amber-700 hover:bg-amber-600 text-amber-100 border border-amber-600 text-sm py-2 flex items-center justify-center gap-2"
                             >
@@ -325,16 +391,29 @@ export default function FoodModal(props: Props) {
                         )}
                       </div>
                     ) : (
-                      <div className="text-sm text-blue-200 bg-blue-900/30 border border-blue-700 rounded-lg p-3">
-                        {results.length} food{results.length !== 1 ? 's' : ''} found. Click one to select it.
+                      <div className="px-4 py-6 text-center text-sm text-gray-400">
+                        Start typing to search for existing foods...
                       </div>
-                    )
-                  ) : (
-                    <div className="text-sm text-gray-400 bg-gray-900/30 border border-gray-700 rounded-lg p-3">
-                      Start typing to search for existing foods...
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+                
+                {/* Selected Food Indicator */}
+                {selected && (
+                  <div className="mt-3 text-sm text-green-200 bg-green-900/30 border border-green-700 rounded-lg p-3">
+                    {isLoadingDetails ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Loading food details...</span>
+                      </div>
+                    ) : (
+                      <>
+                        ✓ Selected: <strong>{selected.name}</strong>
+                        {kcalSelected && <span className="text-xs block mt-1">{kcalSelected} kcal per unit</span>}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Food Details - Show when food is selected */}
@@ -412,7 +491,8 @@ export default function FoodModal(props: Props) {
                         }
                       }
                     }}
-                    className={inputClass}
+                    disabled={isLoadingDetails || isSubmitting}
+                    className={`${inputClass} ${isLoadingDetails || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                   {liveKcal !== undefined && (
                     <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
@@ -432,8 +512,8 @@ export default function FoodModal(props: Props) {
                     placeholder="Enter food name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    disabled={editingItem?.id !== undefined}
-                    className={`${inputClass} ${editingItem?.id ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''} ${
+                    disabled={editingItem?.id !== undefined || isSubmitting}
+                    className={`${inputClass} ${editingItem?.id || isSubmitting ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''} ${
                       actionType === 'create' && name.trim() && checkFoodNameExists(name) 
                         ? 'border-red-500 focus:ring-red-500' 
                         : ''
@@ -471,7 +551,8 @@ export default function FoodModal(props: Props) {
                         }
                       }
                     }}
-                    className={inputClass}
+                    disabled={isSubmitting}
+                    className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
                 </div>
               </div>
@@ -495,8 +576,8 @@ export default function FoodModal(props: Props) {
                         }
                       }
                     }}
-                    disabled={editingItem?.id !== undefined}
-                    className={`${inputClass} ${editingItem?.id ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''}`}
+                    disabled={editingItem?.id !== undefined || isSubmitting}
+                    className={`${inputClass} ${editingItem?.id || isSubmitting ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''}`}
                   />
                   {editingItem?.id && (
                     <p className="mt-1 text-xs text-amber-400">Existing food calories cannot be changed</p>
@@ -602,8 +683,20 @@ export default function FoodModal(props: Props) {
           )}
 
           <div className="pt-1">
-            <Button type="button" onClick={handleConfirm} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
-              {editingItem ? "Update food" : "Confirm and add food"}
+            <Button 
+              type="button" 
+              onClick={handleConfirm} 
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={(actionType === 'search' && !selected) || isSubmitting || isLoadingDetails}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  {editingItem ? "Updating..." : "Adding food..."}
+                </>
+              ) : (
+                editingItem ? "Update food" : "Confirm and add food"
+              )}
             </Button>
           </div>
         </div>

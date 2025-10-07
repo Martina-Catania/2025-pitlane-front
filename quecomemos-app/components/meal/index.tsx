@@ -95,8 +95,8 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
       
       setOpenModal(true);
     } else {
-      // When adding new, show choice modal first
-      setOpenChoiceModal(true);
+      // When adding new, directly open search existing food modal
+      handleSearchExisting();
     }
   };
 
@@ -129,10 +129,11 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   };
   const closeModal = () => setOpenModal(false);
 
-  const handleSwitchToCreate = () => {
+  const handleSwitchToCreate = (initialName?: string) => {
     // Switch from search mode to create mode, preserving the search term as the initial name
     setFoodActionType('create');
-    // Keep the current name (search term) so user doesn't have to retype
+    // Apply the provided initial name (from search input) if present
+    if (typeof initialName === 'string') setModalName(initialName);
     // Reset other create fields but keep the name
     setCreateIcon("");
     setCreatePreferences([]);

@@ -390,10 +390,11 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     setShowFoodModal(true);
   };
 
-  const handleSwitchToCreateInEdit = () => {
+  const handleSwitchToCreateInEdit = (initialName?: string) => {
     // Switch from search mode to create mode, preserving the search term as the initial name
     setFoodModalAction('create');
-    // Keep the current name (search term) so user doesn't have to retype
+    // Apply provided initial name if present
+    if (typeof initialName === 'string') setModalName(initialName);
     // Reset other create fields but keep the name
     setCreateIcon("");
     setCreatePreferences([]);
@@ -441,7 +442,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowFoodChoiceModal(true)}
+              onClick={handleSearchExistingFood}
               className="border-amber-700/50 text-amber-200 hover:bg-amber-800/20"
             >
               <Plus className="w-4 h-4 mr-2" />

@@ -15,16 +15,24 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
   const [showDropdown, setShowDropdown] = useState(false);
   const [selected, setSelected] = useState<ExistingFood | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isLoadingFoods, setIsLoadingFoods] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     let cancel = false;
+    setIsLoadingFoods(true);
     (async () => {
       try {
         const res = await fetch(`${apiBase}/foods`);
         const data: ExistingFood[] = await res.json();
-        if (!cancel) setAllFoods(Array.isArray(data) ? data : []);
-      } catch { /* ignore */ }
+        if (!cancel) {
+          setAllFoods(Array.isArray(data) ? data : []);
+          setIsLoadingFoods(false);
+        }
+      } catch {
+        if (!cancel) setIsLoadingFoods(false);
+      }
     })();
     return () => { cancel = true; };
   }, [apiBase, open]);
@@ -65,5 +73,8 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
     activeIndex, setActiveIndex,
     kcalSelected,
     allFoods, // Export allFoods so we can check for duplicates
+    isLoadingFoods,
+    isLoadingDetails,
+    setIsLoadingDetails,
   };
 }
