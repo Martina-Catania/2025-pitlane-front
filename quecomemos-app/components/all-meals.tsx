@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
 import { ChefHat } from 'lucide-react';
 import { MealModal } from './ui/meal-modal';
@@ -48,7 +48,7 @@ export function AllMeals() {
     const profile = userData?.profile;
     const userPreferences = userData?.preferences;
 
-    const fetchRecommendedMeals = async () => {
+    const fetchRecommendedMeals = useCallback(async () => {
         if (userPreferences && userPreferences.hasPreferences && profile?.id) {
             try {
                 setLoadingRecommended(true);
@@ -77,7 +77,7 @@ export function AllMeals() {
         } else {
             setLoadingRecommended(false);
         }
-    };
+    }, [userPreferences, profile]);
 
     useEffect(() => {
         const fetchAllMeals = async () => {
@@ -118,7 +118,7 @@ export function AllMeals() {
             fetchAllMeals();
             fetchRecommendedMeals();
         }
-    }, [profile]);
+    }, [profile, fetchRecommendedMeals]);
 
     const handleMealClick = (meal: Meal) => {
         setSelectedMeal(meal);

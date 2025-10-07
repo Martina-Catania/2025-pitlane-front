@@ -29,7 +29,6 @@ const EnhancedPasswordInput = React.forwardRef<
   const [isFocused, setIsFocused] = React.useState(false);
   const [isBreachChecking, setIsBreachChecking] = React.useState(false);
   const [isBreached, setIsBreached] = React.useState<boolean | null>(null);
-  const [debounceTimer, setDebounceTimer] = React.useState<NodeJS.Timeout | null>(null);
   const password = (props.value as string) || "";
 
   const togglePasswordVisibility = () => {
@@ -38,17 +37,15 @@ const EnhancedPasswordInput = React.forwardRef<
 
   // Debounced breach check
   React.useEffect(() => {
-    // Clear existing timer
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
+    // Use a local timer variable for debounce; avoid putting timer in deps
+    let timer: NodeJS.Timeout | null = null;
 
     // Only check if password meets basic requirements and has content
     if (password.length >= 6 && /\d/.test(password) && /[a-zA-Z]/.test(password) && /[A-Z]/.test(password)) {
       setIsBreachChecking(true);
       setIsBreached(null);
 
-      const timer = setTimeout(async () => {
+  timer = setTimeout(async () => {
         try {
           const result = await checkPasswordBreach(password);
           setIsBreached(result.isBreached);
@@ -69,7 +66,7 @@ const EnhancedPasswordInput = React.forwardRef<
         }
       }, 3000); // 3 second delay
 
-      setDebounceTimer(timer);
+      // no-op: we use local timer for cleanup below
     } else {
       // Reset breach status if password doesn't meet basic requirements
       setIsBreached(null);
@@ -81,9 +78,7 @@ const EnhancedPasswordInput = React.forwardRef<
 
     // Cleanup function
     return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
+      if (timer) clearTimeout(timer);
     };
   }, [password, onBreachStatusChange]);
 

@@ -72,27 +72,25 @@ export default function FoodModal(props: Props) {
   // Loading state for form submission
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Clear selected food and search when switching to create mode
-  // We intentionally avoid including `actionType` in the deps here so that
-  // switching modes while the modal is open (search -> create) does not
-  // immediately clear the `name` value the parent may have just set.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Track previous open state to only reset on modal open (rising edge)
+  const prevOpenRef = useRef<boolean>(false);
+
+  // Clear selected food when switching to create mode (keep name stable)
   useEffect(() => {
     if (actionType === 'create' && open) {
       if (selected) {
         setSelected(null);
       }
     }
-  }, [actionType, open, selected, setSelected, setName, setQuery]);
+  }, [actionType, open, selected, setSelected]);
 
-  // Clear all form state immediately when modal opens to prevent stale data
-  // NOTE: don't include `actionType` in deps here — we only want this to run
-  // when the modal is opened/closed or when editingItem changes. If we run
-  // this on actionType changes, switching from search -> create while the
-  // modal is open will clear the name that the parent may have just set.
+  // Clear all form state immediately when modal opens to prevent stale data.
+  // Include actionType in deps to satisfy hooks rules, but only perform the
+  // reset on the rising edge (modal opening) to avoid clearing `name` when
+  // switching modes while open.
   useEffect(() => {
-    if (open && !editingItem) {
-      // Reset form state immediately to prevent old data from showing
+    const justOpened = open && !prevOpenRef.current;
+    if (justOpened && !editingItem) {
       setIsSubmitting(false);
       setSelected(null);
       setActiveIndex(-1);
@@ -101,8 +99,8 @@ export default function FoodModal(props: Props) {
         setName('');
       }
     }
-  // Intentionally not watching `actionType` so this effect only runs on open/editingItem
-  }, [open, editingItem, setSelected, setActiveIndex, setQuery, setName]);
+    prevOpenRef.current = open;
+  }, [open, editingItem, actionType, setSelected, setActiveIndex, setQuery, setName]);
 
   // Clear search history when modal closes
   useEffect(() => {
@@ -352,7 +350,7 @@ export default function FoodModal(props: Props) {
                           );
                         })}
                         {/* Create option in dropdown */}
-                        {onSwitchToCreate && name.trim().length > 2 && !checkFoodNameExists(name.trim()) && (
+                        {onSwitchToCreate && name.trim().length > 0 && !checkFoodNameExists(name.trim()) && (
                           <button
                             type="button"
                             onClick={() => {
@@ -367,7 +365,7 @@ export default function FoodModal(props: Props) {
                           </button>
                         )}
                       </>
-                    ) : name.trim().length > 2 ? (
+                    ) : name.trim().length > 0 ? (
                       <div className="px-4 py-6 text-center">
                         <div className="text-sm text-amber-200 mb-3">No existing foods found for &ldquo;{name.trim()}&rdquo;.</div>
                         {onSwitchToCreate && (
@@ -527,7 +525,7 @@ export default function FoodModal(props: Props) {
                       ⚠️ A food with this name already exists. Please choose a different name.
                     </p>
                   )}
-                  {actionType === 'create' && name.trim() && !checkFoodNameExists(name) && name.length > 2 && (
+                  {actionType === 'create' && name.trim() && !checkFoodNameExists(name) && name.trim().length > 0 && (
                     <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
                       ✓ Food name is available
                     </p>
