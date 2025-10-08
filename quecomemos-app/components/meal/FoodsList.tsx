@@ -15,7 +15,7 @@ export default function FoodsList({ foods, onEdit, onRemove }: Props) {
   if (foods.length === 0) {
     return (
       <div className={`${COMMON_STYLES.TEXT_AMBER_MUTED}/90 text-sm bg-neutral-800/60 border border-amber-800/40 rounded-lg p-3`}>
-        You haven't added any food yet. Use the <b>Add Food</b> button.
+        You haven&apos;t added any food yet. Use the <b>Add Food</b> button.
       </div>
     );
   }
