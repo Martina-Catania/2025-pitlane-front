@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { ChefHat, Clock, User, Users } from "lucide-react";
+import { DEFAULTS } from "./constants";
 
 interface MealFood {
   food: {
@@ -42,7 +43,7 @@ export function MealCard({
   meal, 
   onClick, 
   showExtendedInfo = true,
-  maxFoodsToShow = 3,
+  maxFoodsToShow = DEFAULTS.MAX_FOODS_TO_SHOW,
   className = ""
 }: MealCardProps) {
   const handleClick = () => {

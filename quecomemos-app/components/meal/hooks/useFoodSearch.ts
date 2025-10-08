@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExistingFood } from "../types";
 import { getKcalFromFood } from "../utils";
+import { DEFAULTS } from "../constants";
 
 type UseFoodSearchParams = {
   apiBase: string;
@@ -40,7 +41,7 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
   const [q, setQ] = useState("");
   useEffect(() => {
     if (!open) return;
-    const t = setTimeout(() => setQ(query.trim().toLowerCase()), 250);
+    const t = setTimeout(() => setQ(query.trim().toLowerCase()), DEFAULTS.SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [query, open]);
 
@@ -50,7 +51,7 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
       setResults([]); setShowDropdown(false); setActiveIndex(-1); setSelected(null);
       return;
     }
-    const filtered = allFoods.filter(f => f.name?.toLowerCase().includes(q)).slice(0, 12);
+    const filtered = allFoods.filter(f => f.name?.toLowerCase().includes(q)).slice(0, DEFAULTS.MAX_SEARCH_RESULTS);
     setResults(filtered);
     setShowDropdown(true);
     setActiveIndex(filtered.length ? 0 : -1);
