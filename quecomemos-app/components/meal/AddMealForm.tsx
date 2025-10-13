@@ -219,7 +219,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         "Meal Created Successfully!",
         `"${mealName}" has been saved with ${foods.length} food${foods.length !== 1 ? 's' : ''}.`
       );
-      if (onFoodAdded) onFoodAdded();
+      if (onFoodAdded) onFoodAdded({ MealID: mealResponse.ok ? (await mealResponse.json()).MealID : 0, name: mealName, description });
       if (onClose) onClose();
 
       // Reset form

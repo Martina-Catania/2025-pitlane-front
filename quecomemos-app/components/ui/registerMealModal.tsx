@@ -1,14 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { X, Plus } from 'lucide-react';
 import AddMealForm from '@/components/meal/AddMealForm';
-
-interface Meal {
-  MealID: number;
-  name: string;
-  description?: string;
-}
+import type { Meal } from '@/components/meal/types';
 
 interface RegisterMealModalProps {
   isOpen: boolean;
@@ -16,10 +11,6 @@ interface RegisterMealModalProps {
   onSubmit: (mealData: { mealId: number; date: string }) => void;
   meals: Meal[];
   onMealAdded?: (newMeal: Meal) => void; // Callback para cuando se agrega una nueva comida
-}
-
-interface AddMealFormProps {
-  onFoodAdded?: (newMeal: any) => void;
 }
 
 export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdded }: RegisterMealModalProps) {
@@ -47,18 +38,33 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
     try {
       await onSubmit({ mealId: parseInt(selectedMealId, 10), date: mealDate });
       handleClose();
-    } catch (error) {
+    } catch {
       setError('Failed to register meal. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Handle modal close and reset form
+  const handleClose = useCallback(() => {
+    setSelectedMealId('');
+    setMealDate('');
+    setError(null);
+    setShowCreateMeal(false);
+    onClose();
+  }, [onClose]);
+
+  // Handle closing the AddMealForm
+  const handleCloseAddMealForm = () => {
+    setShowCreateMeal(false);
+    setError(null);
+  };
+
   // Handle when a new meal is successfully created
-  const handleMealAdded = (newMeal: any) => {
-    // Convertir el formato si es necesario
+  const handleMealAdded = (newMeal: Meal | { id: number; name: string; description?: string }) => {
+    // Support both MealID and id
     const mealForList: Meal = {
-      MealID: newMeal.MealID || newMeal.id,
+      MealID: 'MealID' in newMeal ? newMeal.MealID : newMeal.id,
       name: newMeal.name,
       description: newMeal.description
     };
@@ -72,21 +78,6 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
     setSelectedMealId(mealForList.MealID.toString());
     
     // Volver al formulario principal
-    setShowCreateMeal(false);
-    setError(null);
-  };
-
-  // Handle modal close and reset form
-  const handleClose = () => {
-    setSelectedMealId('');
-    setMealDate('');
-    setError(null);
-    setShowCreateMeal(false);
-    onClose();
-  };
-
-  // Handle closing the AddMealForm
-  const handleCloseAddMealForm = () => {
     setShowCreateMeal(false);
     setError(null);
   };
@@ -112,7 +103,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, showCreateMeal]);
+  }, [isOpen, showCreateMeal, handleClose]);
 
   if (!isOpen) return null;
 
@@ -130,7 +121,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
             <p className="text-sm text-gray-400 mt-1">
               {showCreateMeal 
                 ? 'Add a new meal to the community and register it' 
-                : 'Record a meal you\'ve eaten from our community recipes'
+                : `Record a meal you've eaten from our community recipes`
               }
             </p>
           </div>
@@ -190,7 +181,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
                     className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
-                    Can't find your meal? Create it
+                    Can&apos;t find your meal? Create it
                   </button>
                 </div>
               </div>
@@ -249,7 +240,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
               </div>
               
               <AddMealForm 
-                onFoodAdded={handleMealAdded}
+                onFoodAdded={(m: Meal) => handleMealAdded(m)}
                 onClose={handleCloseAddMealForm}
               />
             </div>
