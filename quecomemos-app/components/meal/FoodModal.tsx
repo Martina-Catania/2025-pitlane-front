@@ -7,56 +7,52 @@ import { Label } from "@/components/ui/label";
 import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper";
 import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
 import { IconSelect } from "@/components/custom-components/icon-select";
-import { X, Utensils, Plus, Loader2 } from "lucide-react";
+import { X, Utensils, Plus, Loader2, Search, AlertCircle } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
 import { getKcalFromFood } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 
+type FoodModalMode = 'search' | 'create' | 'edit';
+type PreferenceObject = { id?: number; name?: string; PreferenceID?: number };
+type RestrictionObject = { id?: number; name?: string; RestrictionID?: number };
+
 type Props = {
   apiBase: string;
   open: boolean;
   onClose: () => void;
-
+  mode: FoodModalMode;
   editingItem?: FoodItem | null;
   onConfirm: (payload: FoodItem) => void;
-
-  createPreferences: number[];
-  setCreatePreferences: (v: number[]) => void;
-  createRestrictions: number[];
-  setCreateRestrictions: (v: number[]) => void;
-  createHasRestrictions: boolean | null;
-  setCreateHasRestrictions: (v: boolean | null) => void;
-  createIcon: string;
-  setCreateIcon: (v: string) => void;
-
-  quantity: number | "";
-  setQuantity: (v: number | "") => void;
-  kcalPerUnit: number | "";
-  setKcalPerUnit: (v: number | "") => void;
-  name: string;
-  setName: (v: string) => void;
-  
-  actionType?: 'create' | 'search';
   onSwitchToCreate?: (initialName?: string) => void;
+  initialName?: string; // Add prop to pass initial name for create mode
 };
 
 export default function FoodModal(props: Props) {
   const {
-    apiBase, open, onClose, editingItem, onConfirm,
-    createPreferences, setCreatePreferences,
-    createRestrictions, setCreateRestrictions,
-    createHasRestrictions, setCreateHasRestrictions,
-    createIcon, setCreateIcon,
-    quantity,
-    kcalPerUnit, setKcalPerUnit,
-    name, setName,
-    actionType = 'create',
-    onSwitchToCreate,
+    apiBase, open, onClose, mode, editingItem, onConfirm, onSwitchToCreate, initialName,
   } = props;
 
   const { showError } = useGlobalNotification();
 
+  // Expand/collapse states for selected food details
+  const [showAllSelectedPreferences, setShowAllSelectedPreferences] = useState(false);
+  const [showAllSelectedRestrictions, setShowAllSelectedRestrictions] = useState(false);
+  // Expand/collapse states for editingItem (read-only) details
+  const [showAllEditPreferences, setShowAllEditPreferences] = useState(false);
+  const [showAllEditRestrictions, setShowAllEditRestrictions] = useState(false);
+
+  // Internal state for form fields
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState<number | "">("");
+  const [kcalPerUnit, setKcalPerUnit] = useState<number | "">("");
+  const [createIcon, setCreateIcon] = useState("");
+  const [createPreferences, setCreatePreferences] = useState<number[]>([]);
+  const [createRestrictions, setCreateRestrictions] = useState<number[]>([]);
+  const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Search functionality (only used in search mode)
   const {
     setQuery,
     results, showDropdown,
@@ -69,59 +65,94 @@ export default function FoodModal(props: Props) {
     setIsLoadingDetails,
   } = useFoodSearch({ apiBase, open });
 
-  // Loading state for form submission
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Track previous open state to only reset on modal open (rising edge)
-  const prevOpenRef = useRef<boolean>(false);
-
-  // Clear selected food when switching to create mode (keep name stable)
-  useEffect(() => {
-    if (actionType === 'create' && open) {
-      if (selected) {
-        setSelected(null);
-      }
-    }
-  }, [actionType, open, selected, setSelected]);
-
-  // Clear all form state immediately when modal opens to prevent stale data.
-  // Include actionType in deps to satisfy hooks rules, but only perform the
-  // reset on the rising edge (modal opening) to avoid clearing `name` when
-  // switching modes while open.
-  useEffect(() => {
-    const justOpened = open && !prevOpenRef.current;
-    if (justOpened && !editingItem) {
-      setIsSubmitting(false);
-      setSelected(null);
-      setActiveIndex(-1);
-      setQuery('');
-      if (actionType !== 'search') {
-        setName('');
-      }
-    }
-    prevOpenRef.current = open;
-  }, [open, editingItem, actionType, setSelected, setActiveIndex, setQuery, setName]);
-
-  // Clear search history when modal closes
-  useEffect(() => {
-    if (!open) {
-      setQuery('');
-      setSelected(null);
-      setActiveIndex(-1);
-      setName('');
-      setIsSubmitting(false); // Reset submission state
-    }
-  }, [open, setQuery, setSelected, setActiveIndex, setName]);
-
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const inputClass =
-    "w-full p-3 rounded-lg border border-amber-700 bg-amber-800 text-amber-100 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500";
+  // Reset form when modal opens/closes or mode changes
+  useEffect(() => {
+    if (!open) {
+      // Reset everything when modal closes
+      setName("");
+      setQuantity("");
+      setKcalPerUnit("");
+      setCreateIcon("");
+      setCreatePreferences([]);
+      setCreateRestrictions([]);
+      setCreateHasRestrictions(null);
+      setSelected(null);
+      setQuery("");
+      setActiveIndex(-1);
+      setIsSubmitting(false);
+      return;
+    }
 
-  // sincronizar caja de búsqueda con "name"
-  const onChangeName = (v: string) => { setName(v); setQuery(v); };
+    // Initialize form based on mode and editing item
+    if (mode === 'edit' && editingItem) {
+      // Edit mode: populate with existing item data (for existing foods with IDs)
+      setName(editingItem.name);
+      setQuantity(editingItem.quantity);
+      setKcalPerUnit(editingItem.kcalPerUnit || (editingItem.kCal / editingItem.quantity));
+      setCreateIcon(editingItem.svgLink || "");
+      setCreatePreferences(editingItem.preferences || []);
+      setCreateRestrictions(editingItem.dietaryRestrictions || []);
+      setCreateHasRestrictions(editingItem.hasNoRestrictions ?? null);
+    } else if (mode === 'create') {
+      if (editingItem) {
+        // Create mode but editing an existing item (temporary food) - populate with existing data
+        setName(editingItem.name);
+        setQuantity(editingItem.quantity);
+        setKcalPerUnit(editingItem.kcalPerUnit || (editingItem.kCal / editingItem.quantity));
+        setCreateIcon(editingItem.svgLink || "");
+        setCreatePreferences(editingItem.preferences || []);
+        setCreateRestrictions(editingItem.dietaryRestrictions || []);
+        setCreateHasRestrictions(editingItem.hasNoRestrictions ?? null);
+      } else {
+        // Create mode: start with form, using initialName if provided (from search mode switch)
+        setName(initialName || "");
+        setQuantity(1);
+        setKcalPerUnit("");
+        setCreateIcon("");
+        setCreatePreferences([]);
+        setCreateRestrictions([]);
+        setCreateHasRestrictions(null);
+      }
+    } else if (mode === 'search') {
+      // Search mode: start with empty search
+      setName("");
+      setQuantity(1);
+      setKcalPerUnit("");
+      setQuery("");
+      setSelected(null);
+      setActiveIndex(-1);
+    }
+  }, [open, mode, editingItem, initialName, setQuery, setSelected, setActiveIndex]);
 
-  // helper: cargar detalle (relaciones) cuando hay id
+  // Sync search query with name in search mode
+  useEffect(() => {
+    if (mode === 'search' && open) {
+      setQuery(name);
+    }
+  }, [mode, name, open, setQuery]);
+
+  const inputClass = "w-full p-3 rounded-lg border border-amber-700 bg-amber-800 text-amber-100 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500";
+
+  // Check if food name already exists (for create mode)
+  const checkFoodNameExists = (foodName: string): boolean => {
+    const trimmedName = foodName.trim().toLowerCase();
+    return allFoods.some(food => {
+      // When editing (either edit mode or create mode with existing item), exclude the current food from duplicate check
+      if ((mode === 'edit' || (mode === 'create' && editingItem)) && editingItem) {
+        if (editingItem.id && food.id === editingItem.id) {
+          return false;
+        }
+        if (!editingItem.id && food.name?.toLowerCase() === editingItem.name.toLowerCase()) {
+          return false;
+        }
+      }
+      return food.name?.toLowerCase() === trimmedName;
+    });
+  };
+
+  // Load detailed food information when a food is selected
   const hydrateSelectedWithDetails = async (food: ExistingFood) => {
     if (!food?.id) return;
     setIsLoadingDetails(true);
@@ -129,148 +160,171 @@ export default function FoodModal(props: Props) {
       const res = await fetch(`${apiBase}/foods/${food.id}?include=preferences,dietaryRestrictions`);
       if (res.ok) {
         const full = await res.json();
-        setSelected(full);
+        // Map FoodID to id for consistency
+        setSelected({
+          ...full,
+          id: full.FoodID || full.id
+        });
       }
     } catch (e) {
-      console.error("No se pudo cargar el detalle de la food", e);
+      console.error("Could not load food details", e);
     } finally {
       setIsLoadingDetails(false);
     }
   };
 
-  // helper: check if food name already exists
-  const checkFoodNameExists = (foodName: string): boolean => {
-    const trimmedName = foodName.trim().toLowerCase();
-    return allFoods.some(food => food.name?.toLowerCase() === trimmedName);
-  };
-
+  // Handle search keyboard navigation
   const onKeyDownSearch = async (e: KeyboardEvent<HTMLInputElement>) => {
     if (!showDropdown && e.key !== "Enter") return;
+    
     if (e.key === "ArrowDown") {
-      e.preventDefault(); setActiveIndex(i => Math.min(i + 1, results.length - 1));
+      e.preventDefault(); 
+      setActiveIndex(i => Math.min(i + 1, results.length - 1));
     } else if (e.key === "ArrowUp") {
-      e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0));
+      e.preventDefault(); 
+      setActiveIndex(i => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       if (showDropdown && activeIndex >= 0 && results[activeIndex]) {
-        const f = results[activeIndex];
-        setSelected(f);
-        setName(f.name);
-        setQuery(f.name);
-        // Only set kcal automatically in search mode, not in create mode
-        if (actionType === 'search') {
-          const k = getKcalFromFood(f);
-          if (typeof k === "number") setKcalPerUnit(k);
-        }
-        await hydrateSelectedWithDetails(f);
+        const selectedFood = results[activeIndex];
+        setSelected(selectedFood);
+        setName(selectedFood.name);
+        setQuery(selectedFood.name);
+        const k = getKcalFromFood(selectedFood);
+        if (typeof k === "number") setKcalPerUnit(k);
+        await hydrateSelectedWithDetails(selectedFood);
         return;
       }
       handleConfirm();
-    } else if (e.key === "Escape") {
-      // cierra dropdown
     }
   };
 
+  // Calculate total calories
   const liveKcal = useMemo(() => {
     const base = selected ? kcalSelected : (typeof kcalPerUnit === "number" ? kcalPerUnit : undefined);
     const quantityNum = typeof quantity === "number" ? quantity : (quantity === "" ? 0 : Number(quantity));
-    
-    // Debug logging to help identify the issue
-    console.log('liveKcal calculation:', { 
-      selected: !!selected, 
-      kcalSelected, 
-      kcalPerUnit, 
-      quantity, 
-      quantityNum, 
-      base 
-    });
     
     if (!base || quantityNum <= 0 || isNaN(quantityNum) || isNaN(base)) return undefined;
     return Math.round(base * quantityNum);
   }, [selected, kcalSelected, kcalPerUnit, quantity]);
 
+  // Handle form submission
   const handleConfirm = async () => {
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
     setIsSubmitting(true);
     
     try {
-      // When editing an existing food item
-      if (editingItem) {
-        if (!quantity || !kcalPerUnit) {
-          showError("Incomplete Information", "Please complete the quantity and calories per unit.");
+      if (mode === 'edit' && editingItem) {
+        // Edit mode: only allow quantity changes
+        if (!quantity || typeof quantity !== "number" || quantity <= 0) {
+          showError("Invalid Quantity", "Please enter a valid quantity.");
           return;
         }
+        
+        const originalKcalPerUnit = editingItem.kcalPerUnit || (editingItem.kCal / editingItem.quantity);
         onConfirm({ 
-          name, 
-          quantity: Number(quantity), 
-          kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
-          kcalPerUnit: Number(kcalPerUnit),
-          svgLink: createIcon || editingItem.svgLink || ""
+          ...editingItem,
+          quantity: quantity,
+          kCal: Math.round(originalKcalPerUnit * quantity),
+          kcalPerUnit: originalKcalPerUnit
         });
         onClose(); 
         return;
       }
       
-      // When in create mode, always create a new food regardless of selected state
-      if (actionType === 'create') {
-        if (!name || !quantity || !kcalPerUnit) {
-          showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
+      if (mode === 'search') {
+        // Search mode: must have a selected food
+        if (!selected) {
+          showError("No Food Selected", "Please select a food from the search results.");
           return;
         }
         
-        // Check if food name already exists
-        if (checkFoodNameExists(name)) {
-          showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name or search for the existing food.`);
+        if (!quantity || typeof quantity !== "number" || quantity <= 0) {
+          showError("Invalid Quantity", "Please enter a valid quantity.");
           return;
         }
         
-        onConfirm({ 
-          name, 
-          quantity: Number(quantity), 
-          kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
-          kcalPerUnit: Number(kcalPerUnit),
-          svgLink: createIcon || ""
-        });
-        onClose();
-        return;
-      }
-      
-      // When in search mode and selecting an existing food from search
-      if (actionType === 'search' && selected) {
-        if (!quantity) { 
-          showError("Missing Quantity", "Please enter a quantity for the selected food.");
-          return;
-        }
         const k = kcalSelected;
         if (typeof k !== "number") { 
           showError("Calorie Information Missing", "Calorie information per unit was not found for this food.");
           return;
         }
+        
         onConfirm({ 
+          id: typeof selected.id === 'string' ? parseInt(selected.id) : selected.id,
           name: selected.name, 
-          quantity: Number(quantity), 
-          kCal: Math.round(k * Number(quantity)),
+          quantity: quantity, 
+          kCal: Math.round(k * quantity),
           kcalPerUnit: k,
-          svgLink: selected.svgLink || selected.icon || createIcon || ""
+          svgLink: selected.svgLink || selected.icon || "",
+          preferences: Array.isArray(selected.preferences) ? 
+            selected.preferences.map(p => typeof p === 'object' && p && 'id' in p ? p.id : p) : [],
+          dietaryRestrictions: Array.isArray(selected.dietaryRestrictions) ? 
+            selected.dietaryRestrictions.map(r => typeof r === 'object' && r && 'id' in r ? r.id : r) : [],
+          hasNoRestrictions: selected.dietaryRestrictions?.some(r => 
+            (typeof r === 'object' && r && 'id' in r ? r.id : r) === 0
+          ) ?? false
         });
         onClose(); 
         return;
       }
       
-      // Fallback: When creating a new food (legacy compatibility)
-      if (!name || !quantity || !kcalPerUnit) {
-        showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
+      if (mode === 'create') {
+        // Create mode: validate all required fields
+        if (!name.trim() || !quantity || !kcalPerUnit) {
+          showError("Incomplete Information", "Please complete the food name, quantity, and calories per unit.");
+          return;
+        }
+        
+        if (typeof quantity !== "number" || quantity <= 0) {
+          showError("Invalid Quantity", "Please enter a valid quantity.");
+          return;
+        }
+        
+        if (typeof kcalPerUnit !== "number" || kcalPerUnit <= 0) {
+          showError("Invalid Calories", "Please enter valid calories per unit.");
+          return;
+        }
+        
+        // When editing a temporary food, don't check for duplicate names against itself
+        if (!editingItem && checkFoodNameExists(name)) {
+          showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name or search for the existing food.`);
+          return;
+        }
+        
+        // If editing a temporary food and name changed, check for duplicates
+        if (editingItem && editingItem.name !== name.trim() && checkFoodNameExists(name)) {
+          showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name or search for the existing food.`);
+          return;
+        }
+        
+        onConfirm({ 
+          // Preserve ID if editing an existing temporary food
+          ...(editingItem?.id ? { id: editingItem.id } : {}),
+          name: name.trim(), 
+          quantity: quantity, 
+          kCal: Math.round(kcalPerUnit * quantity),
+          kcalPerUnit: kcalPerUnit,
+          svgLink: createIcon || "",
+          preferences: createPreferences,
+          dietaryRestrictions: createRestrictions,
+          hasNoRestrictions: createHasRestrictions ?? false
+        });
+        onClose();
         return;
       }
-      onConfirm({ 
-        name, 
-        quantity: Number(quantity), 
-        kCal: Math.round(Number(kcalPerUnit) * Number(quantity)),
-        kcalPerUnit: Number(kcalPerUnit),
-        svgLink: createIcon || ""
-      });
-      onClose();
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Get modal title based on mode
+  const getModalTitle = () => {
+    switch (mode) {
+      case 'search': return "Search Existing Food";
+      case 'create': 
+        return editingItem ? "Edit Food" : "Create New Food";
+      case 'edit': return "Edit Food";
+      default: return "Food Modal";
     }
   };
 
@@ -284,10 +338,10 @@ export default function FoodModal(props: Props) {
         style={{ zIndex: 96 }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-amber-800/40">
           <h4 className="text-amber-100 font-semibold text-sm md:text-base">
-            {editingItem ? "Edit food" : 
-             actionType === 'create' ? "Create New Food" : "Search Existing Food"}
+            {getModalTitle()}
           </h4>
           <button onClick={onClose} className="p-2 text-amber-200 hover:text-amber-50">
             <X className="w-5 h-5" />
@@ -295,24 +349,28 @@ export default function FoodModal(props: Props) {
         </div>
 
         <div className="p-4 max-h-[85vh] overflow-y-auto">
-          {actionType === 'search' ? (
-            // Search Mode - Focus on finding existing foods
+          {mode === 'search' ? (
+            // SEARCH MODE
             <div className="space-y-4">
-              {/* Search Section - Tall Rectangle */}
+              {/* Search Section */}
               <div>
-                <Label className="text-amber-200 text-sm mb-2 block">Search for existing food</Label>
+                <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  Search for existing food
+                </Label>
                 <div className="border border-amber-700 rounded-lg bg-neutral-800 overflow-hidden">
                   <input
                     ref={searchRef}
                     type="text"
                     placeholder="Type food name to search..."
                     value={name}
-                    onChange={(e) => onChangeName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     onKeyDown={onKeyDownSearch}
                     disabled={isLoadingFoods || isSubmitting}
                     className={`w-full px-4 py-3 bg-neutral-800 text-amber-100 border-b border-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-600 ${isLoadingFoods || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
-                  {/* Results List - Inline, always visible when there are results */}
+                  
+                  {/* Search Results */}
                   <div className="max-h-[400px] overflow-y-auto">
                     {isLoadingFoods ? (
                       <div className="px-4 py-6 text-center">
@@ -333,9 +391,9 @@ export default function FoodModal(props: Props) {
                               onMouseEnter={() => setActiveIndex(i)}
                               onClick={async () => {
                                 setSelected(food);
-                                onChangeName(food.name);
-                                // Only set kcal automatically in search mode
-                                if (actionType === 'search' && typeof k === "number") {
+                                setName(food.name);
+                                setQuery(food.name);
+                                if (typeof k === "number") {
                                   setKcalPerUnit(k);
                                 }
                                 await hydrateSelectedWithDetails(food);
@@ -344,19 +402,19 @@ export default function FoodModal(props: Props) {
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <span className="truncate">{food.name}</span>
-                                <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "s/kcal"}</span>
+                                <span className="text-xs opacity-80">{typeof k === "number" ? `${k} kcal/unit` : "No kcal data"}</span>
                               </div>
                             </button>
                           );
                         })}
-                        {/* Create option in dropdown */}
+                        
+                        {/* Create option in search results */}
                         {onSwitchToCreate && name.trim().length > 0 && !checkFoodNameExists(name.trim()) && (
                           <button
                             type="button"
                             onClick={() => {
                               const trimmed = name.trim();
-                              setName(trimmed);
-                              onSwitchToCreate?.(trimmed);
+                              onSwitchToCreate(trimmed);
                             }}
                             className="w-full text-left px-4 py-3 border-t-2 border-amber-600 bg-amber-700/80 hover:bg-amber-600 text-amber-100 flex items-center gap-2 font-medium"
                           >
@@ -371,14 +429,14 @@ export default function FoodModal(props: Props) {
                         {onSwitchToCreate && (
                           checkFoodNameExists(name.trim()) ? (
                             <div className="text-xs text-red-400 bg-red-900/30 border border-red-700 rounded p-2">
-                              ⚠️ A food named &ldquo;{name.trim()}&rdquo; already exists in the database. Try searching with the exact name or use a different search term.
+                              <AlertCircle className="w-4 h-4 inline mr-2" />
+                              A food named &ldquo;{name.trim()}&rdquo; already exists in the database.
                             </div>
                           ) : (
                             <Button
                               onClick={() => {
                                 const trimmed = name.trim();
-                                setName(trimmed);
-                                onSwitchToCreate?.(trimmed);
+                                onSwitchToCreate(trimmed);
                               }}
                               className="w-full bg-amber-700 hover:bg-amber-600 text-amber-100 border border-amber-600 text-sm py-2 flex items-center justify-center gap-2"
                             >
@@ -444,11 +502,32 @@ export default function FoodModal(props: Props) {
                       <div>
                         <p className="text-xs text-amber-200 mb-1">Preferences:</p>
                         <div className="flex flex-wrap gap-1">
-                          {selected.preferences.map((pref, index) => (
-                            <span key={index} className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded">
-                              {typeof pref === 'string' ? pref : (typeof pref === 'object' && pref && 'name' in pref ? pref.name : `ID: ${typeof pref === 'number' ? pref : 'Unknown'}`)}
-                            </span>
-                          ))}
+                          {(showAllSelectedPreferences ? selected.preferences : selected.preferences.slice(0, 2)).map((pref, index) => {
+                            let displayName = '';
+                            if (typeof pref === 'string') {
+                              displayName = pref;
+                            } else if (typeof pref === 'object' && pref) {
+                              const prefObj = pref as PreferenceObject;
+                              displayName = prefObj.name || `ID: ${prefObj.PreferenceID || prefObj.id || 'Unknown'}`;
+                            } else if (typeof pref === 'number') {
+                              displayName = `ID: ${pref}`;
+                            } else {
+                              displayName = 'Unknown';
+                            }
+                            return (
+                              <span key={index} className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded">
+                                {displayName}
+                              </span>
+                            );
+                          })}
+                          {selected.preferences.length > 2 && (
+                            <button
+                              onClick={() => setShowAllSelectedPreferences(prev => !prev)}
+                              className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded hover:underline"
+                            >
+                              {showAllSelectedPreferences ? 'Show less' : `+${selected.preferences.length - 2} more`}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -457,11 +536,32 @@ export default function FoodModal(props: Props) {
                       <div>
                         <p className="text-xs text-amber-200 mb-1">Dietary Restrictions:</p>
                         <div className="flex flex-wrap gap-1">
-                          {selected.dietaryRestrictions.map((restriction, index) => (
-                            <span key={index} className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded">
-                              {typeof restriction === 'string' ? restriction : (typeof restriction === 'object' && restriction && 'name' in restriction ? restriction.name : `ID: ${typeof restriction === 'number' ? restriction : 'Unknown'}`)}
-                            </span>
-                          ))}
+                          {(showAllSelectedRestrictions ? selected.dietaryRestrictions : selected.dietaryRestrictions.slice(0, 2)).map((restriction, index) => {
+                            let displayName = '';
+                            if (typeof restriction === 'string') {
+                              displayName = restriction;
+                            } else if (typeof restriction === 'object' && restriction) {
+                              const restrictionObj = restriction as RestrictionObject;
+                              displayName = restrictionObj.name || `ID: ${restrictionObj.RestrictionID || restrictionObj.id || 'Unknown'}`;
+                            } else if (typeof restriction === 'number') {
+                              displayName = `ID: ${restriction}`;
+                            } else {
+                              displayName = 'Unknown';
+                            }
+                            return (
+                              <span key={index} className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded">
+                                {displayName}
+                              </span>
+                            );
+                          })}
+                          {selected.dietaryRestrictions.length > 2 && (
+                            <button
+                              onClick={() => setShowAllSelectedRestrictions(prev => !prev)}
+                              className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded hover:underline"
+                            >
+                              {showAllSelectedRestrictions ? 'Show less' : `+${selected.dietaryRestrictions.length - 2} more`}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -481,11 +581,11 @@ export default function FoodModal(props: Props) {
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        props.setQuantity('');
+                        setQuantity('');
                       } else {
                         const num = Number(val);
-                        if (!isNaN(num)) {
-                          props.setQuantity(num);
+                        if (!isNaN(num) && num > 0) {
+                          setQuantity(num);
                         }
                       }
                     }}
@@ -498,8 +598,131 @@ export default function FoodModal(props: Props) {
                 </div>
               )}
             </div>
+          ) : mode === 'edit' ? (
+            // EDIT MODE - Only allow quantity changes
+            <div className="space-y-4">
+              {/* Food Information - Read Only */}
+              <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4">
+                <Label className="text-amber-200 text-sm mb-3 block">Food Information (Read-only)</Label>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 flex items-center justify-center bg-amber-800/30 rounded-full border border-amber-700/50 flex-shrink-0">
+                    {editingItem?.svgLink ? (
+                      <Image 
+                        src={editingItem.svgLink} 
+                        alt={editingItem.name} 
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 object-contain" 
+                      />
+                    ) : (
+                      <Utensils className="w-5 h-5 text-amber-400" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-amber-100">{editingItem?.name}</h4>
+                    <p className="text-sm text-amber-300">{editingItem?.kcalPerUnit || (editingItem ? editingItem.kCal / editingItem.quantity : 0)} kcal per unit</p>
+                  </div>
+                </div>
+                
+                {/* Show preferences and restrictions if available */}
+                {editingItem?.preferences && editingItem.preferences.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-amber-200 mb-1">Preferences:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(showAllEditPreferences ? editingItem.preferences : editingItem.preferences.slice(0, 2)).map((pref, index) => {
+                        let displayName = '';
+                        if (typeof pref === 'string') {
+                          displayName = pref;
+                        } else if (typeof pref === 'object' && pref) {
+                          const prefObj = pref as PreferenceObject;
+                          displayName = prefObj.name || `ID: ${prefObj.PreferenceID || prefObj.id || pref}`;
+                        } else if (typeof pref === 'number') {
+                          displayName = `ID: ${pref}`;
+                        } else {
+                          displayName = String(pref);
+                        }
+                        return (
+                          <span key={index} className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded">
+                            {displayName}
+                          </span>
+                        );
+                      })}
+                      {editingItem.preferences.length > 2 && (
+                        <button
+                          onClick={() => setShowAllEditPreferences(prev => !prev)}
+                          className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded hover:underline"
+                        >
+                          {showAllEditPreferences ? 'Show less' : `+${editingItem.preferences.length - 2} more`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {editingItem?.dietaryRestrictions && editingItem.dietaryRestrictions.length > 0 && (
+                  <div>
+                    <p className="text-xs text-amber-200 mb-1">Dietary Restrictions:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(showAllEditRestrictions ? editingItem.dietaryRestrictions : editingItem.dietaryRestrictions.slice(0, 2)).map((restriction, index) => {
+                        let displayName = '';
+                        if (typeof restriction === 'string') {
+                          displayName = restriction;
+                        } else if (typeof restriction === 'object' && restriction) {
+                          const restrictionObj = restriction as RestrictionObject;
+                          displayName = restrictionObj.name || `ID: ${restrictionObj.RestrictionID || restrictionObj.id || restriction}`;
+                        } else if (typeof restriction === 'number') {
+                          displayName = `ID: ${restriction}`;
+                        } else {
+                          displayName = String(restriction);
+                        }
+                        return (
+                          <span key={index} className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded">
+                            {displayName}
+                          </span>
+                        );
+                      })}
+                      {editingItem.dietaryRestrictions.length > 2 && (
+                        <button
+                          onClick={() => setShowAllEditRestrictions(prev => !prev)}
+                          className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded hover:underline"
+                        >
+                          {showAllEditRestrictions ? 'Show less' : `+${editingItem.dietaryRestrictions.length - 2} more`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Quantity Section - Editable */}
+              <div>
+                <Label className="text-amber-200 text-sm mb-2 block">Quantity (Editable)</Label>
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="Enter quantity"
+                  value={quantity === "" ? "" : quantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setQuantity('');
+                    } else {
+                      const num = Number(val);
+                      if (!isNaN(num) && num > 0) {
+                        setQuantity(num);
+                      }
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+                {liveKcal !== undefined && (
+                  <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
+                )}
+              </div>
+            </div>
           ) : (
-            // Create Mode - Focus on creating new food
+            // CREATE MODE - Full form
             <div className="space-y-4">
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -510,25 +733,38 @@ export default function FoodModal(props: Props) {
                     placeholder="Enter food name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    disabled={editingItem?.id !== undefined || isSubmitting}
-                    className={`${inputClass} ${editingItem?.id || isSubmitting ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''} ${
-                      actionType === 'create' && name.trim() && checkFoodNameExists(name) 
+                    disabled={isSubmitting}
+                    className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      name.trim() && checkFoodNameExists(name) 
                         ? 'border-red-500 focus:ring-red-500' 
                         : ''
                     }`}
                   />
-                  {editingItem?.id && (
-                    <p className="mt-1 text-xs text-amber-400">Existing food name cannot be changed</p>
-                  )}
-                  {actionType === 'create' && name.trim() && checkFoodNameExists(name) && (
-                    <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
-                      ⚠️ A food with this name already exists. Please choose a different name.
-                    </p>
-                  )}
-                  {actionType === 'create' && name.trim() && !checkFoodNameExists(name) && name.trim().length > 0 && (
-                    <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
-                      ✓ Food name is available
-                    </p>
+                  {/* Show validation messages based on whether we're editing or creating */}
+                  {editingItem ? (
+                    // When editing a temporary food
+                    editingItem.name !== name.trim() && name.trim() && checkFoodNameExists(name) ? (
+                      <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        A food with this name already exists. Please choose a different name.
+                      </p>
+                    ) : editingItem.name !== name.trim() && name.trim() && !checkFoodNameExists(name) && name.trim().length > 0 ? (
+                      <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
+                        ✓ Food name is available
+                      </p>
+                    ) : null
+                  ) : (
+                    // When creating a new food
+                    name.trim() && checkFoodNameExists(name) ? (
+                      <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        A food with this name already exists. Please choose a different name.
+                      </p>
+                    ) : name.trim() && !checkFoodNameExists(name) && name.trim().length > 0 ? (
+                      <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
+                        ✓ Food name is available
+                      </p>
+                    ) : null
                   )}
                 </div>
                 <div>
@@ -541,11 +777,11 @@ export default function FoodModal(props: Props) {
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        props.setQuantity('');
+                        setQuantity('');
                       } else {
                         const num = Number(val);
-                        if (!isNaN(num)) {
-                          props.setQuantity(num);
+                        if (!isNaN(num) && num > 0) {
+                          setQuantity(num);
                         }
                       }
                     }}
@@ -561,139 +797,104 @@ export default function FoodModal(props: Props) {
                   <input
                     type="number"
                     min={0}
-                    placeholder={actionType === 'create' ? "1" : "kcal per unit"}
-                    value={kcalPerUnit}
+                    placeholder="Enter calories per unit"
+                    value={kcalPerUnit === "" ? "" : kcalPerUnit}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        props.setKcalPerUnit('');
+                        setKcalPerUnit('');
                       } else {
                         const num = Number(val);
                         if (!isNaN(num) && num >= 0) {
-                          props.setKcalPerUnit(num);
+                          setKcalPerUnit(num);
                         }
                       }
                     }}
-                    disabled={editingItem?.id !== undefined || isSubmitting}
-                    className={`${inputClass} ${editingItem?.id || isSubmitting ? 'bg-amber-900/50 text-amber-300 cursor-not-allowed' : ''}`}
+                    disabled={isSubmitting}
+                    className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
-                  {editingItem?.id && (
-                    <p className="mt-1 text-xs text-amber-400">Existing food calories cannot be changed</p>
-                  )}
                   {liveKcal !== undefined && (
                     <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
                   )}
                 </div>
                 <div>
                   <Label className="text-amber-200 text-sm mb-2 block">Icon</Label>
-                  {editingItem?.id ? (
-                    <div className="text-amber-300 text-sm p-2 bg-amber-900/20 border border-amber-800/30 rounded-lg">
-                      Icon cannot be changed for existing foods
-                    </div>
-                  ) : (
-                    <IconSelect onSelectionChange={setCreateIcon} />
-                  )}
+                  <IconSelect onSelectionChange={setCreateIcon} />
                 </div>
               </div>
 
               {/* Advanced Options */}
               <div className="border-t border-amber-800/30 pt-4">
-                <Label className="text-amber-200 text-sm mb-3 block">Dietary Information {editingItem?.id ? '(Read-only)' : '(Optional)'}</Label>
-                {editingItem?.id ? (
-                  <div className="space-y-3 text-amber-300">
-                    <div className="bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
-                      <h4 className="text-sm font-medium mb-2">Current Preferences:</h4>
-                      {createPreferences && createPreferences.length > 0 ? (
-                        <div className="text-xs">
-                          {createPreferences.length} preference(s) set
-                        </div>
-                      ) : (
-                        <div className="text-xs text-amber-400">No preferences set</div>
-                      )}
+                <Label className="text-amber-200 text-sm mb-3 block">Dietary Information (Optional)</Label>
+                <div className="space-y-3">
+                  <DropdownWrapper label="Preferences">
+                    <CustomCheckbox
+                      initialOptions={createPreferences}
+                      endpoint="preferences"
+                      onSelectionChange={setCreatePreferences}
+                    />
+                  </DropdownWrapper>
+                  
+                  <div>
+                    <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
+                    <div className="flex gap-4 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setCreateHasRestrictions(true)}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                          createHasRestrictions === true
+                            ? 'bg-amber-700 border-amber-600 text-white'
+                            : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                        }`}
+                      >
+                        No restrictions (For Everyone)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCreateHasRestrictions(false)}
+                        className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                          createHasRestrictions === false
+                            ? 'bg-amber-700 border-amber-600 text-white'
+                            : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                        }`}
+                      >
+                        Has restrictions
+                      </button>
                     </div>
-                    <div className="bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
-                      <h4 className="text-sm font-medium mb-2">Current Restrictions:</h4>
-                      {createHasRestrictions === true ? (
-                        <div className="text-xs text-green-300">✓ For Everyone (No restrictions)</div>
-                      ) : createRestrictions && createRestrictions.length > 0 ? (
-                        <div className="text-xs text-orange-300">
-                          ⚠ {createRestrictions.length} restriction(s) set
-                        </div>
-                      ) : (
-                        <div className="text-xs text-amber-400">No restrictions defined</div>
-                      )}
-                    </div>
-                    <div className="text-xs text-amber-400 mt-2">
-                      Dietary information cannot be changed for existing foods. Only quantity can be modified.
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <DropdownWrapper label="Preferences">
-                      <CustomCheckbox
-                        initialOptions={createPreferences}
-                        endpoint="preferences"
-                        onSelectionChange={setCreatePreferences}
-                      />
-                    </DropdownWrapper>
                     
-                    <div>
-                      <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
-                      <div className="flex gap-4 mb-4">
-                        <button
-                          type="button"
-                          onClick={() => setCreateHasRestrictions(true)}
-                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                            createHasRestrictions === true
-                              ? 'bg-amber-700 border-amber-600 text-white'
-                              : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
-                          }`}
-                        >
-                          No restrictions (For Everyone)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCreateHasRestrictions(false)}
-                          className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                            createHasRestrictions === false
-                              ? 'bg-amber-700 border-amber-600 text-white'
-                              : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
-                          }`}
-                        >
-                          Has restrictions
-                        </button>
-                      </div>
-                      
-                      {createHasRestrictions === false && (
-                        <DropdownWrapper label="Select Dietary Restrictions">
-                          <CustomCheckbox
-                            initialOptions={createRestrictions}
-                            endpoint="dietary-restrictions/excluding-for-everyone"
-                            onSelectionChange={setCreateRestrictions}
-                          />
-                        </DropdownWrapper>
-                      )}
-                    </div>
+                    {createHasRestrictions === false && (
+                      <DropdownWrapper label="Select Dietary Restrictions">
+                        <CustomCheckbox
+                          initialOptions={createRestrictions}
+                          endpoint="dietary-restrictions/excluding-for-everyone"
+                          onSelectionChange={setCreateRestrictions}
+                        />
+                      </DropdownWrapper>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="pt-1">
+          {/* Submit Button */}
+          <div className="pt-4 border-t border-amber-800/30">
             <Button 
               type="button" 
               onClick={handleConfirm} 
               className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={(actionType === 'search' && !selected) || isSubmitting || isLoadingDetails}
+              disabled={Boolean((mode === 'search' && !selected) || isSubmitting || isLoadingDetails || 
+                        (mode === 'create' && (!name.trim() || !quantity || !kcalPerUnit || 
+                          (!editingItem && checkFoodNameExists(name)) || 
+                          (editingItem && editingItem.name !== name.trim() && checkFoodNameExists(name)))))}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  {editingItem ? "Updating..." : "Adding food..."}
+                  {(mode === 'edit' || (mode === 'create' && editingItem)) ? "Updating..." : "Adding food..."}
                 </>
               ) : (
-                editingItem ? "Update food" : "Confirm and add food"
+                (mode === 'edit' || (mode === 'create' && editingItem)) ? "Update food" : "Confirm and add food"
               )}
             </Button>
           </div>

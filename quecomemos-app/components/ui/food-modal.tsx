@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X, Utensils } from "lucide-react";
 import Image from "next/image";
 
@@ -21,6 +21,8 @@ interface FoodModalProps {
 }
 
 export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
+  const [showAllPreferences, setShowAllPreferences] = useState(false);
+  const [showAllRestrictions, setShowAllRestrictions] = useState(false);
   // Cerrar modal con ESC
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -105,7 +107,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
             </h4>
             {food.preferences && food.preferences.length > 0 ? (
               <div className="space-y-2">
-                {food.preferences.map((preference, index) => (
+                {(showAllPreferences ? food.preferences : food.preferences.slice(0, 2)).map((preference, index) => (
                   <div 
                     key={index} 
                     className="bg-amber-900/40 border border-amber-700/50 rounded-lg px-3 py-2"
@@ -115,6 +117,25 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
                     </span>
                   </div>
                 ))}
+                {food.preferences.length > 2 && (
+                  <div>
+                    {!showAllPreferences ? (
+                      <button
+                        onClick={() => setShowAllPreferences(true)}
+                        className="text-amber-200 text-sm font-medium hover:underline"
+                      >
+                        +{food.preferences.length - 2} more
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowAllPreferences(false)}
+                        className="text-amber-200 text-sm font-medium hover:underline"
+                      >
+                        Show less
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-gray-400 text-sm italic">
@@ -131,7 +152,7 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
             </h4>
             {food.dietaryRestrictions && food.dietaryRestrictions.length > 0 ? (
               <div className="space-y-2">
-                {food.dietaryRestrictions.map((restriction, index) => (
+                {(showAllRestrictions ? food.dietaryRestrictions : food.dietaryRestrictions.slice(0, 2)).map((restriction, index) => (
                   <div 
                     key={index} 
                     className="bg-green-900/40 border border-green-700/50 rounded-lg px-3 py-2"
@@ -141,6 +162,25 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
                     </span>
                   </div>
                 ))}
+                {food.dietaryRestrictions.length > 2 && (
+                  <div>
+                    {!showAllRestrictions ? (
+                      <button
+                        onClick={() => setShowAllRestrictions(true)}
+                        className="text-green-300 text-sm font-medium hover:underline"
+                      >
+                        +{food.dietaryRestrictions.length - 2} more
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowAllRestrictions(false)}
+                        className="text-green-300 text-sm font-medium hover:underline"
+                      >
+                        Show less
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-gray-400 text-sm italic">

@@ -42,6 +42,8 @@ interface MealModalProps {
 export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
   const { userData } = useUser();
   const [isOwner, setIsOwner] = useState(false);
+  const [expandedPrefs, setExpandedPrefs] = useState<Record<number, boolean>>({});
+  const [expandedRestrs, setExpandedRestrs] = useState<Record<number, boolean>>({});
 
   // Check if current user is the owner of the meal
   useEffect(() => {
@@ -203,7 +205,7 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
                       <div className="flex gap-2 mt-2 flex-wrap">
                         {mealFood.food.preferences && mealFood.food.preferences.length > 0 && (
                           <div className="flex gap-1 flex-wrap">
-                            {mealFood.food.preferences.slice(0, 2).map((pref, prefIndex) => (
+                            {(expandedPrefs[index] ? mealFood.food.preferences : mealFood.food.preferences.slice(0, 2)).map((pref, prefIndex) => (
                               <span
                                 key={prefIndex}
                                 className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded"
@@ -213,11 +215,19 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
                                  pref.name || `ID: ${pref.PreferenceID}`}
                               </span>
                             ))}
+                            {mealFood.food.preferences.length > 2 && (
+                              <button
+                                onClick={() => setExpandedPrefs(prev => ({ ...prev, [index]: !prev[index] }))}
+                                className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded hover:underline"
+                              >
+                                {expandedPrefs[index] ? 'Show less' : `+${mealFood.food.preferences.length - 2} more`}
+                              </button>
+                            )}
                           </div>
                         )}
                         {mealFood.food.dietaryRestrictions && mealFood.food.dietaryRestrictions.length > 0 && (
                           <div className="flex gap-1 flex-wrap">
-                            {mealFood.food.dietaryRestrictions.slice(0, 2).map((restriction, restrictionIndex) => (
+                            {(expandedRestrs[index] ? mealFood.food.dietaryRestrictions : mealFood.food.dietaryRestrictions.slice(0, 2)).map((restriction, restrictionIndex) => (
                               <span
                                 key={restrictionIndex}
                                 className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded"
@@ -227,6 +237,14 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
                                  restriction.name || `ID: ${restriction.DietaryRestrictionID}`}
                               </span>
                             ))}
+                            {mealFood.food.dietaryRestrictions.length > 2 && (
+                              <button
+                                onClick={() => setExpandedRestrs(prev => ({ ...prev, [index]: !prev[index] }))}
+                                className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded hover:underline"
+                              >
+                                {expandedRestrs[index] ? 'Show less' : `+${mealFood.food.dietaryRestrictions.length - 2} more`}
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
