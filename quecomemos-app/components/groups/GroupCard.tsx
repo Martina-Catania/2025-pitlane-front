@@ -32,7 +32,7 @@ interface GroupCardProps {
 
 export function GroupCard({ group, showActivity = true }: GroupCardProps) {
   const router = useRouter();
-  
+
 const handleClick = () => {
     router.push(`/protected/groups/${group.GroupID}`);
 };
@@ -82,7 +82,7 @@ const handleClick = () => {
           <div className="flex items-center space-x-2">
             <Users className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              {group.members.length} miembro{group.members.length !== 1 ? 's' : ''}
+              {group.members.length} member{group.members.length !== 1 ? 's' : ''}
             </span>
           </div>
           

@@ -76,7 +76,7 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
         <CardHeader>
           <CardTitle className="flex items-center">
             <Users className="w-5 h-5 mr-2" />
-            Mis Grupos
+            My Groups
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -96,7 +96,7 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
         <CardHeader>
           <CardTitle className="flex items-center">
             <Users className="w-5 h-5 mr-2" />
-            Mis Grupos
+            My Groups
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -107,7 +107,7 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
             onClick={fetchDashboardGroups}
             className="mt-2"
           >
-            Reintentar
+            Retry
           </Button>
         </CardContent>
       </Card>
@@ -120,7 +120,7 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
             <Users className="w-5 h-5 mr-2" />
-            Mis Grupos
+            My Groups
           </CardTitle>
           <div className="flex space-x-2">
             <Button 
@@ -129,14 +129,14 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
               onClick={handleCreateGroup}
             >
               <Plus className="w-4 h-4 mr-1" />
-              Crear
+              Create
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={handleViewAllGroups}
             >
-              Ver todos
+              View all
             </Button>
           </div>
         </div>
@@ -146,13 +146,13 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
         {groups.length === 0 ? (
           <div className="text-center py-8">
             <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No tienes grupos aún</h3>
+            <h3 className="text-lg font-medium mb-2">You don&apos;t have any groups yet</h3>
             <p className="text-muted-foreground mb-4">
-              Crea tu primer grupo para comenzar a gestionar comidas en equipo
+              Create your first group to start managing meals as a team
             </p>
             <Button onClick={handleCreateGroup}>
               <Plus className="w-4 h-4 mr-2" />
-              Crear mi primer grupo
+              Create my first group
             </Button>
           </div>
         ) : (
@@ -166,7 +166,7 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
                 className="w-full mt-4"
                 onClick={handleViewAllGroups}
               >
-                Ver todos los grupos ({groups.length})
+                View all groups ({groups.length})
               </Button>
             )}
           </div>

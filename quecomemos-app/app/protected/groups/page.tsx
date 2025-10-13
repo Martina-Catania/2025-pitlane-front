@@ -39,7 +39,7 @@ export default function GroupsPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const router = useRouter();
 
-  // Obtener el userId del contexto de autenticación
+  // Get the userId from the authentication context
   const { userData } = useUser();
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function GroupsPage() {
       const response = await fetch(`${API_BASE_URL}/groups`);
       
       if (!response.ok) {
-        throw new Error('Error al cargar grupos');
+        throw new Error('Error loading groups');
       }
       
       const data = await response.json();
@@ -106,10 +106,10 @@ export default function GroupsPage() {
 
   const getFilterLabel = (type: string) => {
     switch (type) {
-      case 'all': return 'Todos';
-      case 'mine': return 'Mis grupos';
-      case 'member': return 'Soy miembro';
-      default: return 'Todos';
+      case 'all': return 'All';
+      case 'mine': return 'My groups';
+      case 'member': return 'I\'m a member';
+      default: return 'All';
     }
   };
 
@@ -117,10 +117,10 @@ export default function GroupsPage() {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Grupos</h1>
+          <h1 className="text-3xl font-bold">Groups</h1>
           <Button disabled>
             <Plus className="w-4 h-4 mr-2" />
-            Crear Grupo
+            Create Group
           </Button>
         </div>
 
@@ -150,14 +150,14 @@ export default function GroupsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Grupos</h1>
+          <h1 className="text-3xl font-bold">Groups</h1>
           <p className="text-muted-foreground">
-            Gestiona tus grupos de comidas y colabora con otros usuarios
+            Manage your food groups and collaborate with other users
           </p>
         </div>
         <Button onClick={handleCreateGroup}>
           <Plus className="w-4 h-4 mr-2" />
-          Crear Grupo
+          Create Group
         </Button>
       </div>
 
@@ -171,7 +171,7 @@ export default function GroupsPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
-                    placeholder="Buscar grupos..."
+                    placeholder="Search groups..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -201,7 +201,7 @@ export default function GroupsPage() {
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
-                  Grupos
+                  Groups
                 </div>
                 <Badge variant="secondary">
                   {filteredGroups.length}
@@ -216,26 +216,26 @@ export default function GroupsPage() {
                   {searchQuery ? (
                     <>
                       <h3 className="text-lg font-medium mb-2">
-                        No se encontraron grupos
+                        No groups found
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        No hay grupos que coincidan con tu búsqueda &quot;{searchQuery}&quot;
+                        No groups match your search &quot;{searchQuery}&quot;
                       </p>
                       <Button variant="outline" onClick={() => setSearchQuery('')}>
-                        Limpiar búsqueda
+                        Clear search
                       </Button>
                     </>
                   ) : (
                     <>
                       <h3 className="text-lg font-medium mb-2">
-                        No hay grupos disponibles
+                        No groups available
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        Sé el primero en crear un grupo para gestionar comidas en equipo
+                        Be the first to create a group to manage team meals
                       </p>
                       <Button onClick={handleCreateGroup}>
                         <Plus className="w-4 h-4 mr-2" />
-                        Crear mi primer grupo
+                        Create my first group
                       </Button>
                     </>
                   )}
@@ -257,19 +257,19 @@ export default function GroupsPage() {
             <GroupInvitations userId={currentUserId} />
           )}
           
-          {/* Estadísticas rápidas */}
+          {/* Statistics */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Estadísticas</CardTitle>
+              <CardTitle className="text-lg">Statistics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total de grupos</span>
+                  <span className="text-sm text-muted-foreground">Total groups</span>
                   <Badge variant="outline">{groups.length}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Resultados mostrados</span>
+                  <span className="text-sm text-muted-foreground">Results shown</span>
                   <Badge variant="outline">{filteredGroups.length}</Badge>
                 </div>
               </div>

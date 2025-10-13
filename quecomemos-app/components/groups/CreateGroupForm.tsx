@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Users, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface CreateGroupFormProps {
@@ -23,12 +24,13 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { showSuccess, showError } = useGlobalNotification();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      setError('El nombre del grupo es requerido');
+      setError('Group name is required');
       return;
     }
 
@@ -57,22 +59,31 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
         let errorData = null;
   try { errorData = text ? JSON.parse(text) : null; } catch { /* ignore parse errors */ }
         console.error('[DEBUG] CreateGroupForm.handleSubmit - failed', { status: response.status, statusText: response.statusText, body: text, parsed: errorData });
-        throw new Error((errorData && errorData.error) || 'Error al crear el grupo');
+        throw new Error((errorData && errorData.error) || 'Error creating group');
       }
 
       const newGroup = await response.json();
       console.debug('[DEBUG] CreateGroupForm.handleSubmit - result', { newGroup });
       
-      // Llamar callback de éxito si se proporciona
-      if (onSuccess) {
-        onSuccess(newGroup.GroupID);
-      } else {
-        // Redirigir al grupo creado
-        router.push(`protected/groups/${newGroup.GroupID}`);
-      }
+      // Show themed success notification then navigate
+      showSuccess(
+        'Group created',
+        `Group "${newGroup.name || newGroup.GroupID}" created successfully.`,
+      );
+
+      // Delay navigation slightly to allow notification to be seen
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess(newGroup.GroupID);
+        } else {
+          router.push(`protected/groups/${newGroup.GroupID}`);
+        }
+      }, 800);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(msg);
+      showError('Error creating group', msg);
     } finally {
       setLoading(false);
     }
@@ -84,7 +95,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
       [field]: value
     }));
     
-    // Limpiar error cuando el usuario empiece a escribir
+    // Clear error when the user starts typing
     if (error) {
       setError(null);
     }
@@ -105,47 +116,47 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-2xl font-bold">Crear Nuevo Grupo</h1>
+  <h1 className="text-2xl font-bold">Create New Group</h1>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Users className="w-5 h-5 mr-2" />
-            Información del Grupo
+            Group Information
           </CardTitle>
         </CardHeader>
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre del Grupo *</Label>
+              <Label htmlFor="name">Group Name *</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Ej: Familia González, Oficina Marketing, etc."
+                placeholder="e.g. Gonzalez Family, Marketing Team, etc."
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 maxLength={100}
                 required
               />
               <p className="text-sm text-muted-foreground">
-                Elige un nombre descriptivo para tu grupo
+                Choose a descriptive name for your group
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción (Opcional)</Label>
+              <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
-                placeholder="Describe el propósito del grupo, tipo de comidas que comparten, etc."
+                placeholder="Describe the group's purpose, meal types, etc."
                 value={formData.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('description', e.target.value)}
                 maxLength={500}
                 rows={4}
               />
               <p className="text-sm text-muted-foreground">
-                Ayuda a los miembros a entender el propósito del grupo
+                Help members understand the group&apos;s purpose
               </p>
             </div>
 
@@ -161,7 +172,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
                 disabled={loading || !formData.name.trim()}
                 className="flex-1"
               >
-                {loading ? 'Creando...' : 'Crear Grupo'}
+                {loading ? 'Creating...' : 'Create Group'}
               </Button>
               
               <Button
@@ -170,7 +181,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
                 onClick={handleBack}
                 disabled={loading}
               >
-                Cancelar
+                Cancel
               </Button>
             </div>
           </form>
@@ -180,23 +191,23 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <h3 className="font-medium">¿Qué sucede después?</h3>
+            <h3 className="font-medium">What happens next?</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                Serás automáticamente el administrador del grupo
+                You will automatically be the group&apos;s administrator
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                Podrás invitar a otros usuarios a unirse
+                You will be able to invite other users to join
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                Los miembros podrán registrar consumos grupales
+                Members will be able to log group consumptions
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
-                El sistema filtrará alimentos según las restricciones de todos los miembros
+                The system will filter foods based on all members&apos; restrictions
               </li>
             </ul>
           </div>

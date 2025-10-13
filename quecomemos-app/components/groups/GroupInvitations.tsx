@@ -42,7 +42,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
       if (!response.ok) {
         const text = await response.text().catch(() => null);
         console.error('[DEBUG] GroupInvitations.fetchInvitations - failed', { status: response.status, statusText: response.statusText, body: text });
-        throw new Error('Error al cargar invitaciones');
+  throw new Error('Error loading invitations');
       }
 
       const data = await response.json();
@@ -77,17 +77,17 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
       if (!res.ok) {
         const text = await res.text().catch(() => null);
         console.error('[DEBUG] GroupInvitations.handleInvitationResponse - failed', { status: res.status, statusText: res.statusText, body: text });
-        throw new Error('Error al responder la invitación');
+        throw new Error('Error responding to the invitation');
       }
 
       const result = await res.json().catch(() => null);
       console.debug('[DEBUG] GroupInvitations.handleInvitationResponse - result', result);
 
-      // Remover la invitación de la lista
-      setInvitations(prev => prev.filter(inv => inv.InvitationID !== invitationId));
+  // Remove the invitation from the list
+  setInvitations(prev => prev.filter(inv => inv.InvitationID !== invitationId));
       
-      // Mostrar mensaje de éxito (opcional - puedes agregar un toast)
-      console.log(`Invitación ${response === 'accept' ? 'aceptada' : 'rechazada'} exitosamente`);
+  // Show success message (optional - you can add a toast)
+  console.log(`Invitation ${response === 'accept' ? 'accepted' : 'rejected'} successfully`);
       
     } catch (error) {
       console.error('Error responding to invitation:', error);
@@ -111,7 +111,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Mail className="w-5 h-5 mr-2" />
-            Invitaciones Pendientes
+            Pending Invitations
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -131,13 +131,13 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Mail className="w-5 h-5 mr-2" />
-            Invitaciones Pendientes
+            Pending Invitations
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6">
             <Mail className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No tienes invitaciones pendientes</p>
+            <p className="text-muted-foreground">You have no pending invitations</p>
           </div>
         </CardContent>
       </Card>
@@ -150,7 +150,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center">
             <Mail className="w-5 h-5 mr-2" />
-            Invitaciones Pendientes
+            Pending Invitations
           </div>
           <Badge variant="secondary">
             {invitations.length}
@@ -179,7 +179,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
                   )}
                   
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <span>Invitado por {invitation.invitedBy.username}</span>
+                    <span>Invited by {invitation.invitedBy.username}</span>
                     <span className="mx-2">•</span>
                     <Clock className="w-3 h-3 mr-1" />
                     <span>{formatDate(invitation.createdAt)}</span>
@@ -201,7 +201,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
                   className="flex-1"
                 >
                   <Check className="w-4 h-4 mr-1" />
-                  Aceptar
+                  Accept
                 </Button>
                 
                 <Button
@@ -212,7 +212,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
                   className="flex-1"
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Rechazar
+                  Reject
                 </Button>
               </div>
             </div>

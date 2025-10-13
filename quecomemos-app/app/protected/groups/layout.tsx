@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Grupos | QueComemos',
-  description: 'Gestiona tus grupos de comidas y colabora con otros usuarios',
+  description: 'Manage your meal groups and collaborate with other users',
 };
 
 export default function GroupsLayout({

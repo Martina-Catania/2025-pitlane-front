@@ -47,7 +47,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
       );
       
       if (!response.ok) {
-        throw new Error('Error al buscar usuarios');
+        throw new Error('Error searching users');
       }
       
       const data = await response.json();
@@ -91,7 +91,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Buscar usuarios por nombre..."
+              placeholder="Search users by name..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-10"
@@ -101,7 +101,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
           {loading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Buscando usuarios...</span>
+              <span className="ml-2 text-muted-foreground">Searching users...</span>
             </div>
           )}
 
@@ -109,7 +109,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
             <div className="text-center py-8">
               <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                No se encontraron usuarios con &quot;{query}&quot;
+                No users found with &quot;{query}&quot;
               </p>
             </div>
           )}
@@ -118,7 +118,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
             <div className="text-center py-8">
               <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                Escribe al menos 2 caracteres para buscar usuarios
+                Type at least 2 characters to search users
               </p>
             </div>
           )}
@@ -126,7 +126,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
           {users.length > 0 && (
             <div className="space-y-3">
               <h4 className="font-medium text-sm text-muted-foreground">
-                Usuarios encontrados ({users.length})
+                Users found ({users.length})
               </h4>
               
               {users.map((user) => (
@@ -143,7 +143,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
                       <p className="font-medium">{user.username}</p>
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                          {user.role === 'admin' ? 'Admin' : 'User'}
                         </Badge>
                       </div>
                     </div>
@@ -157,12 +157,12 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
                     {inviting === user.id ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Invitando...
+                        Inviting...
                       </>
                     ) : (
                       <>
                         <UserPlus className="w-4 h-4 mr-1" />
-                        Invitar
+                        Invite
                       </>
                     )}
                   </Button>

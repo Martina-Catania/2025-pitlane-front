@@ -7,15 +7,15 @@ import { useUser } from '@/lib/contexts/UserContext';
 export default function CreateGroupPage() {
   const { userData, loading } = useUser();
 
-  // Mostrar estado mientras cargamos o si no hay usuario autenticado
+  // Show loading state or if no authenticated user
   if (loading) {
-    return <div className="container mx-auto p-6">Cargando usuario...</div>;
+    return <div className="container mx-auto p-6">Loading user...</div>;
   }
 
   if (!userData?.profile) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center text-muted-foreground">Necesitas iniciar sesión para crear un grupo.</div>
+        <div className="text-center text-muted-foreground">You need to log in to create a group.</div>
       </div>
     );
   }
