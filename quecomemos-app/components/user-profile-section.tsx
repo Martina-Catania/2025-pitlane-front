@@ -3,6 +3,7 @@
 import { useUser } from '@/lib/contexts/UserContext';
 import { AllMeals } from './all-meals';
 import { PreferencesWarning } from './custom-components/preferences-warning';
+import DashboardGroupsSection from './groups/DashboardGroupsSection';
 
 export function UserProfileSection() {
   const { userData, loading, error } = useUser();
@@ -54,8 +55,18 @@ export function UserProfileSection() {
         <PreferencesWarning className="mb-6" />
       )}
 
-      {/* Show all meals from all users for both admin and regular users */}
-      <AllMeals />
+      {/* Dashboard with groups and meals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Groups section */}
+        <div>
+          <DashboardGroupsSection userId={profile.id} />
+        </div>
+        
+        {/* Meals section */}
+        <div>
+          <AllMeals />
+        </div>
+      </div>
     </div>
   );
 }
