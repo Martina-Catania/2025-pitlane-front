@@ -63,11 +63,11 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
   }, [fetchDashboardGroups]);
 
   const handleViewAllGroups = () => {
-    router.push('/protected/groups');
+    router.push(`/protected/groups`);
   };
 
   const handleCreateGroup = () => {
-    router.push('/protected/groups/create');
+    router.push(`/protected/groups/create`);
   };
 
   if (loading) {

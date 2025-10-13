@@ -32,10 +32,10 @@ interface GroupCardProps {
 
 export function GroupCard({ group, showActivity = true }: GroupCardProps) {
   const router = useRouter();
-
-  const handleClick = () => {
-    router.push(`groups/${group.GroupID}`);
-  };
+  
+const handleClick = () => {
+    router.push(`/protected/groups/${group.GroupID}`);
+};
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {

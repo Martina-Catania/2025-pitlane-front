@@ -14,7 +14,7 @@ export function PreferencesWarning({ className }: PreferencesWarningProps) {
 
   const handleConfigurePreferences = () => {
     // Navigate to settings page where users can configure preferences
-    router.push('/protected/settings');
+    router.push(`/protected/settings`);
   };
 
   return (

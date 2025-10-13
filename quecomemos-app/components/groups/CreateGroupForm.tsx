@@ -68,7 +68,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
         onSuccess(newGroup.GroupID);
       } else {
         // Redirigir al grupo creado
-        router.push(`/groups/${newGroup.GroupID}`);
+        router.push(`protected/groups/${newGroup.GroupID}`);
       }
       
     } catch (err) {

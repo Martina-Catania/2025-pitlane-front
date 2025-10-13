@@ -16,6 +16,7 @@ import {
   User
 } from 'lucide-react';
 import UserSearch from '@/components/groups/UserSearch';
+import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface GroupMember {
@@ -49,8 +50,7 @@ interface Group {
   }>;
 }
 
-// TODO: Obtener userId del contexto de autenticación
-const DUMMY_USER_ID = 'dummy-user-id';
+// Obtener userId del contexto de autenticación
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -61,7 +61,8 @@ export default function GroupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showInviteSection, setShowInviteSection] = useState(false);
-  const [currentUserId] = useState(DUMMY_USER_ID);
+  const { userData } = useUser();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -86,7 +87,10 @@ export default function GroupDetailPage() {
 
   useEffect(() => {
     fetchGroup();
-  }, [fetchGroup]);
+    if (userData?.profile?.id) {
+      setCurrentUserId(userData.profile.id);
+    }
+  }, [fetchGroup, userData?.profile?.id]);
 
   const handleInviteUser = async (userId: string, username: string) => {
     try {
@@ -331,11 +335,11 @@ export default function GroupDetailPage() {
       </div>
 
       {/* Sección de invitar usuarios */}
-      {showInviteSection && isUserAdmin() && (
+        {showInviteSection && isUserAdmin() && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Invitar Usuarios</h2>
           <UserSearch
-            currentUserId={currentUserId}
+            currentUserId={currentUserId || ''}
             existingMemberIds={group.members.map(m => m.profile.id)}
             onInvite={handleInviteUser}
           />

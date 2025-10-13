@@ -101,7 +101,7 @@ export default function GroupsPage() {
   }, [groups, searchQuery, filterType, currentUserId]);
 
   const handleCreateGroup = () => {
-    router.push('/protected/groups/create');
+    router.push(`/protected/groups/create`);
   };
 
   const getFilterLabel = (type: string) => {

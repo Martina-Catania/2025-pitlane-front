@@ -43,7 +43,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
       const excludeParam = excludeIds.join(',');
       
       const response = await fetch(
-        `/${API_BASE_URL}/groups/search/users?query=${encodeURIComponent(searchQuery)}&excludeIds=${excludeParam}`
+        `${API_BASE_URL}/groups/search/users?query=${encodeURIComponent(searchQuery)}&excludeIds=${excludeParam}`
       );
       
       if (!response.ok) {
