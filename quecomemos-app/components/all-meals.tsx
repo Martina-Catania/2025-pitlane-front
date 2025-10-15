@@ -1,125 +1,45 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { API_BASE_URL } from '@/lib/config/api';
+import { useEffect, useState } from 'react';
 import { ChefHat } from 'lucide-react';
 import { MealModal } from './ui/meal-modal';
 import { EditMealForm } from './ui/EditMealForm';
 import { useUser } from '@/lib/contexts/UserContext';
+import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { MealCard } from './meal';
 import { RegisterMealModal } from './ui/registerMealModal';
 
-interface Meal {
-    MealID: number;
-    name: string;
-    description?: string;
-    createdAt: string;
-    updatedAt: string;
-    profileId: string;
-    profile: {
-        username?: string;
-        id: string;
-        role: string;
-    };
-    mealFoods: {
-        food: {
-            FoodID: number;
-            name: string;
-            svgLink?: string;
-            kCal: number;
-            dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
-            preferences?: { name?: string; PreferenceID?: number }[] | number[];
-        };
-        quantity: number;
-    }[];
-}
-
 export function AllMeals() {
     const { userData } = useUser();
-    const [meals, setMeals] = useState<Meal[]>([]);
-    const [recommendedMeals, setRecommendedMeals] = useState<Meal[]>([]);
-    const [loadingMeals, setLoadingMeals] = useState(true);
-    const [loadingRecommended, setLoadingRecommended] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [recommendedError, setRecommendedError] = useState<string | null>(null);
+    const {
+        meals,
+        allMeals,
+        recommendedMeals,
+        loadingMeals,
+        loadingRecommended,
+        error,
+        recommendedError,
+        fetchAllMeals,
+        fetchRecommendedMeals,
+        refetchMeals
+    } = useMeals();
+    
     const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
     const [isMealModalOpen, setIsMealModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
 
     const profile = userData?.profile;
     const userPreferences = userData?.preferences;
 
-    const fetchRecommendedMeals = useCallback(async () => {
-        if (userPreferences && userPreferences.hasPreferences && profile?.id) {
-            try {
-                setLoadingRecommended(true);
-                setRecommendedError(null);
-
-                const response = await fetch(`${API_BASE_URL}/meals/recommended/${profile.id}`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (response.ok) {
-                    const mealsData = await response.json();
-                    setRecommendedMeals(Array.isArray(mealsData) ? mealsData : []);
-                } else {
-                    const errorData = await response.json().catch(() => ({}));
-                    const errorMessage = errorData.error || `Server error (${response.status})`;
-                    setRecommendedError(`Failed to load recommended meals: ${errorMessage}`);
-                }
-            } catch (error) {
-                console.error('Error fetching recommended meals:', error);
-                setRecommendedError('Failed to load recommended meals');
-                setRecommendedMeals([]);
-            } finally {
-                setLoadingRecommended(false);
-            }
-        } else {
-            setLoadingRecommended(false);
-        }
-    }, [userPreferences, profile]);
-
     useEffect(() => {
-        const fetchAllMeals = async () => {
-            try {
-                setLoadingMeals(true);
-                setError(null);
-
-                // Fetch all meals from all users
-                const response = await fetch(`${API_BASE_URL}/meals/all`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (response.ok) {
-                    const mealsData = await response.json();
-                    // Filter out current user's meals to show only community meals
-                    const communityMeals = profile ? 
-                        mealsData.filter((meal: Meal) => meal.profileId !== profile.id) : 
-                        mealsData;
-                    setMeals(communityMeals);
-                } else if (response.status === 404) {
-                    // No meals found
-                    setMeals([]);
-                } else {
-                    throw new Error(`Error fetching meals: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('Error fetching all meals:', error);
-                setError(error instanceof Error ? error.message : 'An unknown error occurred');
-            } finally {
-                setLoadingMeals(false);
-            }
-        };
-
         if (profile) {
-            fetchAllMeals();
-            fetchRecommendedMeals();
+            fetchAllMeals(profile.id);
+            if (userPreferences && userPreferences.hasPreferences) {
+                fetchRecommendedMeals(profile.id);
+            }
         }
-    }, [profile, fetchRecommendedMeals]);
+    }, [profile, userPreferences, fetchAllMeals, fetchRecommendedMeals]);
 
     const handleMealClick = (meal: Meal) => {
         setSelectedMeal(meal);
@@ -144,33 +64,11 @@ export function AllMeals() {
 
     const handleEditSuccess = async () => {
         // Refetch meals after successful edit
-        try {
-            setLoadingMeals(true);
-            setError(null);
-
-            const response = await fetch(`${API_BASE_URL}/meals/all`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (response.ok) {
-                const mealsData = await response.json();
-                setMeals(mealsData);
-            }
-        } catch (error) {
-            console.error('Error refetching meals:', error);
-        } finally {
-            setLoadingMeals(false);
+        if (profile) {
+            await refetchMeals(profile.id);
         }
-        
-        // Also refresh recommended meals
-        await fetchRecommendedMeals();
         closeEditModal();
     };
-
-    const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
 
     const openRegisterMealModal = () => {
         setIsRegisterMealModalOpen(true);
@@ -316,7 +214,7 @@ export function AllMeals() {
                 isOpen={isRegisterMealModalOpen}
                 onClose={closeRegisterMealModal}
                 onSubmit={handleRegisterMeal}
-                meals={meals}
+                meals={allMeals}
             />
 
             {/* Edit Meal Modal */}

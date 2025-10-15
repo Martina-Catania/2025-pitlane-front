@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { FoodsProvider } from "@/lib/contexts/FoodsContext";
+import { MealsProvider } from "@/lib/contexts/MealsContext";
 import { UserProvider } from "@/lib/contexts/UserContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 
@@ -33,16 +34,18 @@ export default function RootLayout({
       <body className={`${geistSans.className} antialiased`}>
         <UserProvider>
           <FoodsProvider>
-            <NotificationProvider>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                {children}
-              </ThemeProvider>
-            </NotificationProvider>
+            <MealsProvider>
+              <NotificationProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="system"
+                  enableSystem
+                  disableTransitionOnChange
+                >
+                  {children}
+                </ThemeProvider>
+              </NotificationProvider>
+            </MealsProvider>
           </FoodsProvider>
         </UserProvider>
       </body>

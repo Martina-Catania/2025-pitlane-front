@@ -1,8 +1,8 @@
 'use client';
 
 import { useUser } from '@/lib/contexts/UserContext';
-import { useEffect, useState, useCallback } from 'react';
-import { API_BASE_URL } from '@/lib/config/api';
+import { useMeals, Meal } from '@/lib/contexts/MealsContext';
+import { useEffect, useState } from 'react';
 import { ChefHat } from 'lucide-react';
 import AddMealForm from "@/components/meal";
 import { MealModal } from './ui/meal-modal';
@@ -13,38 +13,16 @@ interface UserMealsProps {
   onfoodAdded?: () => void;
 }
 
-interface Meal {
-  MealID: number;
-  name: string;
-  description?: string;
-  preparationTime?: number;
-  servings?: number;
-  createdAt: string;
-  updatedAt: string;
-  profileId: string;
-  profile: {
-    username?: string;
-    id: string;
-    role: string;
-  };
-  mealFoods: {
-    food: {
-      FoodID: number;
-      name: string;
-      svgLink?: string;
-      kCal: number;
-      dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
-      preferences?: { name?: string; PreferenceID?: number }[] | number[];
-    };
-    quantity: number;
-  }[];
-}
-
 export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
   const { userData } = useUser();
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [loadingMeals, setLoadingMeals] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    userMeals, 
+    loadingUserMeals, 
+    userMealsError, 
+    fetchUserMeals, 
+    refetchUserMeals 
+  } = useMeals();
+  
   const [openCreator, setOpenCreator] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
@@ -52,41 +30,11 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
 
   const profile = userData?.profile;
 
-  const fetchUserMeals = useCallback(async () => {
-    if (profile?.id) {
-      try {
-        setLoadingMeals(true);
-        setError(null);
-
-        const response = await fetch(`${API_BASE_URL}/meals/user?profileId=${profile.id}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (response.ok) {
-          const mealsData = await response.json();
-          setMeals(Array.isArray(mealsData) ? mealsData : []);
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData.error || `Server error (${response.status})`;
-          setError(`Failed to load meals: ${errorMessage}`);
-          return;
-        }
-      } catch (error) {
-        console.error('Error fetching user meals:', error);
-        setError('Failed to load meals');
-        setMeals([]);
-      } finally {
-        setLoadingMeals(false);
-      }
-    } else {
-      setLoadingMeals(false);
-    }
-  }, [profile?.id]);
-
   useEffect(() => {
-    fetchUserMeals();
-  }, [fetchUserMeals]);
+    if (profile?.id) {
+      fetchUserMeals(profile.id);
+    }
+  }, [profile?.id, fetchUserMeals]);
 
   const handleMealClick = (meal: Meal) => {
     setSelectedMeal(meal);
@@ -110,15 +58,17 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
   };
 
   const handleEditSuccess = async () => {
-    await fetchUserMeals();
+    if (profile?.id) {
+      await refetchUserMeals(profile.id);
+    }
     closeEditModal();
     onfoodAdded?.();
   };
 
-  if (loadingMeals) {
+  if (loadingUserMeals) {
     return (
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-amber-2  00">Your Meals</h2>
+        <h2 className="text-xl font-semibold text-amber-200">Your Meals</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-32 bg-amber-700/30 rounded-lg animate-pulse"></div>
@@ -128,7 +78,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
     );
   }
 
-  if (error) {
+  if (userMealsError) {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-amber-200">Your Meals</h2>
@@ -138,7 +88,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             <p className="text-lg font-medium">Unable to load meals</p>
-            <p className="text-sm text-red-300 mt-1">{error}</p>
+            <p className="text-sm text-red-300 mt-1">{userMealsError}</p>
           </div>
         </div>
       </div>
@@ -150,7 +100,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-amber-200">Your Meals</h2>
         <span className="text-sm text-gray-400">
-          {meals.length} meal{meals.length !== 1 ? 's' : ''}
+          {userMeals.length} meal{userMeals.length !== 1 ? 's' : ''}
         </span>
       </div>
 
@@ -193,7 +143,9 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
             <div className="p-4 max-h-[80vh] overflow-y-auto">
               <AddMealForm
                 onFoodAdded={async () => {
-                  await fetchUserMeals();
+                  if (profile?.id) {
+                    await refetchUserMeals(profile.id);
+                  }
                   setOpenCreator(false);
                   onfoodAdded?.();
                 }}
@@ -204,7 +156,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
         </div>
       )}
 
-      {meals.length === 0 ? (
+      {userMeals.length === 0 ? (
         <div className="text-center py-12 bg-amber-900/20 rounded-lg border-2 border-dashed border-amber-700/50">
           <ChefHat className="mx-auto h-12 w-12 text-amber-600 mb-4" />
           <h3 className="text-lg font-medium text-amber-200 mb-2">No meals created yet</h3>
@@ -214,7 +166,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {meals.map((meal) => (
+          {userMeals.map((meal) => (
             <MealCard
               key={meal.MealID}
               meal={meal}
