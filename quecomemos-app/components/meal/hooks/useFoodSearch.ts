@@ -26,9 +26,14 @@ export function useFoodSearch({ apiBase, open, initialFoods }: UseFoodSearchPara
     (async () => {
       try {
         const res = await fetch(`${apiBase}/foods`);
-        const data: ExistingFood[] = await res.json();
+        const data: (ExistingFood & { FoodID?: number })[] = await res.json();
         if (!cancel) {
-          setAllFoods(Array.isArray(data) ? data : []);
+          // Map FoodID to id for consistency
+          const mappedData = Array.isArray(data) ? data.map(food => ({
+            ...food,
+            id: food.FoodID || food.id
+          })) : [];
+          setAllFoods(mappedData);
           setIsLoadingFoods(false);
         }
       } catch {

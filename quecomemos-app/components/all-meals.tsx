@@ -7,6 +7,7 @@ import { MealModal } from './ui/meal-modal';
 import { EditMealForm } from './ui/EditMealForm';
 import { useUser } from '@/lib/contexts/UserContext';
 import { MealCard } from './meal';
+import { RegisterMealModal } from './ui/registerMealModal';
 
 interface Meal {
     MealID: number;
@@ -169,6 +170,22 @@ export function AllMeals() {
         closeEditModal();
     };
 
+    const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+
+    const openRegisterMealModal = () => {
+        setIsRegisterMealModalOpen(true);
+    };
+
+    const closeRegisterMealModal = () => {
+        setIsRegisterMealModalOpen(false);
+    };
+
+    const handleRegisterMeal = (mealData: { mealId: number; date: string }) => {
+        console.log('Meal registered:', mealData);
+        // Aquí puedes enviar los datos al backend o realizar otras acciones
+        closeRegisterMealModal();
+    };
+
     if (loadingMeals) {
         return (
             <div className="space-y-4">
@@ -207,6 +224,15 @@ export function AllMeals() {
                         <span className="text-sm text-gray-400">
                             Based on your preferences
                         </span>
+                    </div>
+
+                    <div className="mb-4">
+                        <button
+                            onClick={openRegisterMealModal}
+                            className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-200"
+                        >
+                            Do you want to register a meal you ate?
+                        </button>
                     </div>
 
                     {loadingRecommended ? (
@@ -283,6 +309,14 @@ export function AllMeals() {
                 isOpen={isMealModalOpen}
                 onClose={closeMealModal}
                 onEdit={handleEditMeal}
+            />
+            
+            {/* Register Meal Modal */}
+            <RegisterMealModal
+                isOpen={isRegisterMealModalOpen}
+                onClose={closeRegisterMealModal}
+                onSubmit={handleRegisterMeal}
+                meals={meals}
             />
 
             {/* Edit Meal Modal */}

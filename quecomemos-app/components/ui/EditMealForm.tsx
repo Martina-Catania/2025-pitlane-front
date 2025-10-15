@@ -111,16 +111,8 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showFoodChoiceModal, setShowFoodChoiceModal] = useState(false);
   const [showFoodModal, setShowFoodModal] = useState(false);
-  const [foodModalAction, setFoodModalAction] = useState<'create' | 'search'>('search');
-  
-  // FoodModal state
-  const [createPreferences, setCreatePreferences] = useState<number[]>([]);
-  const [createRestrictions, setCreateRestrictions] = useState<number[]>([]);
-  const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
-  const [createIcon, setCreateIcon] = useState("");
-  const [modalQuantity, setModalQuantity] = useState<number | "">(1);
-  const [modalKcalPerUnit, setModalKcalPerUnit] = useState<number | "">(1);
-  const [modalName, setModalName] = useState("");
+  const [foodModalAction, setFoodModalAction] = useState<'search' | 'create' | 'edit'>('search');
+  const [initialFoodName, setInitialFoodName] = useState<string>("");
 
   const handleEditMeal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -366,13 +358,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     setShowFoodChoiceModal(false);
     setFoodModalAction('create');
     // Reset modal state for creating new food
-    setModalName("");
-    setModalQuantity(1);
-    setModalKcalPerUnit(1);
-    setCreateIcon("");
-    setCreatePreferences([]);
-    setCreateRestrictions([]);
-    setCreateHasRestrictions(null);
+    setInitialFoodName(""); // Clear any previous initial name
     setShowFoodModal(true);
   };
 
@@ -380,27 +366,16 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     setShowFoodChoiceModal(false);
     setFoodModalAction('search');
     // Reset modal state for searching existing food
-    setModalName("");
-    setModalQuantity(1);
-    setModalKcalPerUnit(1);
-    setCreateIcon("");
-    setCreatePreferences([]);
-    setCreateRestrictions([]);
-    setCreateHasRestrictions(null);
+    setInitialFoodName(""); // Clear any previous initial name
     setShowFoodModal(true);
   };
 
   const handleSwitchToCreateInEdit = (initialName?: string) => {
-    // Switch from search mode to create mode, preserving the search term as the initial name
+    // Switch from search mode to create mode
     setFoodModalAction('create');
-    // Apply provided initial name if present
-    if (typeof initialName === 'string') setModalName(initialName);
-    // Reset other create fields but keep the name
-    setCreateIcon("");
-    setCreatePreferences([]);
-    setCreateRestrictions([]);
-    setCreateHasRestrictions(null);
-    // Modal stays open, just switches mode
+    // Store the initial name to pass to the modal
+    setInitialFoodName(initialName || "");
+    // Modal stays open, just switches mode - the modal will handle the state internally
   };
 
   return (
@@ -442,7 +417,10 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleSearchExistingFood}
+              onClick={() => {
+                // Open the search modal directly, not the choice modal
+                handleSearchExistingFood();
+              }}
               className="border-amber-700/50 text-amber-200 hover:bg-amber-800/20"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -576,40 +554,14 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
         onClose={() => {
           setShowFoodModal(false);
           // Reset modal state
-          setModalName("");
-          setModalQuantity(1);
-          setModalKcalPerUnit(1);
-          setCreateIcon("");
-          setCreatePreferences([]);
-          setCreateRestrictions([]);
-          setCreateHasRestrictions(null);
+          setInitialFoodName("");
         }}
+        mode={foodModalAction}
+        initialName={initialFoodName}
         onConfirm={async (foodItem) => {
-          // Enrich the food item with preferences and restrictions from form state
-          const enrichedFoodItem = {
-            ...foodItem,
-            preferences: createPreferences,
-            dietaryRestrictions: createRestrictions,
-            hasNoRestrictions: createRestrictions && createRestrictions.length > 0 ? false : (createHasRestrictions === true ? true : createHasRestrictions)
-          };
-          await addMealFood(enrichedFoodItem);
+          await addMealFood(foodItem);
           setShowFoodModal(false);
         }}
-        actionType={foodModalAction}
-        createPreferences={createPreferences}
-        setCreatePreferences={setCreatePreferences}
-        createRestrictions={createRestrictions}
-        setCreateRestrictions={setCreateRestrictions}
-        createHasRestrictions={createHasRestrictions}
-        setCreateHasRestrictions={setCreateHasRestrictions}
-        createIcon={createIcon}
-        setCreateIcon={setCreateIcon}
-        quantity={modalQuantity}
-        setQuantity={setModalQuantity}
-        kcalPerUnit={modalKcalPerUnit}
-        setKcalPerUnit={setModalKcalPerUnit}
-        name={modalName}
-        setName={setModalName}
         onSwitchToCreate={foodModalAction === 'search' ? handleSwitchToCreateInEdit : undefined}
       />
     </div>

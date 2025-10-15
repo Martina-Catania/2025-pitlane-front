@@ -150,7 +150,7 @@ export function PreferenceFilteredFoodsPage({ preferenceId }: PreferenceFiltered
     };
 
     const handleBackToFoods = () => {
-        router.push('/protected/foods');
+        router.push(`/protected/foods`);
     };
 
     if (userLoading || loadingFoods) {

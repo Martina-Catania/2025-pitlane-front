@@ -22,6 +22,12 @@ export type ExistingFood = {
   restrictions?: Array<{ id: number; name?: string }> | number[];
 };
 
+export type Meal = {
+  MealID: number;
+  name: string;
+  description?: string;
+};
+
 export interface AddMealFormProps {
-  onFoodAdded?: () => void;
+  onFoodAdded?: (meal: Meal) => void;
 }

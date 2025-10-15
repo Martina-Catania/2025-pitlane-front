@@ -45,135 +45,70 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
   // Modal states
   const [openModal, setOpenModal] = useState(false);
   const [openChoiceModal, setOpenChoiceModal] = useState(false);
-  const [foodActionType, setFoodActionType] = useState<'create' | 'search'>('create');
+  const [modalMode, setModalMode] = useState<'search' | 'create' | 'edit'>('search');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-
-  // Food form states
-  const [modalName, setModalName] = useState("");
-  const [modalQuantity, setModalQuantity] = useState<number | "">("");
-  const [modalKcalPerUnit, setModalKcalPerUnit] = useState<number | "">("");
-  const [createPreferences, setCreatePreferences] = useState<number[]>([]);
-  const {
-    restrictions: createRestrictions,
-    setRestrictions: setCreateRestrictions,
-    hasRestrictions: createHasRestrictions,
-    setHasRestrictions: setCreateHasRestrictions
-  } = useDietaryRestrictions();
-  const [createIcon, setCreateIcon] = useState<string>("");
+  const [initialFoodName, setInitialFoodName] = useState<string>("");
 
   const suggestedMealName = useMealNameSuggestion(foods);
 
   const openAddFoodModal = (index: number | null = null) => {
     setEditingIndex(index);
+  
     if (index !== null) {
-      // When editing, go directly to the food modal
+      // Editing existing food - determine if it's a temporary food or an existing one
       const item = foods[index];
-      setModalName(item.name);
-      setModalQuantity(item.quantity);
-      
-      // Use stored kcalPerUnit if available, otherwise default to 1 for editing
-      const kcalPerUnit = item.kcalPerUnit || 1;
-      setModalKcalPerUnit(kcalPerUnit);
-      
-      // Preserve the icon
-      setCreateIcon(item.svgLink || "");
-      
-      // For existing foods (those with an ID), preserve their current restrictions
-      // and set hasNoRestrictions based on whether they have the "For All" restriction (ID 0)
       if (item.id) {
-        // Existing food - preserve current state and check restrictions
-        setCreatePreferences(item.preferences || []);
-        setCreateRestrictions(item.dietaryRestrictions || []);
-        
-        // Check if food has "For All" restriction (ID 0) or no restrictions
-        const hasForAllRestriction = item.dietaryRestrictions?.includes(0);
-        const hasOtherRestrictions = item.dietaryRestrictions?.some((r: number) => r !== 0);
-        
-        if (hasForAllRestriction && !hasOtherRestrictions) {
-          // Food is "For All" 
-          setCreateHasRestrictions(true);
-        } else if (hasOtherRestrictions) {
-          // Food has specific restrictions
-          setCreateHasRestrictions(false);
-        } else {
-          // Food has no restrictions defined
-          setCreateHasRestrictions(null);
-        }
+        // Existing food with ID - only allow quantity editing
+        setModalMode('edit');
       } else {
-        // New food (temporary) - preserve existing state
-        setCreatePreferences(item.preferences || []);
-        setCreateRestrictions(item.dietaryRestrictions || []);
-        setCreateHasRestrictions(item.hasNoRestrictions ?? null);
+        // Temporary food without ID - allow full editing in create mode
+        setModalMode('create');
       }
-      
       setOpenModal(true);
     } else {
-      // When adding new, directly open search existing food modal
-      handleSearchExisting();
+      // Adding new food - open search modal directly
+      setModalMode('search');
+      setOpenModal(true);
     }
   };
 
   const closeChoiceModal = () => setOpenChoiceModal(false);
   
   const handleCreateNew = () => {
-    setFoodActionType('create');
-    setModalName(""); 
-    setModalQuantity(1); 
-    setModalKcalPerUnit(1);
-    setCreateIcon("");
-    setCreatePreferences([]);
-    setCreateRestrictions([]);
-    setCreateHasRestrictions(null);
+    setModalMode('create');
     setOpenChoiceModal(false);
     setOpenModal(true);
   };
 
   const handleSearchExisting = () => {
-    setFoodActionType('search');
-    setModalName(""); 
-    setModalQuantity(1); 
-    setModalKcalPerUnit(1);
-    setCreateIcon("");
-    setCreatePreferences([]);
-    setCreateRestrictions([]);
-    setCreateHasRestrictions(null);
+    setModalMode('search');
     setOpenChoiceModal(false);
     setOpenModal(true);
   };
   
-  const closeModal = () => setOpenModal(false);
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingIndex(null);
+    setInitialFoodName(""); // Clear initial name when closing
+  };
 
   const handleSwitchToCreate = (initialName?: string) => {
-    // Switch from search mode to create mode, preserving the search term as the initial name
-    setFoodActionType('create');
-    // Apply the provided initial name (from search input) if present
-    if (typeof initialName === 'string') setModalName(initialName);
-    // Reset other create fields but keep the name
-    setCreateIcon("");
-    setCreatePreferences([]);
-    setCreateRestrictions([]);
-    setCreateHasRestrictions(null);
-    // Modal stays open, just switches mode
+    // Switch from search mode to create mode
+    setModalMode('create');
+    // Store the initial name to pass to the modal
+    setInitialFoodName(initialName || "");
+    // Modal stays open, just switches mode - the modal will handle initialName internally
   };
 
   const handleConfirmFood = (payload: FoodItem) => {
-    // Add preferences and restrictions from form state to the food item
-    const processed = processDietaryRestrictions(createHasRestrictions, createRestrictions);
-    const enrichedPayload = {
-      ...payload,
-      preferences: createPreferences,
-      dietaryRestrictions: processed.dietaryRestrictions,
-      hasNoRestrictions: processed.hasNoRestrictions
-    };
-
     if (editingIndex !== null) {
       // Editing existing food
-      updateFood(editingIndex, enrichedPayload);
+      updateFood(editingIndex, payload);
       return;
     }
     
     // Adding new food
-    addFood(enrichedPayload);
+    addFood(payload);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -284,7 +219,7 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         "Meal Created Successfully!",
         `"${mealName}" has been saved with ${foods.length} food${foods.length !== 1 ? 's' : ''}.`
       );
-      if (onFoodAdded) onFoodAdded();
+      if (onFoodAdded) onFoodAdded({ MealID: mealResponse.ok ? (await mealResponse.json()).MealID : 0, name: mealName, description });
       if (onClose) onClose();
 
       // Reset form
@@ -400,24 +335,11 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
         apiBase={API_BASE_URL}
         open={openModal}
         onClose={closeModal}
+        mode={modalMode}
+        initialName={initialFoodName}
         editingItem={editingIndex !== null ? foods[editingIndex] : null}
         onConfirm={handleConfirmFood}
-        createPreferences={createPreferences}
-        setCreatePreferences={setCreatePreferences}
-        createRestrictions={createRestrictions}
-        setCreateRestrictions={setCreateRestrictions}
-        createHasRestrictions={createHasRestrictions}
-        setCreateHasRestrictions={setCreateHasRestrictions}
-        createIcon={createIcon}
-        setCreateIcon={setCreateIcon}
-        quantity={modalQuantity}
-        setQuantity={setModalQuantity}
-        kcalPerUnit={modalKcalPerUnit}
-        setKcalPerUnit={setModalKcalPerUnit}
-        name={modalName}
-        setName={setModalName}
-        actionType={foodActionType}
-        onSwitchToCreate={foodActionType === 'search' ? handleSwitchToCreate : undefined}
+        onSwitchToCreate={modalMode === 'search' ? handleSwitchToCreate : undefined}
       />
     </Card>
   );
