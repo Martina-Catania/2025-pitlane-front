@@ -45,14 +45,14 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
       if (!response.ok) {
         const text = await response.text().catch(() => null);
         console.error('[DEBUG] DashboardGroupsSection - fetch failed', { status: response.status, statusText: response.statusText, body: text });
-        throw new Error('Error al cargar grupos');
+        throw new Error('Error loading groups');
       }
       
       const data = await response.json();
       console.log('[DEBUG] DashboardGroupsSection - received groups', { count: Array.isArray(data) ? data.length : undefined, data });
       setGroups(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

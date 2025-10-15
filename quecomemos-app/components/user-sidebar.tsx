@@ -169,9 +169,9 @@ export function UserSidebar() {
           >
             <Users className="w-5 h-5 text-amber-300" />
             <div>
-              <div className="font-medium text-sm text-card-foreground">Grupos</div>
+              <div className="font-medium text-sm text-card-foreground">Groups</div>
               <div className="text-xs text-muted-foreground">
-                Gestiona tus grupos de comidas
+                Manage your meal groups
               </div>
             </div>
           </Link>

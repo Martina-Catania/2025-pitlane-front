@@ -136,7 +136,7 @@ export default function GroupInfoPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al actualizar el grupo');
+        throw new Error(errorData.error || 'Error updating group');
       }
 
       await fetchGroup(); // Refresh group data

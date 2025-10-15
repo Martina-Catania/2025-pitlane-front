@@ -2,7 +2,7 @@ import React from 'react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Grupos | QueComemos',
+  title: 'Groups | QueComemos',
   description: 'Manage your meal groups and collaborate with other users',
 };
 
