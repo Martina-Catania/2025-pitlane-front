@@ -166,7 +166,7 @@ export default function GroupInfoPage() {
         const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members/${memberId}`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requesterId: currentUserId })
+          body: JSON.stringify({ invitedById: currentUserId })
         });
 
         if (!response.ok) {
@@ -249,15 +249,18 @@ export default function GroupInfoPage() {
   // Invite section state & handler
   const [showInviteSection, setShowInviteSection] = useState(false);
 
-  const handleInviteUser = async (userId: string, username: string) => {
-    if (!currentUserId) return;
-
+    const handleInviteUser = async (userId: string, username: string) => {
     try {
-      console.debug('Inviting user', { groupId, userId, invitedBy: currentUserId });
-      const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invitations`, {
+      const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invite`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invitedId: userId, requesterId: currentUserId }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invitedUserId: userId,
+          invitedById: currentUserId,
+          message: `You've been invited to join "${group?.name}"`
+        }),
       });
 
       if (!response.ok) {
@@ -265,13 +268,16 @@ export default function GroupInfoPage() {
         throw new Error(errorData.error || 'Error sending invitation');
       }
 
-      showSuccess('Invitation sent', `Invitation sent to ${username}`);
-      await fetchGroup();
-    } catch (err) {
-      console.error('Error inviting user:', err);
-      showError('Error inviting user', err instanceof Error ? err.message : 'Error inviting user');
+      // Show success message
+      alert(`Invitation sent to ${username} successfully`);
+
+    } catch (error) {
+      console.error('Error inviting user:', error);
+      alert(error instanceof Error ? error.message : 'Error sending invitation');
+      throw error; // Re-throw para que UserSearch pueda manejarlo
     }
   };
+
 
   // Dashboard & history state
   interface GroupStats {
