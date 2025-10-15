@@ -8,9 +8,11 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { MealCard } from './meal';
 import { RegisterMealModal } from './ui/registerMealModal';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 
 export function AllMeals() {
     const { userData } = useUser();
+    const { showSuccess, showError } = useGlobalNotification();
     const {
         meals,
         allMeals,
@@ -21,7 +23,8 @@ export function AllMeals() {
         recommendedError,
         fetchAllMeals,
         fetchRecommendedMeals,
-        refetchMeals
+        refetchMeals,
+        getMealById
     } = useMeals();
     
     const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
@@ -78,10 +81,57 @@ export function AllMeals() {
         setIsRegisterMealModalOpen(false);
     };
 
-    const handleRegisterMeal = (mealData: { mealId: number; date: string }) => {
-        console.log('Meal registered:', mealData);
-        // Aquí puedes enviar los datos al backend o realizar otras acciones
-        closeRegisterMealModal();
+    const handleRegisterMeal = async (mealData: { mealId: number; date: string }) => {
+        try {
+            if (!profile) {
+                showError('Authentication Required', 'Please make sure you are logged in to register a meal.');
+                return;
+            }
+
+            // Get the meal information from context
+            const meal = getMealById(mealData.mealId);
+            const mealName = meal?.name || `Meal #${mealData.mealId}`;
+
+            const consumptionData = {
+                name: mealName,
+                description: `Registered meal consumed on ${mealData.date}`,
+                meals: [{
+                    mealId: mealData.mealId,
+                    quantity: 1
+                }],
+                profileId: profile.id,
+                consumedAt: mealData.date
+            };
+
+            const response = await fetch('http://localhost:3005/consumptions/individual', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(consumptionData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to register meal consumption');
+            }
+
+            const consumption = await response.json();
+            console.log('Meal consumption registered successfully:', consumption);
+            
+            showSuccess(
+                'Meal Registered Successfully!', 
+                `"${mealName}" has been recorded for ${mealData.date}.`
+            );
+            
+            closeRegisterMealModal();
+        } catch (error) {
+            console.error('Error registering meal consumption:', error);
+            showError(
+                'Registration Failed',
+                error instanceof Error ? error.message : 'An unexpected error occurred while registering your meal. Please try again.'
+            );
+        }
     };
 
     if (loadingMeals) {
