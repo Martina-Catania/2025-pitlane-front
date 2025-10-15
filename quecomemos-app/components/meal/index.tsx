@@ -7,7 +7,6 @@ export { default as MealCard } from "./MealCard";
 export { default as FoodsList } from "./FoodsList";
 export { default as MealExtras } from "./MealExtras";
 export { default as FoodModal } from "./FoodModal";
-export { default as FoodChoiceModal } from "./FoodChoiceModal";
 export { CustomCheckbox } from "./CustomCheckbox";
 
 // Common reusable components

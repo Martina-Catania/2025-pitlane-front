@@ -14,7 +14,6 @@ import { useFormSubmission, useDietaryRestrictions } from "./hooks/useFormHelper
 import FoodsList from "./FoodsList";
 import MealExtras from "./MealExtras";
 import FoodModal from "./FoodModal";
-import FoodChoiceModal from "./FoodChoiceModal";
 
 type Props = AddMealFormProps & { onClose?: () => void };
 
@@ -320,15 +319,6 @@ export default function AddMealForm({ onFoodAdded, onClose }: Props) {
           {isSubmitting ? "Saving..." : "Save Meal"}
         </button>
       </form>
-
-      {/* Choice Modal */}
-      <FoodChoiceModal
-        open={openChoiceModal}
-        onClose={closeChoiceModal}
-        onCreateNew={handleCreateNew}
-        onSearchExisting={handleSearchExisting}
-        title="Add Food to Meal"
-      />
 
       {/* Food Modal */}
       <FoodModal

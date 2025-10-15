@@ -11,7 +11,6 @@ import { SquarePen, Trash2, Plus, Utensils } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
 import { useFoods } from "@/lib/contexts/FoodsContext";
 import { useUser } from "@/lib/contexts/UserContext";
-import FoodChoiceModal from "../meal/FoodChoiceModal";
 import FoodModal from "../meal/FoodModal";
 
 interface MealFood {
@@ -536,15 +535,6 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
         isLoading={confirmation.isLoading}
         onConfirm={handleConfirm}
         onClose={closeConfirmation}
-      />
-
-      {/* Food Choice Modal */}
-      <FoodChoiceModal
-        open={showFoodChoiceModal}
-        onClose={() => setShowFoodChoiceModal(false)}
-        onCreateNew={handleCreateNewFood}
-        onSearchExisting={handleSearchExistingFood}
-        title="Add Food to Meal"
       />
 
       {/* Food Modal */}
