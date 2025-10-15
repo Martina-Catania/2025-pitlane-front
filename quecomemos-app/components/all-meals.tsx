@@ -214,7 +214,6 @@ export function AllMeals() {
                 isOpen={isRegisterMealModalOpen}
                 onClose={closeRegisterMealModal}
                 onSubmit={handleRegisterMeal}
-                meals={allMeals}
             />
 
             {/* Edit Meal Modal */}

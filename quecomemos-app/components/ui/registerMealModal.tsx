@@ -3,17 +3,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { X, Plus } from 'lucide-react';
 import AddMealForm from '@/components/meal/AddMealForm';
-import type { Meal } from '@/components/meal/types';
+import { useMeals, Meal } from '@/lib/contexts/MealsContext';
+import { useUser } from '@/lib/contexts/UserContext';
 
 interface RegisterMealModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (mealData: { mealId: number; date: string }) => void;
-  meals: Meal[];
-  onMealAdded?: (newMeal: Meal) => void; // Callback para cuando se agrega una nueva comida
 }
 
-export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdded }: RegisterMealModalProps) {
+export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealModalProps) {
+  const { userData } = useUser();
+  const { allMeals, refetchMeals } = useMeals();
+  
   // Form state
   const [selectedMealId, setSelectedMealId] = useState<string>('');
   const [mealDate, setMealDate] = useState('');
@@ -22,6 +24,8 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
   
   // Create new meal state
   const [showCreateMeal, setShowCreateMeal] = useState(false);
+
+  const profile = userData?.profile;
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -61,21 +65,17 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
   };
 
   // Handle when a new meal is successfully created
-  const handleMealAdded = (newMeal: Meal | { id: number; name: string; description?: string }) => {
-    // Support both MealID and id
-    const mealForList: Meal = {
-      MealID: 'MealID' in newMeal ? newMeal.MealID : newMeal.id,
-      name: newMeal.name,
-      description: newMeal.description
-    };
-
-    // Notificar al componente padre que se agregó una nueva comida
-    if (onMealAdded) {
-      onMealAdded(mealForList);
+  const handleMealAdded = async (newMeal: any) => {
+    // Refresh meals from context to get the newly created meal
+    if (profile?.id) {
+      await refetchMeals(profile.id);
     }
-
-    // Seleccionar automáticamente la nueva comida
-    setSelectedMealId(mealForList.MealID.toString());
+    
+    // Seleccionar automáticamente la nueva comida si tiene ID
+    if (newMeal && (newMeal.MealID || newMeal.id)) {
+      const mealId = newMeal.MealID || newMeal.id;
+      setSelectedMealId(mealId.toString());
+    }
     
     // Volver al formulario principal
     setShowCreateMeal(false);
@@ -164,7 +164,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
                   <option value="" disabled>
                     Select a meal from the community
                   </option>
-                  {meals.map((meal) => (
+                  {allMeals.map((meal) => (
                     <option key={meal.MealID} value={meal.MealID}>
                       {meal.name}
                       {meal.description && ` - ${meal.description.substring(0, 50)}${meal.description.length > 50 ? '...' : ''}`}
@@ -173,7 +173,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
                 </select>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500">
-                    Choose from {meals.length} available community meals
+                    Choose from {allMeals.length} available community meals
                   </p>
                   <button
                     type="button"
@@ -240,7 +240,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, meals, onMealAdde
               </div>
               
               <AddMealForm 
-                onFoodAdded={(m: Meal) => handleMealAdded(m)}
+                onFoodAdded={(m: any) => handleMealAdded(m)}
                 onClose={handleCloseAddMealForm}
               />
             </div>
