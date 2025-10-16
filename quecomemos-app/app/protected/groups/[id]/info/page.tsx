@@ -660,7 +660,7 @@ export default function GroupInfoPage() {
               <Utensils className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground mb-2">No consumption data available</p>
               <p className="text-sm text-muted-foreground">
-                Group members haven't logged any meals yet
+                Group members haven&apos;t logged any meals yet
               </p>
             </div>
           )}
