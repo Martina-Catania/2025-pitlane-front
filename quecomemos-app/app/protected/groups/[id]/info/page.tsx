@@ -24,7 +24,7 @@ import {
   X
 } from 'lucide-react';
 import UserSearch from '@/components/groups/UserSearch';
-import { GroupPreferencesBarChart } from '@/components/dashboard';
+import { GroupPreferencesBarChart, GroupMealPreferencesPieChart } from '@/components/dashboard';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useConfirmation } from '@/lib/hooks/useConfirmation';
@@ -608,28 +608,6 @@ export default function GroupInfoPage() {
               Group Dashboard
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {statsLoading ? (
-              <div className="text-center py-8">Loading statistics...</div>
-            ) : stats ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-3 border rounded">
-                  <p className="text-sm text-muted-foreground">Total meals</p>
-                  <p className="text-lg font-medium">{stats.totalMeals ?? '—'}</p>
-                </div>
-                <div className="p-3 border rounded">
-                  <p className="text-sm text-muted-foreground">Average kcal</p>
-                  <p className="text-lg font-medium">{stats.avgKcal ?? '—'}</p>
-                </div>
-                <div className="p-3 border rounded">
-                  <p className="text-sm text-muted-foreground">Kcal consumed</p>
-                  <p className="text-lg font-medium">{stats.totalConsumptionKcal ?? '—'}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-muted-foreground">No statistics available yet.</div>
-            )}
-          </CardContent>
         </Card>
 
         <Card>
@@ -639,33 +617,14 @@ export default function GroupInfoPage() {
               Group History
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {historyLoading ? (
-              <div className="text-center py-8">Loading history...</div>
-            ) : history && history.length > 0 ? (
-              <div className="space-y-3">
-                {history.map((h) => (
-                  <div key={h.id} className="p-2 border rounded">
-                    <p className="text-sm font-medium">{h.type}</p>
-                    <p className="text-xs text-muted-foreground">{h.description}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(h.date).toLocaleString()}</p>
-                  </div>
-                ))}
-                <div>
-                  <Button variant="ghost" size="sm" onClick={() => router.push(`/protected/groups/${groupId}/history`)}>
-                    View full history
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-muted-foreground">No recent activity.</div>
-            )}
-          </CardContent>
         </Card>
       </div>
 
       {/* Group Preferences Bar Chart */}
       <GroupPreferencesBarChart groupId={groupId} members={group.members} />
+
+      {/* Group Meal Preferences Pie Chart */}
+      <GroupMealPreferencesPieChart groupId={groupId} members={group.members} />
 
       {/* Action Buttons */}
       {isMember() && (
