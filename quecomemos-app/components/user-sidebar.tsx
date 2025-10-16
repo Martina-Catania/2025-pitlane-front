@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Settings, LogOut, X, Home, Utensils, ChefHat, Users } from 'lucide-react';
+import { User, Settings, LogOut, X, Home, Utensils, ChefHat, Users, Activity } from 'lucide-react';
 import { Button } from './ui/button';
 import { useUser } from '@/lib/contexts/UserContext';
 
@@ -101,12 +101,16 @@ export function UserSidebar() {
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-b border-border bg-muted/50">
+        <Link
+          href="/protected/history"
+          onClick={() => setIsOpen(false)}
+          className="block p-4 border-b border-border bg-muted/50 hover:bg-amber-800/20 transition-colors cursor-pointer"
+        >
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-amber-800/30 border border-amber-700/50 rounded-full flex items-center justify-center">
               <User className="w-6 h-6 text-amber-200" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="font-medium text-sm text-card-foreground">
                 {profile.username || 'User'}
               </div>
@@ -114,9 +118,12 @@ export function UserSidebar() {
               <div className="text-xs text-amber-400 capitalize font-medium">
                 {profile.role}
               </div>
+              <div className="text-xs text-amber-300 mt-1 opacity-75">
+                View personal consumption history →
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Menu Items */}
         <div className="p-2">
@@ -172,6 +179,20 @@ export function UserSidebar() {
               <div className="font-medium text-sm text-card-foreground">Groups</div>
               <div className="text-xs text-muted-foreground">
                 Manage your meal groups
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/protected/history"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-3 w-full p-3 text-left hover:bg-amber-800/20 rounded-lg transition-colors"
+          >
+            <Activity className="w-5 h-5 text-amber-300" />
+            <div>
+              <div className="font-medium text-sm text-card-foreground">My Personal History</div>
+              <div className="text-xs text-muted-foreground">
+                View your individual consumption history
               </div>
             </div>
           </Link>

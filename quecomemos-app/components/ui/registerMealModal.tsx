@@ -20,11 +20,16 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
   // Form state
   const [selectedMealId, setSelectedMealId] = useState<string>('');
   const [mealDate, setMealDate] = useState('');
+  const [mealTime, setMealTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Create new meal state
   const [showCreateMeal, setShowCreateMeal] = useState(false);
+  
+  // Date/time selection mode
+  const [useCurrentTime, setUseCurrentTime] = useState(true);
+  const [showDateTimeSelection, setShowDateTimeSelection] = useState(false);
 
   const profile = userData?.profile;
 
@@ -33,15 +38,31 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
     e.preventDefault();
     setError(null);
 
-    if (!selectedMealId || !mealDate) {
-      setError('Please select a meal and a date.');
+    if (!selectedMealId) {
+      setError('Please select a meal.');
+      return;
+    }
+
+    // Validate date/time based on mode
+    if (!useCurrentTime && (!mealDate || !mealTime)) {
+      setError('Please select a date and time.');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      await onSubmit({ mealId: parseInt(selectedMealId, 10), date: mealDate });
+      let finalDateTime: string;
+      
+      if (useCurrentTime) {
+        // Use current date and time
+        finalDateTime = new Date().toISOString();
+      } else {
+        // Combine selected date and time
+        finalDateTime = new Date(`${mealDate}T${mealTime}`).toISOString();
+      }
+
+      await onSubmit({ mealId: parseInt(selectedMealId, 10), date: finalDateTime });
       handleClose();
     } catch {
       setError('Failed to register meal. Please try again.');
@@ -54,14 +75,45 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
   const handleClose = useCallback(() => {
     setSelectedMealId('');
     setMealDate('');
+    setMealTime('');
     setError(null);
     setShowCreateMeal(false);
+    setUseCurrentTime(true);
+    setShowDateTimeSelection(false);
     onClose();
   }, [onClose]);
 
   // Handle closing the AddMealForm
   const handleCloseAddMealForm = () => {
     setShowCreateMeal(false);
+    setError(null);
+  };
+
+  // Handle register now button
+  const handleRegisterNow = () => {
+    setUseCurrentTime(true);
+    setShowDateTimeSelection(true);
+  };
+
+  // Handle choose date/time button
+  const handleChooseDateTime = () => {
+    setUseCurrentTime(false);
+    setShowDateTimeSelection(true);
+    // Set default values for date and time if empty
+    if (!mealDate) {
+      setMealDate(new Date().toISOString().split('T')[0]);
+    }
+    if (!mealTime) {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      setMealTime(`${hours}:${minutes}`);
+    }
+  };
+
+  // Handle back to selection
+  const handleBackToSelection = () => {
+    setShowDateTimeSelection(false);
     setError(null);
   };
 
@@ -187,45 +239,167 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
                 </div>
               </div>
 
-              {/* Date Selection */}
-              <div className="space-y-3">
-                <label htmlFor="mealDate" className="block text-sm font-medium text-amber-200">
-                  Date Consumed <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="mealDate"
-                  name="mealDate"
-                  value={mealDate}
-                  onChange={(e) => setMealDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
-                  className="w-full px-4 py-3 bg-neutral-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
-                  required
-                  disabled={isSubmitting}
-                />
-                <p className="text-xs text-gray-500">
-                  When did you eat this meal?
-                </p>
-              </div>
+              {/* Date/Time Selection Mode */}
+              {!showDateTimeSelection ? (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-amber-200">
+                    When did you eat this meal? <span className="text-red-400">*</span>
+                  </label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Register Now Button */}
+                    <button
+                      type="button"
+                      onClick={handleRegisterNow}
+                      disabled={!selectedMealId || isSubmitting}
+                      className="p-4 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium border-2 border-transparent hover:border-amber-500 disabled:border-gray-500"
+                    >
+                      <div className="text-center">
+                        <div className="font-semibold">Register Now</div>
+                        <div className="text-sm opacity-90 mt-1">
+                          Current time: {new Date().toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Choose Date & Time Button */}
+                    <button
+                      type="button"
+                      onClick={handleChooseDateTime}
+                      disabled={!selectedMealId || isSubmitting}
+                      className="p-4 bg-neutral-700 hover:bg-neutral-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-gray-100 rounded-lg transition-colors font-medium border-2 border-gray-600 hover:border-amber-500 disabled:border-gray-500"
+                    >
+                      <div className="text-center">
+                        <div className="font-semibold">Choose Date & Time</div>
+                        <div className="text-sm opacity-75 mt-1">
+                          Select a specific date and time
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  {!selectedMealId && (
+                    <p className="text-xs text-gray-500 text-center">
+                      Select a meal first to choose when you ate it
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Date/Time Input Form */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-amber-200">
+                      {useCurrentTime ? 'Confirm Registration Time' : 'Select Date & Time'} <span className="text-red-400">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleBackToSelection}
+                      className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+                    >
+                      ← Change selection
+                    </button>
+                  </div>
+
+                  {useCurrentTime ? (
+                    /* Current Time Display */
+                    <div className="p-4 bg-amber-900/20 border border-amber-800/50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-amber-200 font-medium">Using current time:</div>
+                        <div className="text-lg text-amber-100 font-semibold mt-1">
+                          {new Date().toLocaleString('es-ES', {
+                            weekday: 'long',
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Custom Date/Time Inputs */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="mealDate" className="block text-sm font-medium text-gray-300">
+                          Date <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          id="mealDate"
+                          name="mealDate"
+                          value={mealDate}
+                          onChange={(e) => setMealDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                          className="w-full px-4 py-3 bg-neutral-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
+                          required
+                          disabled={isSubmitting}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="mealTime" className="block text-sm font-medium text-gray-300">
+                          Time <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="time"
+                          id="mealTime"
+                          name="mealTime"
+                          value={mealTime}
+                          onChange={(e) => setMealTime(e.target.value)}
+                          className="w-full px-4 py-3 bg-neutral-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
+                          required
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected Date/Time Preview for custom selection */}
+                  {!useCurrentTime && mealDate && mealTime && (
+                    <div className="p-3 bg-neutral-800/50 border border-gray-600 rounded-lg">
+                      <div className="text-sm text-gray-300">
+                        <span className="font-medium">Selected time:</span>{' '}
+                        {new Date(`${mealDate}T${mealTime}`).toLocaleString('es-ES', {
+                          weekday: 'long',
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="flex-1 px-4 py-3 text-gray-300 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors font-medium"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-3 text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting || !selectedMealId || !mealDate}
-                >
-                  {isSubmitting ? 'Registering...' : 'Register Meal'}
-                </button>
-              </div>
+              {showDateTimeSelection && (
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="flex-1 px-4 py-3 text-gray-300 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors font-medium"
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSubmitting || !selectedMealId || (!useCurrentTime && (!mealDate || !mealTime))}
+                  >
+                    {isSubmitting ? 'Registering...' : 'Register Meal'}
+                  </button>
+                </div>
+              )}
             </form>
           ) : (
             /* AddMealForm Component */
