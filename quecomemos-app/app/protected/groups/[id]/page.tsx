@@ -65,6 +65,7 @@ export default function GroupDetailPage() {
 
   const goInfo = () => router.push(`/protected/groups/${groupId}/info`);
   const goMeals = () => alert('Meals functionality coming soon');
+  const goHistory = () => router.push(`/protected/groups/${groupId}/history`);
 
   // RegisterMealModal handlers
   const openRegisterMealModal = () => {
@@ -205,26 +206,36 @@ export default function GroupDetailPage() {
           <CardContent>
             {group?.consumptions && group.consumptions.length > 0 ? (
               <div className="space-y-3">
-                {group!.consumptions!.slice(0, 10).map((c) => (
-                  <div key={c.ConsumptionID} className="border-l-4 border-primary pl-4 py-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{c.name}</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(c.consumedAt)}</p>
-                      </div>
-                      <div className="flex items-center text-muted-foreground">
-                        <ChefHat className="w-4 h-4" />
+                {/* Scrollable container for activities */}
+                <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
+                  {group!.consumptions!.slice(0, 10).map((c) => (
+                    <div key={c.ConsumptionID} className="border-l-4 border-primary pl-4 py-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{c.name}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(c.consumedAt)}</p>
+                        </div>
+                        <div className="flex items-center text-muted-foreground">
+                          <ChefHat className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+                
+                {/* View more button */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    {group!.consumptions!.length > 10 && (
+                      <p className="text-sm text-muted-foreground">
+                        Showing 10 of {group!.consumptions!.length} activities
+                      </p>
+                    )}
+                    <Button variant="outline" size="sm" onClick={goHistory} className="ml-auto">
+                      View Complete History
+                    </Button>
                   </div>
-                ))}
-                {group!.consumptions!.length > 10 && (
-                  <div className="text-center pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      And {group!.consumptions!.length - 10} more activities...
-                    </p>
-                  </div>
-                )}
+                </div>
               </div>
             ) : (
               <div className="text-center py-8">
