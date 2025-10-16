@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Users, Filter } from 'lucide-react';
+import { Plus, Search, Users, Filter, ChefHat } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/contexts/UserContext';
+import { useMeals } from '@/lib/contexts/MealsContext';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import GroupCard from '@/components/groups/GroupCard';
 import GroupInvitations from '@/components/groups/GroupInvitations';
+import { RegisterMealModal } from '@/components/ui/registerMealModal';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface Group {
@@ -37,10 +40,14 @@ export default function GroupsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'mine' | 'member'>('all');
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+  const [selectedGroupForMeal, setSelectedGroupForMeal] = useState<Group | null>(null);
   const router = useRouter();
 
   // Get the userId from the authentication context
   const { userData } = useUser();
+  const { getMealById } = useMeals();
+  const { showSuccess, showError } = useGlobalNotification();
 
   useEffect(() => {
     if (userData?.profile?.id) {
@@ -110,6 +117,79 @@ export default function GroupsPage() {
       case 'mine': return 'My groups';
       case 'member': return 'I\'m a member';
       default: return 'All';
+    }
+  };
+
+  const openRegisterMealModal = (group: Group) => {
+    setSelectedGroupForMeal(group);
+    setIsRegisterMealModalOpen(true);
+  };
+
+  const closeRegisterMealModal = () => {
+    setIsRegisterMealModalOpen(false);
+    setSelectedGroupForMeal(null);
+  };
+
+  const handleRegisterGroupMeal = async (mealData: { mealId: number; date: string }) => {
+    try {
+      if (!userData?.profile) {
+        showError('Authentication Required', 'Please make sure you are logged in to register a meal.');
+        return;
+      }
+
+      if (!selectedGroupForMeal) {
+        showError('Group Selection Required', 'Please select a group first.');
+        return;
+      }
+
+      // Get the meal information from context
+      const meal = getMealById(mealData.mealId);
+      const mealName = meal?.name || `Meal #${mealData.mealId}`;
+
+      const consumptionData = {
+        name: mealName,
+        description: `Group meal consumed on ${mealData.date}`,
+        meals: [{
+          mealId: mealData.mealId,
+          quantity: 1
+        }],
+        profileId: userData.profile.id,
+        groupId: selectedGroupForMeal.GroupID,
+        consumedAt: mealData.date
+      };
+
+      const response = await fetch('http://localhost:3005/consumptions/group', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(consumptionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to register group meal consumption');
+      }
+
+      const consumption = await response.json();
+      console.log('Group meal consumption registered successfully:', consumption);
+      
+      showSuccess(
+        'Group Meal Registered Successfully!', 
+        `"${mealName}" has been recorded for ${selectedGroupForMeal.name} on ${mealData.date}.`
+      );
+      
+      closeRegisterMealModal();
+      
+      // Refresh groups to update consumption count
+      await fetchGroups();
+      
+    } catch (error) {
+      console.error('Error registering group meal consumption:', error);
+      showError(
+        'Registration Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred while registering the group meal. Please try again.'
+      );
     }
   };
 
@@ -243,7 +323,12 @@ export default function GroupsPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredGroups.map((group) => (
-                    <GroupCard key={group.GroupID} group={group} showActivity={false} />
+                    <GroupCard 
+                      key={group.GroupID} 
+                      group={group} 
+                      showActivity={false}
+                      onRegisterMeal={openRegisterMealModal}
+                    />
                   ))}
                 </div>
               )}
@@ -277,6 +362,13 @@ export default function GroupsPage() {
           </Card>
         </div>
       </div>
+      
+      {/* Register Meal Modal */}
+      <RegisterMealModal
+        isOpen={isRegisterMealModalOpen}
+        onClose={closeRegisterMealModal}
+        onSubmit={handleRegisterGroupMeal}
+      />
     </div>
   );
 }

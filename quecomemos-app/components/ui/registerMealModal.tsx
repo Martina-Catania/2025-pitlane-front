@@ -15,6 +15,7 @@ interface RegisterMealModalProps {
 export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealModalProps) {
   const { userData } = useUser();
   const { allMeals, refetchMeals } = useMeals();
+  console.log('All meals from context:', allMeals);
   
   // Form state
   const [selectedMealId, setSelectedMealId] = useState<string>('');

@@ -4,7 +4,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, Info, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Activity, Info, UtensilsCrossed, ChefHat } from 'lucide-react';
+import { useUser } from '@/lib/contexts/UserContext';
+import { useMeals } from '@/lib/contexts/MealsContext';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { RegisterMealModal } from '@/components/ui/registerMealModal';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface Consumption {
@@ -28,6 +32,12 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+
+  // Context hooks
+  const { userData } = useUser();
+  const { getMealById } = useMeals();
+  const { showSuccess, showError } = useGlobalNotification();
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -55,6 +65,78 @@ export default function GroupDetailPage() {
 
   const goInfo = () => router.push(`/protected/groups/${groupId}/info`);
   const goMeals = () => alert('Meals functionality coming soon');
+
+  // RegisterMealModal handlers
+  const openRegisterMealModal = () => {
+    setIsRegisterMealModalOpen(true);
+  };
+
+  const closeRegisterMealModal = () => {
+    setIsRegisterMealModalOpen(false);
+  };
+
+  const handleRegisterGroupMeal = async (mealData: { mealId: number; date: string }) => {
+    try {
+      if (!userData?.profile) {
+        showError('Authentication Required', 'Please make sure you are logged in to register a meal.');
+        return;
+      }
+
+      if (!group) {
+        showError('Group Not Found', 'Group information is not available.');
+        return;
+      }
+
+      // Get the meal information from context
+      const meal = getMealById(mealData.mealId);
+      const mealName = meal?.name || `Meal #${mealData.mealId}`;
+
+      const consumptionData = {
+        name: mealName,
+        description: `Group meal consumed on ${mealData.date}`,
+        meals: [{
+          mealId: mealData.mealId,
+          quantity: 1
+        }],
+        profileId: userData.profile.id,
+        groupId: parseInt(groupId),
+        consumedAt: mealData.date
+      };
+
+      const response = await fetch('http://localhost:3005/consumptions/group', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(consumptionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to register group meal consumption');
+      }
+
+      const consumption = await response.json();
+      console.log('Group meal consumption registered successfully:', consumption);
+      
+      showSuccess(
+        'Group Meal Registered Successfully!', 
+        `"${mealName}" has been recorded for ${group.name} on ${mealData.date}.`
+      );
+      
+      closeRegisterMealModal();
+      
+      // Refresh group data to update consumption list
+      await fetchGroup();
+      
+    } catch (error) {
+      console.error('Error registering group meal consumption:', error);
+      showError(
+        'Registration Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred while registering the group meal. Please try again.'
+      );
+    }
+  };
 
   if (loading) {
     return (
@@ -104,6 +186,9 @@ export default function GroupDetailPage() {
         </div>
 
         <div className="flex gap-2">
+          <Button variant="outline" onClick={openRegisterMealModal}>
+            <ChefHat className="w-4 h-4 mr-2" /> Register Group Meal
+          </Button>
           <Button variant="outline" onClick={goInfo}>
             <Info className="w-4 h-4 mr-2" /> Group information
           </Button>
@@ -121,17 +206,35 @@ export default function GroupDetailPage() {
             {group?.consumptions && group.consumptions.length > 0 ? (
               <div className="space-y-3">
                 {group!.consumptions!.slice(0, 10).map((c) => (
-                  <div key={c.ConsumptionID} className="border-l-4 border-primary pl-4">
-                    <p className="font-medium">{c.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatDate(c.consumedAt)}</p>
+                  <div key={c.ConsumptionID} className="border-l-4 border-primary pl-4 py-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{c.name}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(c.consumedAt)}</p>
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <ChefHat className="w-4 h-4" />
+                      </div>
+                    </div>
                   </div>
                 ))}
+                {group!.consumptions!.length > 10 && (
+                  <div className="text-center pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      And {group!.consumptions!.length - 10} more activities...
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8">
                 <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No recent activity</h3>
-                <p className="text-muted-foreground">Meals consumed by the group will appear here</p>
+                <p className="text-muted-foreground mb-4">Meals consumed by the group will appear here</p>
+                <Button variant="outline" onClick={openRegisterMealModal}>
+                  <ChefHat className="w-4 h-4 mr-2" />
+                  Register First Group Meal
+                </Button>
               </div>
             )}
           </CardContent>
@@ -147,12 +250,25 @@ export default function GroupDetailPage() {
             <div className="text-center py-8">
               <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">Group meals</h3>
-              <p className="text-muted-foreground mb-4">Manage the meals planned and consumed by the group</p>
-              <Button onClick={goMeals}>View group meals</Button>
+              <p className="text-muted-foreground mb-4">Register and track meals consumed by this group</p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={openRegisterMealModal}>
+                  <ChefHat className="w-4 h-4 mr-2" />
+                  Register Group Meal
+                </Button>
+                <Button variant="outline" onClick={goMeals}>View All Meals</Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+      
+      {/* Register Meal Modal */}
+      <RegisterMealModal
+        isOpen={isRegisterMealModalOpen}
+        onClose={closeRegisterMealModal}
+        onSubmit={handleRegisterGroupMeal}
+      />
     </div>
   );
 }

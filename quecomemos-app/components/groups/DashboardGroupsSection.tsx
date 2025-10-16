@@ -21,6 +21,7 @@ interface Group {
     };
   }>;
   _count: {
+    members: number;
     consumptions: number;
   };
 }
