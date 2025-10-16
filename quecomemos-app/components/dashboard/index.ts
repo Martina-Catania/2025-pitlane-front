@@ -1,1 +1,1 @@
-export { default as GroupPreferencesPieChart } from './GroupPreferencesPieChart';
+export { default as GroupPreferencesBarChart } from './GroupPreferencesBarChart';

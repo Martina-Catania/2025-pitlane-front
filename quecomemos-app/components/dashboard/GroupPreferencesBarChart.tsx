@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/config/api';
@@ -29,19 +29,19 @@ interface PreferenceData {
   [key: string]: any;
 }
 
-interface GroupPreferencesPieChartProps {
+interface GroupPreferencesBarChartProps {
   groupId: string;
   members: GroupMember[];
 }
 
-// Color palette for the pie chart
+// Color palette for the bar chart
 const COLORS = [
   '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', 
   '#d084d0', '#ffb347', '#87ceeb', '#dda0dd', '#98fb98',
   '#f0e68c', '#ff6347', '#40e0d0', '#ee82ee', '#90ee90'
 ];
 
-export default function GroupPreferencesPieChart({ groupId, members }: GroupPreferencesPieChartProps) {
+export default function GroupPreferencesBarChart({ groupId, members }: GroupPreferencesBarChartProps) {
   const [preferencesData, setPreferencesData] = useState<PreferenceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -225,41 +225,40 @@ export default function GroupPreferencesPieChart({ groupId, members }: GroupPref
         </p>
       </CardHeader>
       <CardContent>
-        <div className="h-64 w-full">
+        <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={preferencesData}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-                animationBegin={0}
-                animationDuration={800}
+            <BarChart
+              data={preferencesData}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+              <XAxis 
+                dataKey="name" 
+                angle={-45}
+                textAnchor="end"
+                height={80}
+                fontSize={12}
+                interval={0}
+              />
+              <YAxis 
+                fontSize={12}
+                label={{ value: 'Members', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar 
+                dataKey="count" 
+                radius={[4, 4, 0, 0]}
               >
                 {preferencesData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS[index % COLORS.length]} 
-                    stroke="#fff" 
-                    strokeWidth={2}
-                  />
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend 
-                wrapperStyle={{ fontSize: '12px' }}
-                formatter={(value: string, entry: any) => {
-                  const count = entry.payload?.count || 0;
-                  return (
-                    <span style={{ color: entry.color }}>
-                      {value} ({count} member{count !== 1 ? 's' : ''})
-                    </span>
-                  );
-                }}
-              />
-            </PieChart>
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
         
