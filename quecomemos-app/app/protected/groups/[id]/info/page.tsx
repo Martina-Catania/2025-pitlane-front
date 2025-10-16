@@ -24,6 +24,7 @@ import {
   X
 } from 'lucide-react';
 import UserSearch from '@/components/groups/UserSearch';
+import { GroupPreferencesPieChart } from '@/components/dashboard';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useConfirmation } from '@/lib/hooks/useConfirmation';
@@ -662,6 +663,9 @@ export default function GroupInfoPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Group Preferences Pie Chart */}
+      <GroupPreferencesPieChart groupId={groupId} members={group.members} />
 
       {/* Action Buttons */}
       {isMember() && (
