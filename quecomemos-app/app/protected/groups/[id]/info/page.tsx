@@ -21,7 +21,10 @@ import {
   LogOut,
   Edit2,
   Save,
-  X
+  X,
+  Trophy,
+  TrendingUp,
+  Utensils
 } from 'lucide-react';
 import UserSearch from '@/components/groups/UserSearch';
 import { GroupPreferencesBarChart, GroupMealPreferencesPieChart } from '@/components/dashboard';
@@ -30,6 +33,7 @@ import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useConfirmation } from '@/lib/hooks/useConfirmation';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { API_BASE_URL } from '@/lib/config/api';
+import { GroupMostConsumedResponse } from '@/components/types/group-consumption';
 
 interface GroupMember {
   GroupMemberID: number;
@@ -69,6 +73,9 @@ export default function GroupInfoPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
   const [saving, setSaving] = useState(false);
+  const [mostConsumedMeals, setMostConsumedMeals] = useState<GroupMostConsumedResponse | null>(null);
+  const [mealsLoading, setMealsLoading] = useState(false);
+  const [mealsError, setMealsError] = useState<string | null>(null);
   const currentUserId = userData?.profile?.id;
 
   const fetchGroup = useCallback(async () => {
@@ -93,9 +100,31 @@ export default function GroupInfoPage() {
     }
   }, [groupId]);
 
+  const fetchMostConsumedMeals = useCallback(async () => {
+    try {
+      setMealsLoading(true);
+      setMealsError(null);
+      const response = await fetch(`${API_BASE_URL}/consumptions/groups/${groupId}/most-consumed?limit=3`);
+      
+      if (!response.ok) {
+        throw new Error('Error loading most consumed meals');
+      }
+      
+      const data = await response.json();
+      setMostConsumedMeals(data);
+    } catch (err) {
+      console.error('Error fetching most consumed meals:', err);
+      setMealsError(err instanceof Error ? err.message : 'Error loading data');
+      setMostConsumedMeals(null);
+    } finally {
+      setMealsLoading(false);
+    }
+  }, [groupId]);
+
   useEffect(() => {
     fetchGroup();
-  }, [fetchGroup]);
+    fetchMostConsumedMeals();
+  }, [fetchGroup, fetchMostConsumedMeals]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -539,7 +568,104 @@ export default function GroupInfoPage() {
         </Card>
       </div>
 
-      
+      {/* Most Consumed Meals */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              Most Consumed Meals
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchMostConsumedMeals}
+              disabled={mealsLoading}
+            >
+              <Activity className="w-4 h-4" />
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {mealsError ? (
+            <div className="text-center py-8">
+              <p className="text-destructive mb-2">{mealsError}</p>
+              <Button variant="outline" onClick={fetchMostConsumedMeals}>
+                Try Again
+              </Button>
+            </div>
+          ) : mealsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : mostConsumedMeals?.mostConsumedMeals && mostConsumedMeals.mostConsumedMeals.length > 0 ? (
+            <div className="space-y-4">
+              {mostConsumedMeals.mostConsumedMeals.map((meal, index: number) => (
+                <div
+                  key={meal.mealId}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-lg">{meal.name}</h4>
+                      {meal.description && (
+                        <p className="text-sm text-muted-foreground">{meal.description}</p>
+                      )}
+                      <div className="flex items-center space-x-4 mt-2">
+                        <div className="flex items-center space-x-1">
+                          <TrendingUp className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium">{meal.count} times consumed</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm">{meal.uniqueConsumers} different members</span>
+                        </div>
+                        {meal.averageKcal > 0 && (
+                          <div className="flex items-center space-x-1">
+                            <Utensils className="w-4 h-4 text-orange-600" />
+                            <span className="text-sm">{meal.averageKcal} kcal avg</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="secondary" className="mb-2">
+                      Top {index + 1}
+                    </Badge>
+                    {meal.foods && meal.foods.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        {meal.foods.slice(0, 3).map((food) => food.name).join(', ')}
+                        {meal.foods.length > 3 && '...'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {mostConsumedMeals && mostConsumedMeals.totalConsumptions > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Based on {mostConsumedMeals.totalConsumptions} total consumptions from {mostConsumedMeals.memberCount} members
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Utensils className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground mb-2">No consumption data available</p>
+              <p className="text-sm text-muted-foreground">
+                Group members haven't logged any meals yet
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Dashboard & History - new sections above Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

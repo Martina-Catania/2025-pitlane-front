@@ -258,18 +258,21 @@ export default function GroupsPage() {
                   />
                 </div>
                 
-                <div className="flex space-x-2">
-                  {(['all', 'mine', 'member'] as const).map((type) => (
-                    <Button
-                      key={type}
-                      variant={filterType === type ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFilterType(type)}
-                    >
-                      <Filter className="w-3 h-3 mr-1" />
-                      {getFilterLabel(type)}
-                    </Button>
-                  ))}
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex space-x-2 min-w-max">
+                    {(['all', 'mine', 'member'] as const).map((type) => (
+                      <Button
+                        key={type}
+                        variant={filterType === type ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterType(type)}
+                        className="whitespace-nowrap"
+                      >
+                        <Filter className="w-3 h-3 mr-1" />
+                        {getFilterLabel(type)}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </CardContent>

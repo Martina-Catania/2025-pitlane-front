@@ -56,13 +56,13 @@ export function UserProfileSection() {
       )}
 
       {/* Dashboard with groups and meals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Groups section */}
+      <div className="flex flex-col gap-8">
+        {/* Groups section - now above meals */}
         <div>
           <DashboardGroupsSection userId={profile.id} />
         </div>
         
-        {/* Meals section */}
+        {/* Meals section - now below groups */}
         <div>
           <AllMeals />
         </div>

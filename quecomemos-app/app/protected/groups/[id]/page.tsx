@@ -64,7 +64,6 @@ export default function GroupDetailPage() {
     d ? new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
   const goInfo = () => router.push(`/protected/groups/${groupId}/info`);
-  const goMeals = () => alert('Meals functionality coming soon');
   const goHistory = () => router.push(`/protected/groups/${groupId}/history`);
 
   // RegisterMealModal handlers
@@ -176,8 +175,8 @@ export default function GroupDetailPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
+      <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2 self-start">
           <ArrowLeft className="w-4 h-4" />
         </Button>
 
@@ -186,11 +185,11 @@ export default function GroupDetailPage() {
           {group?.description && <p className="text-muted-foreground mt-1">{group.description}</p>}
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={openRegisterMealModal}>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={openRegisterMealModal} className="w-full sm:w-auto">
             <ChefHat className="w-4 h-4 mr-2" /> Register Group Meal
           </Button>
-          <Button variant="outline" onClick={goInfo}>
+          <Button variant="outline" onClick={goInfo} className="w-full sm:w-auto">
             <Info className="w-4 h-4 mr-2" /> Group information
           </Button>
         </div>
@@ -262,13 +261,10 @@ export default function GroupDetailPage() {
               <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">Group meals</h3>
               <p className="text-muted-foreground mb-4">Register and track meals consumed by this group</p>
-              <div className="flex gap-2 justify-center">
-                <Button onClick={openRegisterMealModal}>
-                  <ChefHat className="w-4 h-4 mr-2" />
-                  Register Group Meal
-                </Button>
-                <Button variant="outline" onClick={goMeals}>View All Meals</Button>
-              </div>
+              <Button onClick={openRegisterMealModal}>
+                <ChefHat className="w-4 h-4 mr-2" />
+                Register Group Meal
+              </Button>
             </div>
           </CardContent>
         </Card>
