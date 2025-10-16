@@ -108,7 +108,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     }))
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [showFoodChoiceModal, setShowFoodChoiceModal] = useState(false);
+
   const [showFoodModal, setShowFoodModal] = useState(false);
   const [foodModalAction, setFoodModalAction] = useState<'search' | 'create' | 'edit'>('search');
   const [initialFoodName, setInitialFoodName] = useState<string>("");
@@ -353,21 +353,7 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
     );
   };
 
-  const handleCreateNewFood = () => {
-    setShowFoodChoiceModal(false);
-    setFoodModalAction('create');
-    // Reset modal state for creating new food
-    setInitialFoodName(""); // Clear any previous initial name
-    setShowFoodModal(true);
-  };
 
-  const handleSearchExistingFood = () => {
-    setShowFoodChoiceModal(false);
-    setFoodModalAction('search');
-    // Reset modal state for searching existing food
-    setInitialFoodName(""); // Clear any previous initial name
-    setShowFoodModal(true);
-  };
 
   const handleSwitchToCreateInEdit = (initialName?: string) => {
     // Switch from search mode to create mode
@@ -417,8 +403,10 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
               variant="outline"
               size="sm"
               onClick={() => {
-                // Open the search modal directly, not the choice modal
-                handleSearchExistingFood();
+                // Open the search modal directly
+                setFoodModalAction('search');
+                setInitialFoodName("");
+                setShowFoodModal(true);
               }}
               className="border-amber-700/50 text-amber-200 hover:bg-amber-800/20"
             >

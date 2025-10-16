@@ -14,7 +14,6 @@ interface PreferenceData {
   percentage: number;
   color: string;
   visible: boolean;
-  [key: string]: any;
 }
 
 interface GroupMember {
@@ -159,7 +158,7 @@ export default function GroupMealPreferencesPieChart({ groupId, members }: Group
         }
 
         // Convert to chart data
-        const chartData: PreferenceData[] = Array.from(preferenceCount.entries()).map(([preferenceId, data], index) => ({
+        const chartData: PreferenceData[] = Array.from(preferenceCount.entries()).map(([, data], index) => ({
           name: data.name,
           count: data.count,
           percentage: Math.round((data.count / totalCount) * 100),
@@ -220,7 +219,7 @@ export default function GroupMealPreferencesPieChart({ groupId, members }: Group
 
   const visibleData = getVisibleData();
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: PreferenceData }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -235,12 +234,12 @@ export default function GroupMealPreferencesPieChart({ groupId, members }: Group
     return null;
   };
 
-  const CustomLegend = ({ payload }: any) => {
+  const CustomLegend = ({ payload }: { payload?: Array<{ value: string; color: string; payload: PreferenceData }> }) => {
     if (!payload) return null;
 
     return (
       <div className="flex flex-wrap gap-2 justify-center mt-4">
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index: number) => (
           <div key={index} className="flex items-center gap-1 text-xs">
             <div 
               className="w-3 h-3 rounded-full" 

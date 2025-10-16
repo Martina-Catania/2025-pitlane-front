@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
-import { useMeals } from '@/lib/contexts/MealsContext';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface Consumption {
@@ -41,7 +40,7 @@ export default function GroupHistoryPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Context hooks
-  const { userData } = useUser();
+  const { } = useUser();
 
   const fetchGroupHistory = useCallback(async () => {
     try {
@@ -65,14 +64,7 @@ export default function GroupHistoryPage() {
     fetchGroupHistory();
   }, [fetchGroupHistory]);
 
-  const formatDate = (d?: string) =>
-    d ? new Date(d).toLocaleDateString('es-ES', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) : '';
+
 
   const formatShortDate = (d?: string) =>
     d ? new Date(d).toLocaleDateString('es-ES', { 

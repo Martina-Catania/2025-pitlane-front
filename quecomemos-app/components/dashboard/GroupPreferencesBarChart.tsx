@@ -26,7 +26,6 @@ interface PreferenceData {
   name: string;
   count: number;
   percentage: number;
-  [key: string]: any;
 }
 
 interface GroupPreferencesBarChartProps {
@@ -138,7 +137,7 @@ export default function GroupPreferencesBarChart({ groupId, members }: GroupPref
     }
   }, [groupId, members]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: PreferenceData }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (

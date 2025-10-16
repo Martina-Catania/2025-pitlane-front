@@ -43,7 +43,6 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
 
   // Modal states
   const [openModal, setOpenModal] = useState(false);
-  const [openChoiceModal, setOpenChoiceModal] = useState(false);
   const [modalMode, setModalMode] = useState<'search' | 'create' | 'edit'>('search');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [initialFoodName, setInitialFoodName] = useState<string>("");
@@ -71,19 +70,9 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
     }
   };
 
-  const closeChoiceModal = () => setOpenChoiceModal(false);
-  
-  const handleCreateNew = () => {
-    setModalMode('create');
-    setOpenChoiceModal(false);
-    setOpenModal(true);
-  };
 
-  const handleSearchExisting = () => {
-    setModalMode('search');
-    setOpenChoiceModal(false);
-    setOpenModal(true);
-  };
+  
+
   
   const closeModal = () => {
     setOpenModal(false);

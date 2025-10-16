@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { X, Plus, Search, ChevronDown } from 'lucide-react';
+import { X, Plus, Search } from 'lucide-react';
 import AddMealForm from '@/components/meal/AddMealForm';
-import { useMeals, Meal } from '@/lib/contexts/MealsContext';
+import { useMeals } from '@/lib/contexts/MealsContext';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useMealSearch } from './hooks/useMealSearch';
 import { API_BASE_URL } from '@/lib/config/api';
@@ -149,7 +149,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
   };
 
   // Handle when a new meal is successfully created
-  const handleMealAdded = async (newMeal: any) => {
+  const handleMealAdded = async (newMeal: { MealID?: number; id?: number; name?: string; [key: string]: unknown }) => {
     // Refresh meals from context to get the newly created meal
     if (profile?.id) {
       await refetchMeals(profile.id);
@@ -158,14 +158,24 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
     // Automatically select the newly created meal if it has ID
     if (newMeal && (newMeal.MealID || newMeal.id)) {
       const mealId = newMeal.MealID || newMeal.id;
-      setSelectedMealId(mealId.toString());
-      // Also update the search to show the new meal as selected
-      const mealToSelect = { 
-        ...newMeal, 
-        MealID: mealId,
-        name: newMeal.name || ''
-      };
-      selectMeal(mealToSelect);
+      if (mealId) {
+        setSelectedMealId(mealId.toString());
+        // Also update the search to show the new meal as selected
+        const mealToSelect = { 
+          MealID: mealId,
+          name: newMeal.name || '',
+          createdAt: '',
+          updatedAt: '',
+          profileId: profile?.id || '',
+          profile: {
+            id: profile?.id || '',
+            role: profile?.role || '',
+            username: profile?.username
+          },
+          mealFoods: []
+        };
+        selectMeal(mealToSelect);
+      }
     }
     
     // Return to the main form
@@ -524,7 +534,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
               </div>
               
               <AddMealForm 
-                onFoodAdded={(m: any) => handleMealAdded(m)}
+                onFoodAdded={(m: { MealID?: number; id?: number; name?: string; [key: string]: unknown }) => handleMealAdded(m)}
                 onClose={handleCloseAddMealForm}
                 initialMealName={mealQuery.trim() || undefined}
               />

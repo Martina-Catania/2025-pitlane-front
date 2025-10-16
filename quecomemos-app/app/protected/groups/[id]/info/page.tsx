@@ -280,71 +280,13 @@ export default function GroupInfoPage() {
   };
 
 
-  // Dashboard & history state
-  interface GroupStats {
-    totalMeals?: number;
-    avgKcal?: number;
-    totalConsumptionKcal?: number;
-  }
 
-  interface HistoryEntry {
-    id: string | number;
-    type: string;
-    description?: string;
-    date: string;
-    user?: { id: string; username: string };
-  }
 
-  const [stats, setStats] = useState<GroupStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
 
-  const fetchStats = useCallback(async () => {
-    if (!group) return;
-    try {
-      setStatsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/groups/${groupId}/stats`);
-      if (!res.ok) {
-        // Endpoint may not exist yet - ignore gracefully
-        setStats(null);
-        return;
-      }
-      const data = await res.json();
-      setStats(data);
-    } catch (err) {
-      console.debug('Could not fetch stats:', err);
-      setStats(null);
-    } finally {
-      setStatsLoading(false);
-    }
-  }, [group, groupId]);
 
-  const fetchHistory = useCallback(async () => {
-    if (!group) return;
-    try {
-      setHistoryLoading(true);
-      const res = await fetch(`${API_BASE_URL}/groups/${groupId}/history?limit=5`);
-      if (!res.ok) {
-        setHistory([]);
-        return;
-      }
-      const data = await res.json();
-      setHistory(data || []);
-    } catch (err) {
-      console.debug('Could not fetch history:', err);
-      setHistory([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [group, groupId]);
 
-  useEffect(() => {
-    if (group) {
-      fetchStats();
-      fetchHistory();
-    }
-  }, [group, fetchStats, fetchHistory]);
+
+
 
   if (loading) {
     return (

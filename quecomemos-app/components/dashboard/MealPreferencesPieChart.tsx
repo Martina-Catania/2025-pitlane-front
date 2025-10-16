@@ -9,18 +9,13 @@ import { TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/config/api';
 import { useUser } from '@/lib/contexts/UserContext';
 
-interface Preference {
-  PreferenceID: number;
-  name: string;
-}
-
 interface PreferenceData {
   name: string;
   count: number;
   percentage: number;
   color: string;
   visible: boolean;
-  [key: string]: any;
+
 }
 
 interface Consumption {
@@ -145,7 +140,7 @@ export default function MealPreferencesPieChart() {
         }
 
         // Convert to chart data
-        const chartData: PreferenceData[] = Array.from(preferenceCount.entries()).map(([preferenceId, data], index) => ({
+        const chartData: PreferenceData[] = Array.from(preferenceCount.entries()).map(([, data], index) => ({
           name: data.name,
           count: data.count,
           percentage: Math.round((data.count / totalCount) * 100),
@@ -206,7 +201,7 @@ export default function MealPreferencesPieChart() {
 
   const visibleData = getVisibleData();
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: PreferenceData }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -221,12 +216,12 @@ export default function MealPreferencesPieChart() {
     return null;
   };
 
-  const CustomLegend = ({ payload }: any) => {
+  const CustomLegend = ({ payload }: { payload?: Array<{ value: string; color: string; payload: PreferenceData }> }) => {
     if (!payload) return null;
 
     return (
       <div className="flex flex-wrap gap-2 justify-center mt-4">
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry, index: number) => (
           <div key={index} className="flex items-center gap-1 text-xs">
             <div 
               className="w-3 h-3 rounded-full" 

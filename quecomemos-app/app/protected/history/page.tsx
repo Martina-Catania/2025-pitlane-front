@@ -57,14 +57,7 @@ export default function UserHistoryPage() {
     fetchUserHistory();
   }, [fetchUserHistory]);
 
-  const formatDate = (d?: string) =>
-    d ? new Date(d).toLocaleDateString('es-ES', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) : '';
+
 
   const formatShortDate = (d?: string) =>
     d ? new Date(d).toLocaleDateString('es-ES', { 

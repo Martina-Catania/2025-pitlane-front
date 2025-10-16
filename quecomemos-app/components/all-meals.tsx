@@ -15,7 +15,6 @@ export function AllMeals() {
     const { showSuccess, showError } = useGlobalNotification();
     const {
         meals,
-        allMeals,
         recommendedMeals,
         loadingMeals,
         loadingRecommended,
