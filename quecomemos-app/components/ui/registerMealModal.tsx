@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Search, ChevronDown } from 'lucide-react';
 import AddMealForm from '@/components/meal/AddMealForm';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { useUser } from '@/lib/contexts/UserContext';
+import { useMealSearch } from './hooks/useMealSearch';
+import { API_BASE_URL } from '@/lib/config/api';
 
 interface RegisterMealModalProps {
   isOpen: boolean;
@@ -15,7 +17,26 @@ interface RegisterMealModalProps {
 export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealModalProps) {
   const { userData } = useUser();
   const { allMeals, refetchMeals } = useMeals();
-  console.log('All meals from context:', allMeals);
+  
+  // Meal search functionality
+  const {
+    query: mealQuery,
+    setQuery: setMealQuery,
+    results: searchResults,
+    showDropdown: showMealDropdown,
+    selected: selectedMeal,
+    selectMeal,
+    activeIndex: mealActiveIndex,
+    resetSearch,
+    handleKeyDown: handleMealKeyDown,
+    canCreateNew: canCreateNewMeal,
+    isLoadingMeals,
+    searchRef
+  } = useMealSearch({
+    apiBase: API_BASE_URL,
+    open: isOpen,
+    initialMeals: allMeals
+  });
   
   // Form state
   const [selectedMealId, setSelectedMealId] = useState<string>('');
@@ -32,6 +53,15 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
   const [showDateTimeSelection, setShowDateTimeSelection] = useState(false);
 
   const profile = userData?.profile;
+
+  // Update selectedMealId when a meal is selected from search
+  useEffect(() => {
+    if (selectedMeal) {
+      setSelectedMealId(selectedMeal.MealID.toString());
+    } else {
+      setSelectedMealId('');
+    }
+  }, [selectedMeal]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -80,8 +110,9 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
     setShowCreateMeal(false);
     setUseCurrentTime(true);
     setShowDateTimeSelection(false);
+    resetSearch();
     onClose();
-  }, [onClose]);
+  }, [onClose, resetSearch]);
 
   // Handle closing the AddMealForm
   const handleCloseAddMealForm = () => {
@@ -124,13 +155,20 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
       await refetchMeals(profile.id);
     }
     
-    // Seleccionar automáticamente la nueva comida si tiene ID
+    // Automatically select the newly created meal if it has ID
     if (newMeal && (newMeal.MealID || newMeal.id)) {
       const mealId = newMeal.MealID || newMeal.id;
       setSelectedMealId(mealId.toString());
+      // Also update the search to show the new meal as selected
+      const mealToSelect = { 
+        ...newMeal, 
+        MealID: mealId,
+        name: newMeal.name || ''
+      };
+      selectMeal(mealToSelect);
     }
     
-    // Volver al formulario principal
+    // Return to the main form
     setShowCreateMeal(false);
     setError(null);
   };
@@ -200,33 +238,104 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
                 </div>
               )}
 
-              {/* Meal Selection */}
+              {/* Meal Search */}
               <div className="space-y-3">
-                <label htmlFor="mealId" className="block text-sm font-medium text-amber-200">
-                  Choose a Meal <span className="text-red-400">*</span>
+                <label htmlFor="mealSearch" className="block text-sm font-medium text-amber-200">
+                  Search for a Meal <span className="text-red-400">*</span>
                 </label>
-                <select
-                  id="mealId"
-                  name="mealId"
-                  value={selectedMealId}
-                  onChange={(e) => setSelectedMealId(e.target.value)}
-                  className="w-full px-4 py-3 bg-neutral-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
-                  required
-                  disabled={isSubmitting}
-                >
-                  <option value="" disabled>
-                    Select a meal from the community
-                  </option>
-                  {allMeals.map((meal) => (
-                    <option key={meal.MealID} value={meal.MealID}>
-                      {meal.name}
-                      {meal.description && ` - ${meal.description.substring(0, 50)}${meal.description.length > 50 ? '...' : ''}`}
-                    </option>
-                  ))}
-                </select>
+                
+                <div className="relative" ref={searchRef}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      id="mealSearch"
+                      placeholder="Type to search for meals..."
+                      value={mealQuery}
+                      onChange={(e) => setMealQuery(e.target.value)}
+                      onKeyDown={handleMealKeyDown}
+                      className="w-full pl-10 pr-4 py-3 bg-neutral-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-colors"
+                      disabled={isSubmitting || isLoadingMeals}
+                    />
+                    {selectedMeal && (
+                      <button
+                        type="button"
+                        onClick={resetSearch}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search Results Dropdown */}
+                  {showMealDropdown && searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-neutral-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {searchResults.map((meal, index) => (
+                        <button
+                          key={meal.MealID}
+                          type="button"
+                          onClick={() => selectMeal(meal)}
+                          className={`w-full text-left px-4 py-3 hover:bg-neutral-700 transition-colors ${
+                            index === mealActiveIndex ? 'bg-neutral-700' : ''
+                          }`}
+                        >
+                          <div className="font-medium text-gray-100">{meal.name}</div>
+                          {meal.description && (
+                            <div className="text-sm text-gray-400 truncate">
+                              {meal.description}
+                            </div>
+                          )}
+                          <div className="text-xs text-amber-400 mt-1">
+                            by {meal.profile?.username || 'Unknown'} • {meal.mealFoods?.length || 0} ingredients
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Meal Display */}
+                {selectedMeal && (
+                  <div className="p-3 bg-neutral-800 border border-amber-600/50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-amber-200">{selectedMeal.name}</div>
+                        {selectedMeal.description && (
+                          <div className="text-sm text-gray-400">{selectedMeal.description}</div>
+                        )}
+                        <div className="text-xs text-amber-400 mt-1">
+                          by {selectedMeal.profile?.username || 'Unknown'} • {selectedMeal.mealFoods?.length || 0} ingredients
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={resetSearch}
+                        className="text-gray-400 hover:text-gray-200 p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500">
-                    Choose from {allMeals.length} available community meals
+                    {isLoadingMeals ? (
+                      'Loading meals...'
+                    ) : (
+                      <>
+                        {mealQuery && searchResults.length > 0 && (
+                          `Found ${searchResults.length} meal${searchResults.length !== 1 ? 's' : ''}`
+                        )}
+                        {mealQuery && searchResults.length === 0 && !selectedMeal && (
+                          'No meals found'
+                        )}
+                        {!mealQuery && (
+                          `Search from ${allMeals.length} available community meals`
+                        )}
+                      </>
+                    )}
                   </p>
                   <button
                     type="button"
@@ -234,7 +343,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
                     className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
-                    Can&apos;t find your meal? Create it
+                    {canCreateNewMeal ? 'Create this meal' : "Can't find your meal? Create it"}
                   </button>
                 </div>
               </div>
@@ -417,6 +526,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit }: RegisterMealMod
               <AddMealForm 
                 onFoodAdded={(m: any) => handleMealAdded(m)}
                 onClose={handleCloseAddMealForm}
+                initialMealName={mealQuery.trim() || undefined}
               />
             </div>
           )}

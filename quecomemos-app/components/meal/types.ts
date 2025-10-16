@@ -30,4 +30,5 @@ export type Meal = {
 
 export interface AddMealFormProps {
   onFoodAdded?: (meal: Meal) => void;
+  initialMealName?: string;
 }

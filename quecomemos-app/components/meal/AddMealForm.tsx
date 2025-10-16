@@ -17,12 +17,12 @@ import FoodModal from "./FoodModal";
 
 type Props = AddMealFormProps & { onClose?: () => void };
 
-export default function AddMealForm({ onFoodAdded, onClose }: Props) {
+export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: Props) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
   
   // Basic meal info
-  const [mealName, setMealName] = useState("");
+  const [mealName, setMealName] = useState(initialMealName || "");
   const [description, setDescription] = useState("");
   
   // Foods management with custom hook
