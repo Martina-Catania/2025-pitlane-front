@@ -31,7 +31,7 @@ import { GroupPreferencesBarChart, GroupMealPreferencesPieChart } from '@/compon
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useConfirmation } from '@/lib/hooks/useConfirmation';
-import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+import { ConfirmationModal } from '@/components/modals';
 import { API_BASE_URL } from '@/lib/config/api';
 import { GroupMostConsumedResponse } from '@/components/types/group-consumption';
 

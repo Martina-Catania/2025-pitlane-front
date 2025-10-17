@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { UserFoodsPage } from "@/components/user-foods-page";
+import { UserFoodsPage } from "@/components/food";
 
 export default async function FoodsPage() {
   const supabase = await createClient();

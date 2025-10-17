@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { UserProfileSection } from "@/components/user-profile-section";
+import { UserProfileSection } from "@/components/profile";
 
 
 export default async function ProtectedPage() {

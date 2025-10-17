@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent } from "@/components/ui/card";
-import { DropdownWrapper } from "@/components/custom-components/dropdown-wrapper";
-import { CustomCheckbox } from "@/components/custom-components/custom-checkbox";
+import { DropdownWrapper } from "@/components/forms";
+import { CustomCheckbox } from "@/components/forms";
 import { Label } from "@/components/ui/label";
 
 type Props = {

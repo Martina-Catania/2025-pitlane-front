@@ -8,7 +8,7 @@ import { ArrowLeft, Activity, Info, UtensilsCrossed, ChefHat } from 'lucide-reac
 import { useUser } from '@/lib/contexts/UserContext';
 import { useMeals } from '@/lib/contexts/MealsContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
-import { RegisterMealModal } from '@/components/ui/registerMealModal';
+import { RegisterMealModal } from '@/components/modals';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface Consumption {

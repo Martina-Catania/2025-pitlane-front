@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { NotificationModal, NotificationType } from '@/components/ui/notification-modal';
+import { NotificationModal, NotificationType } from '@/components/modals/notification-modal';
 
 interface NotificationState {
   isOpen: boolean;
@@ -98,19 +98,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     >
       {children}
       
-      {/* Global Notification Modal - Fixed position, high z-index */}
-      <div className="fixed inset-0 pointer-events-none z-[9999]">
-        <NotificationModal
-          isOpen={notification.isOpen}
-          onClose={closeNotification}
-          type={notification.type}
-          title={notification.title}
-          message={notification.message}
-          autoClose={notification.autoClose}
-          autoCloseTime={notification.autoCloseTime}
-          customIcon={notification.customIcon}
-        />
-      </div>
+      {/* Global Notification Toast - Non-blocking */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        autoClose={notification.autoClose}
+        autoCloseTime={notification.autoCloseTime}
+        customIcon={notification.customIcon}
+      />
     </NotificationContext.Provider>
   );
 }

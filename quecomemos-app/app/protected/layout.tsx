@@ -1,5 +1,5 @@
-import { AuthButton } from "@/components/auth-button";
-import { Logo } from "@/components/logo";
+import { AuthButton } from "@/components/auth";
+import { Logo } from "@/components/common";
 
 export default function ProtectedLayout({
   children,

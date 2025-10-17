@@ -1,4 +1,4 @@
-import { UserMeals } from '@/components/user-meals';
+import { UserMeals } from '@/components/profile';
 
 export default function MyMealsPage() {
     return (

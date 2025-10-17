@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SettingsForm } from "@/components/settings-form";
+import { SettingsForm } from "@/components/profile";
 import { API_BASE_URL } from "@/lib/config/api";
 
 export default async function SettingsPage() {

@@ -12,7 +12,7 @@ import { useMeals } from '@/lib/contexts/MealsContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import GroupCard from '@/components/groups/GroupCard';
 import GroupInvitations from '@/components/groups/GroupInvitations';
-import { RegisterMealModal } from '@/components/ui/registerMealModal';
+import { RegisterMealModal } from '@/components/modals';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface Group {

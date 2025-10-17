@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PreferenceFilteredFoodsPage } from "@/components/preference-filtered-foods-page";
+import { PreferenceFilteredFoodsPage } from "@/components/food";
 
 interface PreferencePageProps {
   params: Promise<{

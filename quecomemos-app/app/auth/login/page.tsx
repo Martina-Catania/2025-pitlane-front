@@ -1,6 +1,5 @@
-import { LoginForm } from "@/components/login-form";
-import { PreventBackNavigation } from "@/components/prevent-back-navigation";
-import { Logo } from "@/components/logo";
+import { LoginForm, PreventBackNavigation } from "@/components/auth";
+import { Logo } from "@/components/common";
 
 export default function Page() {
   return (
