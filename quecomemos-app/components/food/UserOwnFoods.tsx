@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { API_BASE_URL } from "@/lib/config/api";
 import { AddFoodForm } from "./forms";
-import { EditableFoodCarousel } from "./carousels";
+import {FoodCarousel } from "./carousels";
 
 interface Food {
   FoodID: number;
@@ -29,7 +29,7 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
   const [userFoods, setUserFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Modal states
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -39,10 +39,10 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
   // Fetch user's own foods
   const fetchUserFoods = useCallback(async () => {
     if (!userData.profile?.id) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/foods/user/${userData.profile.id}`, {
         method: 'GET',
@@ -50,7 +50,7 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const foods = await response.json();
         setUserFoods(foods);
@@ -129,13 +129,15 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
 
   return (
     <div>
-      <EditableFoodCarousel
+      <FoodCarousel
         title="Your Foods"
         foods={userFoods}
         onCardClick={openViewModal}
         onEditClick={openEditModal}
         onAddClick={openAddModal}
         showAddButton={true}
+        variant="editable"
+        isOwner={true}
         emptyStateTitle="No foods created yet"
         emptyStateDescription="Start by creating your first custom food!"
         emptyStateButtonText="Create Your First Food"
@@ -152,11 +154,11 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
       {isEditModalOpen && selectedFood && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={closeEditModal}
           />
-          
+
           {/* Modal */}
           <div className="relative bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-amber-800/30">
             {/* Header */}
@@ -190,11 +192,11 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={closeAddModal}
           />
-          
+
           {/* Modal */}
           <div className="relative bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-amber-800/30">
             {/* Header */}

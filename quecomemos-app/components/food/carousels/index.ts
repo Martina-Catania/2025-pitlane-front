@@ -1,2 +1,1 @@
-export { RegularFoodCarousel } from './regular-food-carousel';
-export { EditableFoodCarousel } from './editable-food-carousel';
+export { FoodCarousel } from './food-carousel';

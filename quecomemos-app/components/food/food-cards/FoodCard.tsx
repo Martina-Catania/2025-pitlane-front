@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Utensils, Heart, Eye, SquarePen } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,18 +41,7 @@ export function FoodCard({
   className
 }: FoodCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isHovered && cardRef.current && variant === 'simple') {
-      const rect = cardRef.current.getBoundingClientRect();
-      setTooltipPosition({
-        top: rect.bottom + 8,
-        left: rect.left + rect.width / 2
-      });
-    }
-  }, [isHovered, variant]);
 
   // Get preference and restriction names for display
   const getPreferenceNames = () => {
@@ -72,190 +61,352 @@ export function FoodCard({
   };
 
   if (variant === 'simple') {
+    const preferenceNamesArray = getPreferenceNames();
+    const restrictionNamesArray = getRestrictionNames();
+
     return (
       <>
-        <div 
-          ref={cardRef}
-          className={`relative group bg-amber-700 border border-amber-800 rounded-lg shadow-md px-3 py-2 md:px-4 md:py-3 cursor-pointer transition-all duration-200 hover:bg-amber-600 hover:shadow-lg hover:scale-105 flex flex-col items-center min-w-[110px] md:min-w-[140px] flex-shrink-0 touch-manipulation ${className || ''}`}
+      <div
+        ref={cardRef}
+        className={`group bg-gradient-to-br from-amber-800 to-amber-900 border border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden rounded-lg w-[200px] md:w-[220px] h-[280px] flex-shrink-0 touch-manipulation flex flex-col ${className || ''}`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onCardClick?.(food)}
         >
-          <div className="w-8 h-8 md:w-12 md:h-12 mb-1 md:mb-2 flex items-center justify-center">
+          {/* Image Section */}
+          <div className="relative h-24 md:h-28 flex items-center justify-center bg-gradient-to-b from-amber-700 to-amber-800 overflow-hidden">
             {food.svgLink ? (
               <Image 
                 src={food.svgLink} 
                 alt={food.name} 
-                width={48}
-                height={48}
-                className="w-full h-full object-contain" 
+                width={60}
+                height={60}
+                className="object-contain transition-transform duration-300 group-hover:scale-110" 
               />
             ) : (
-              <Utensils className="w-6 h-6 md:w-8 md:h-8 text-amber-200" />
+              <Utensils className="w-12 h-12 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
             )}
-          </div>
-          <p className="text-xs md:text-sm font-medium text-amber-100 text-center leading-tight line-clamp-2">
-            {food.name}
-          </p>
-          <p className="text-xs text-amber-300 mt-1">
-            {food.kCal} kcal
-          </p>
-        </div>
+            
+            {/* Hover overlay */}
+            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}>
+              <Eye className="w-6 h-6 text-white" />
+            </div>
 
-        {/* Tooltip for simple variant */}
-        {isHovered && (
-          <div 
-            className="fixed z-50 bg-black/90 text-white p-3 rounded-lg shadow-lg max-w-xs"
-            style={{
-              top: `${tooltipPosition.top}px`,
-              left: `${tooltipPosition.left}px`,
-              transform: 'translateX(-50%)',
-            }}
-          >
-            <h4 className="font-semibold text-sm mb-1">{food.name}</h4>
-            <p className="text-xs text-gray-300 mb-2">{food.kCal} kcal</p>
-            
-            {food.dietaryRestrictions && food.dietaryRestrictions.length > 0 && (
-              <div className="mb-2">
-                <p className="text-xs font-medium text-yellow-400 mb-1">Dietary Restrictions:</p>
-                <div className="flex flex-wrap gap-1">
-                  {food.dietaryRestrictions.map((restriction, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full"
-                    >
-                      {typeof restriction === 'object' && restriction.name ? restriction.name : `Restriction ${restriction}`}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {food.preferences && food.preferences.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-green-400 mb-1">Preferences:</p>
-                <div className="flex flex-wrap gap-1">
-                  {food.preferences.map((preference, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full"
-                    >
-                      {typeof preference === 'object' && preference.name ? preference.name : `Preference ${preference}`}
-                    </span>
-                  ))}
+            {/* Match badge */}
+            {preferenceNamesArray.length > 0 && (
+              <div className="absolute top-1 right-1">
+                <div className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Heart className="w-2.5 h-2.5" />
+                  <span className="text-xs">Match</span>
                 </div>
               </div>
             )}
           </div>
-        )}
+
+          {/* Content Section */}
+          <div className="p-3 space-y-2 flex-1 flex flex-col">
+            {/* Title */}
+            <h3 className="text-sm font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2 leading-tight">
+              {food.name}
+            </h3>
+
+            {/* Calories */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-medium text-amber-200">Calories:</span>
+              <div className="bg-amber-900/50 border border-amber-400 text-amber-100 font-bold text-xs px-1.5 py-0.5 rounded">
+                {food.kCal} kCal
+              </div>
+            </div>
+
+            {/* Preferences */}
+            {preferenceNamesArray.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-amber-200">Preferences:</p>
+                <div className="flex flex-wrap gap-1">
+                  {preferenceNamesArray.slice(0, 1).map((name, index) => (
+                    <div key={index} className="bg-amber-900/50 border border-amber-400 text-amber-100 text-xs px-1.5 py-0.5 rounded">
+                      {name}
+                    </div>
+                  ))}
+                  {preferenceNamesArray.length > 1 && (
+                    <div className="bg-amber-900/50 border border-amber-400 text-amber-100 text-xs px-1.5 py-0.5 rounded">
+                      +{preferenceNamesArray.length - 1}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Dietary Restrictions */}
+            {restrictionNamesArray.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-amber-200">Dietary Info:</p>
+                <div className="flex flex-wrap gap-1">
+                  {restrictionNamesArray.slice(0, 2).map((name, index) => (
+                    <div key={index} className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded">
+                      {name}
+                    </div>
+                  ))}
+                  {restrictionNamesArray.length > 2 && (
+                    <div className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded">
+                      +{restrictionNamesArray.length - 2}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Click indicator */}
+            <div className="flex items-center justify-between pt-1 border-t border-amber-600/30 mt-auto">
+              <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
+              </span>
+              <Eye className="w-3 h-3 text-amber-200 group-hover:text-amber-100 transition-colors" />
+            </div>
+          </div>
+        </div>
       </>
     );
   }
 
-  // Enhanced and Editable variants use Card component
-  return (
-    <Card 
-      ref={cardRef}
-      className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 w-full max-w-sm bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 ${className || ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onCardClick?.(food)}
-    >
-      <CardContent className="p-0">
-        {/* Edit button for editable variant */}
-        {variant === 'editable' && isOwner && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditClick?.(food);
-            }}
-            className="absolute top-2 right-2 z-10 bg-amber-600 hover:bg-amber-700 text-white rounded-full p-2 transition-colors duration-200"
-            title="Edit food"
-          >
-            <SquarePen className="w-4 h-4 text-amber-200" />
-          </button>
-        )}
+  if (variant === 'enhanced') {
+    const preferenceNamesList = getPreferenceNames();
+    const restrictionNamesList = getRestrictionNames();
 
-        {/* Image Section */}
-        <div className="relative h-28 flex items-center justify-center bg-gradient-to-b from-amber-700 to-amber-800 overflow-hidden">
-          {food.svgLink ? (
-            <Image 
-              src={food.svgLink} 
-              alt={food.name} 
-              width={70}
-              height={70}
-              className="object-contain transition-transform duration-300 group-hover:scale-110" 
-            />
-          ) : (
-            <Utensils className="w-14 h-14 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
-          )}
-          
-          {/* Hover overlay */}
-          <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}>
-            <Eye className="w-6 h-6 text-white" />
-          </div>
-        </div>
-
-        {/* Content Section */}
-        <div className="p-4 space-y-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-amber-900 leading-tight line-clamp-2">
-                {food.name}
-              </h3>
-              <p className="text-sm text-amber-700 font-medium">
-                {food.kCal} kcal
-              </p>
-            </div>
+    return (
+      <Card
+        ref={cardRef}
+        className={`group bg-gradient-to-br from-amber-800 to-amber-900 border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden w-[220px] flex-shrink-0 h-[400px] flex flex-col ${className || ''}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={() => onCardClick?.(food)}
+      >
+  <CardContent className="p-0 flex flex-col h-full min-h-0">
+          {/* Image Section */}
+          <div className="relative h-32 flex items-center justify-center bg-gradient-to-b from-amber-700 to-amber-800 overflow-hidden">
+            {food.svgLink ? (
+              <Image 
+                src={food.svgLink} 
+                alt={food.name} 
+                width={80}
+                height={80}
+                className="object-contain transition-transform duration-300 group-hover:scale-110" 
+              />
+            ) : (
+              <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
+            )}
             
-            {showPreferenceBadge && getPreferenceNames().length > 0 && (
-              <div className="ml-2 flex-shrink-0">
-                <Heart className="w-5 h-5 text-rose-500 fill-current" />
+            {/* Hover overlay */}
+            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}>
+              <Eye className="w-8 h-8 text-white" />
+            </div>
+
+            {/* Preference badge */}
+            {showPreferenceBadge && preferenceNamesList.length > 0 && (
+              <div className="absolute top-2 right-2">
+                <Badge variant="secondary" className="bg-green-600 text-white text-xs">
+                  <Heart className="w-3 h-3 mr-1" />
+                  Match
+                </Badge>
               </div>
             )}
           </div>
 
-          {/* Preferences */}
-          {getPreferenceNames().length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-amber-800">Preferences:</p>
-              <div className="flex flex-wrap gap-1">
-                {getPreferenceNames().map((name, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="text-xs bg-green-100 text-green-800 hover:bg-green-200"
-                  >
-                    {name}
-                  </Badge>
-                ))}
-              </div>
+          {/* Content Section */}
+          <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
+            {/* Title */}
+            <h3 className="text-lg font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
+              {food.name}
+            </h3>
+
+            {/* Calories */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-amber-200">Calories:</span>
+              <Badge variant="outline" className="text-sm border-amber-400 text-amber-100 font-bold">
+                {food.kCal} kCal
+              </Badge>
             </div>
+
+            {/* Preferences */}
+            {preferenceNamesList.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-amber-200">Preferences:</p>
+                <div className="flex flex-wrap gap-1">
+                  {preferenceNamesList.slice(0, 2).map((name, index) => (
+                    <Badge key={index} variant="outline" className="text-xs border-amber-400 text-amber-100">
+                      {name}
+                    </Badge>
+                  ))}
+                  {preferenceNamesList.length > 2 && (
+                    <Badge variant="outline" className="text-xs border-amber-400 text-amber-100">
+                      +{preferenceNamesList.length - 2} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Dietary Restrictions */}
+            {restrictionNamesList.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-amber-200">Dietary Info:</p>
+                <div className="flex flex-wrap gap-1">
+                  {restrictionNamesList.slice(0, 2).map((name, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs bg-green-600 text-white">
+                      {name}
+                    </Badge>
+                  ))}
+                  {restrictionNamesList.length > 2 && (
+                    <Badge variant="secondary" className="text-xs bg-green-600 text-white">
+                      +{restrictionNamesList.length - 2} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Click to view more indicator */}
+            <div className="flex items-center justify-between pt-2 border-t border-amber-600/30 mt-auto">
+              <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
+                Click for details
+              </span>
+              <Eye className="w-4 h-4 text-amber-200 group-hover:text-amber-100 transition-colors" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (variant === 'editable') {
+    const preferenceNamesList = getPreferenceNames();
+    const restrictionNamesList = getRestrictionNames();
+
+    return (
+      <Card
+        ref={cardRef}
+        className={`group bg-gradient-to-br from-amber-800 to-amber-900 border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden w-[220px] flex-shrink-0 h-[400px] flex flex-col ${className || ''}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={() => onCardClick?.(food)}
+      >
+  <CardContent className="p-0 flex flex-col h-full relative min-h-0">
+          {/* Edit button - only show if user owns this food */}
+          {isOwner && onEditClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditClick(food);
+              }}
+              className="absolute top-2 right-2 z-20 bg-amber-600/20 hover:bg-amber-600/40 p-2 rounded-full transition-all"
+              title="Edit Food"
+            >
+              <SquarePen className="w-4 h-4 text-amber-200" />
+            </button>
           )}
 
-          {/* Dietary Restrictions */}
-          {getRestrictionNames().length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-amber-800">Restrictions:</p>
-              <div className="flex flex-wrap gap-1">
-                {getRestrictionNames().map((name, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="destructive" 
-                    className="text-xs bg-red-100 text-red-800 hover:bg-red-200"
-                  >
-                    {name}
-                  </Badge>
-                ))}
-              </div>
+          {/* Image Section */}
+          <div className="relative h-32 flex items-center justify-center bg-gradient-to-b from-amber-700 to-amber-800 overflow-hidden">
+            {food.svgLink ? (
+              <Image 
+                src={food.svgLink} 
+                alt={food.name} 
+                width={80}
+                height={80}
+                className="object-contain transition-transform duration-300 group-hover:scale-110" 
+              />
+            ) : (
+              <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
+            )}
+            
+            {/* Hover overlay */}
+            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
+              isHovered ? 'opacity-100' : 'opacity-0'
+            }`}>
+              <Eye className="w-8 h-8 text-white" />
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+
+            {/* Preference badge */}
+            {showPreferenceBadge && preferenceNamesList.length > 0 && (
+              <div className="absolute top-2 right-2">
+                <Badge variant="secondary" className="bg-green-600 text-white text-xs">
+                  <Heart className="w-3 h-3 mr-1" />
+                  Match
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Content Section */}
+          <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
+            {/* Title */}
+            <h3 className="text-lg font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
+              {food.name}
+            </h3>
+
+            {/* Calories */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-amber-200">Calories:</span>
+              <Badge variant="outline" className="text-sm border-amber-400 text-amber-100 font-bold">
+                {food.kCal} kCal
+              </Badge>
+            </div>
+
+            {/* Preferences */}
+            {preferenceNamesList.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-amber-200">Preferences:</p>
+                <div className="flex flex-wrap gap-1">
+                  {preferenceNamesList.slice(0, 2).map((name, index) => (
+                    <Badge key={index} variant="outline" className="text-xs border-amber-400 text-amber-100">
+                      {name}
+                    </Badge>
+                  ))}
+                  {preferenceNamesList.length > 2 && (
+                    <Badge variant="outline" className="text-xs border-amber-400 text-amber-100">
+                      +{preferenceNamesList.length - 2} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Dietary Restrictions */}
+            {restrictionNamesList.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-amber-200">Dietary Info:</p>
+                <div className="flex flex-wrap gap-1">
+                  {restrictionNamesList.slice(0, 2).map((name, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs bg-green-600 text-white">
+                      {name}
+                    </Badge>
+                  ))}
+                  {restrictionNamesList.length > 2 && (
+                    <Badge variant="secondary" className="text-xs bg-green-600 text-white">
+                      +{restrictionNamesList.length - 2} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Click to view more indicator */}
+            <div className="flex items-center justify-between pt-2 border-t border-amber-600/30 mt-auto">
+              <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
+                Click for details
+              </span>
+              <Eye className="w-4 h-4 text-amber-200 group-hover:text-amber-100 transition-colors" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return null;
 }
 
 export default FoodCard;

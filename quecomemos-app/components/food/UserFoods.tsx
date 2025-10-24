@@ -2,7 +2,7 @@
 import { FoodModal } from "@/components/modals";
 import { useState } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
-import { RegularFoodCarousel } from "./carousels";
+import { FoodCarousel } from "./carousels";
 
 interface Food {
   FoodID: number;
@@ -28,11 +28,11 @@ interface UserFoodsProps {
 
 export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
   const { userData } = useUser();
-  
+
   // Use mock data if provided (for admin preview), otherwise use real user data
   const userPreferences = mockUserData?.preferences || userData.preferences;
   const userProfile = mockUserData?.profile || userData.profile;
-  
+
   // Estados para el modal
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,7 +60,7 @@ export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
     if (!userPreferences || !userPreferences.hasPreferences) {
       return { preferredFoods: [], otherFoods: foods };
     }
-    
+
     // If user has no dietary restrictions, they can see all foods (no restriction filtering)
     const userRestrictionsIds = userPreferences.dietaryRestrictions || [];
     if (userRestrictionsIds.length === 0) {
@@ -68,18 +68,18 @@ export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
       const userPrefIds = userPreferences.preferences || [];
       const preferredFoods: Food[] = [];
       const otherFoods: Food[] = [];
-      
+
       foods.forEach(food => {
         const foodPrefIds = food.preferences?.map(p => typeof p === 'number' ? p : p.PreferenceID ?? -1) || [];
         const hasMatchingPreference = foodPrefIds.some(prefId => userPrefIds.includes(prefId));
-        
+
         if (hasMatchingPreference) {
           preferredFoods.push(food);
         } else {
           otherFoods.push(food);
         }
       });
-      
+
       return { preferredFoods, otherFoods };
     }
 
@@ -94,12 +94,12 @@ export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
 
       // Check if food matches user preferences
       const hasMatchingPreference = foodPrefIds.some(prefId => userPrefIds.includes(prefId));
-      
+
       // Check if food is compatible with user's dietary restrictions:
       // 1. Food has "For Everyone" restriction (id = 0)
       // 2. Food has at least one restriction that matches user's restrictions
       const isForEveryone = foodRestrictionsIds.includes(0);
-      const hasMatchingRestriction = foodRestrictionsIds.some(restrictionId => 
+      const hasMatchingRestriction = foodRestrictionsIds.some(restrictionId =>
         userRestrictionsIds.includes(restrictionId)
       );
       const isCompatible = isForEveryone || hasMatchingRestriction;
@@ -122,24 +122,26 @@ export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
 
   return (
     <div className="w-full">
-      {/* Preferred Foods Section */}
-      <RegularFoodCarousel
-        title="Recommended foods for you"
+
+      <FoodCarousel
+        title="Recommended Foods"
         foods={preferredFoods}
         onCardClick={openModal}
-        showHeader={true}
+        variant="simple"
+        showPreferenceBadge={true}
       />
 
-      {/* Other Foods Section */}
-      <RegularFoodCarousel
-        title="Other foods for you"
+      <FoodCarousel
+        title="Recommended Foods"
         foods={otherFoods}
         onCardClick={openModal}
-        showHeader={true}
+        variant="simple"
+        showPreferenceBadge={true}
       />
 
+
       {/* Modal */}
-      <FoodModal 
+      <FoodModal
         food={selectedFood}
         isOpen={isModalOpen}
         onClose={closeModal}
