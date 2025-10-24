@@ -400,7 +400,10 @@ function GroupsPageSkeleton() {
         {/* Sidebar con invitaciones */}
         <div className="space-y-6">
           {currentUserId && (
-            <GroupInvitations userId={currentUserId} />
+            <GroupInvitations 
+              userId={currentUserId} 
+              onInvitationAccepted={fetchGroups}
+            />
           )}
         </div>
       </div>

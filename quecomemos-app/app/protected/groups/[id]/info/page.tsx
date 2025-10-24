@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  ArrowLeft, 
-  Users, 
-  Settings, 
-  UserMinus, 
+import {
+  ArrowLeft,
+  Users,
+  Settings,
+  UserMinus,
   UserPlus,
   Activity,
   Clock,
@@ -86,10 +87,11 @@ export default function GroupInfoPage() {
   const router = useRouter();
   const groupId = params.id as string;
   const { userData } = useUser();
-  
+
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
   const [saving, setSaving] = useState(false);
@@ -110,14 +112,16 @@ export default function GroupInfoPage() {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}`);
-      
+
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Group not found');
+          // Group doesn't exist anymore
+          setNotFound(true);
+          return;
         }
         throw new Error('Error loading group');
       }
-      
+
       const data = await response.json();
       setGroup(data);
       setEditForm({ name: data.name, description: data.description || '' });
@@ -133,11 +137,11 @@ export default function GroupInfoPage() {
       setMealsLoading(true);
       setMealsError(null);
       const response = await fetch(`${API_BASE_URL}/consumptions/groups/${groupId}/most-consumed?limit=3`);
-      
+
       if (!response.ok) {
         throw new Error('Error loading most consumed meals');
       }
-      
+
       const data = await response.json();
       setMostConsumedMeals(data);
     } catch (err) {
@@ -151,16 +155,16 @@ export default function GroupInfoPage() {
 
   const fetchPendingInvitations = useCallback(async () => {
     if (!currentUserId) return;
-    
+
     try {
       setInvitationsLoading(true);
       setInvitationsError(null);
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invitations?requesterId=${currentUserId}`);
-      
+
       if (!response.ok) {
         throw new Error('Error loading pending invitations');
       }
-      
+
       const data = await response.json();
       setPendingInvitations(data);
     } catch (err) {
@@ -211,10 +215,10 @@ export default function GroupInfoPage() {
 
   useEffect(() => {
     if (group && currentUserId) {
-      const adminCheck = group.createdBy === currentUserId || 
-                        group.members.some(member => 
-                          member.profile.id === currentUserId && member.role === 'admin'
-                        );
+      const adminCheck = group.createdBy === currentUserId ||
+        group.members.some(member =>
+          member.profile.id === currentUserId && member.role === 'admin'
+        );
       if (adminCheck) {
         fetchPendingInvitations();
       }
@@ -231,10 +235,10 @@ export default function GroupInfoPage() {
 
   const isUserAdmin = () => {
     if (!group || !currentUserId) return false;
-    return group.createdBy === currentUserId || 
-           group.members.some(member => 
-             member.profile.id === currentUserId && member.role === 'admin'
-           );
+    return group.createdBy === currentUserId ||
+      group.members.some(member =>
+        member.profile.id === currentUserId && member.role === 'admin'
+      );
   };
 
   const isMember = () => {
@@ -244,7 +248,7 @@ export default function GroupInfoPage() {
 
   const handleSaveGroup = async () => {
     if (!group || !currentUserId) return;
-    
+
     try {
       setSaving(true);
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
@@ -302,7 +306,7 @@ export default function GroupInfoPage() {
         }
 
         await fetchGroup();
-                showSuccess('Member removed', `${memberName} was removed from the group.`);
+        showSuccess('Member removed', `${memberName} was removed from the group.`);
       } catch (err) {
         console.error('Error removing member:', err);
         showError('Error removing member', err instanceof Error ? err.message : 'Error removing member');
@@ -364,7 +368,7 @@ export default function GroupInfoPage() {
           throw new Error((errorData && errorData.error) || 'Error deleting group');
         }
 
-        router.push('/protected/groups');
+        router.replace('/protected/groups');
       } catch (err) {
         console.error('Error deleting group:', err);
         showError('Error deleting group', err instanceof Error ? err.message : 'Error deleting the group');
@@ -376,7 +380,7 @@ export default function GroupInfoPage() {
   // Invite section state & handler
   const [showInviteSection, setShowInviteSection] = useState(false);
 
-    const handleInviteUser = async (userId: string, username: string) => {
+  const handleInviteUser = async (userId: string, username: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invite`, {
         method: 'POST',
@@ -403,7 +407,7 @@ export default function GroupInfoPage() {
 
       // Show success message using global notification
       showSuccess('Invitation sent', `Invitation sent to ${username} successfully.`);
-      
+
       // Refresh pending invitations list
       fetchPendingInvitations();
 
@@ -423,85 +427,112 @@ export default function GroupInfoPage() {
 
 
 
-function GroupInfoSkeleton() {
-  return (
-    <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
-      {/* Header skeleton */}
-      <div className="flex items-center space-x-4">
-        <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
-        <div className="flex-1">
-          <div className="w-56 h-8 bg-muted rounded animate-pulse mb-2"></div>
-          <div className="w-80 h-4 bg-muted/70 rounded animate-pulse"></div>
+  function GroupInfoSkeleton() {
+    return (
+      <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
+        {/* Header skeleton */}
+        <div className="flex items-center space-x-4">
+          <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
+          <div className="flex-1">
+            <div className="w-56 h-8 bg-muted rounded animate-pulse mb-2"></div>
+            <div className="w-80 h-4 bg-muted/70 rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Group Details skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
+                <div className="w-16 h-8 bg-muted rounded animate-pulse"></div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="w-24 h-4 bg-muted/70 rounded animate-pulse"></div>
+                <div className="w-full h-10 bg-muted rounded animate-pulse"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="w-32 h-4 bg-muted/70 rounded animate-pulse"></div>
+                <div className="w-full h-20 bg-muted rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Members skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="w-32 h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
+                    <div className="space-y-1">
+                      <div className="w-24 h-4 bg-muted rounded animate-pulse"></div>
+                      <div className="w-16 h-3 bg-muted/70 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="w-16 h-6 bg-muted rounded animate-pulse"></div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Charts skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="w-48 h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full h-64 bg-muted rounded animate-pulse"></div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full h-64 bg-muted rounded animate-pulse"></div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Group Details skeleton */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
-              <div className="w-16 h-8 bg-muted rounded animate-pulse"></div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="w-24 h-4 bg-muted/70 rounded animate-pulse"></div>
-              <div className="w-full h-10 bg-muted rounded animate-pulse"></div>
-            </div>
-            <div className="space-y-2">
-              <div className="w-32 h-4 bg-muted/70 rounded animate-pulse"></div>
-              <div className="w-full h-20 bg-muted rounded animate-pulse"></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Members skeleton */}
-        <Card>
-          <CardHeader>
-            <div className="w-32 h-6 bg-muted rounded animate-pulse"></div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
-                  <div className="space-y-1">
-                    <div className="w-24 h-4 bg-muted rounded animate-pulse"></div>
-                    <div className="w-16 h-3 bg-muted/70 rounded animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="w-16 h-6 bg-muted rounded animate-pulse"></div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Charts skeleton */}
-        <Card>
-          <CardHeader>
-            <div className="w-48 h-6 bg-muted rounded animate-pulse"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full h-64 bg-muted rounded animate-pulse"></div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full h-64 bg-muted rounded animate-pulse"></div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (loading) {
     return <GroupInfoSkeleton />;
+  }
+
+  if (notFound) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <h1 className="text-3xl font-bold mb-4">This is not the group you are looking for</h1>
+          <div className="flex justify-center mb-4">
+            <Image
+              src="https://gifdb.com/images/high/these-are-not-the-droids-you-re-looking-for-page-meme-ygs7tyrw9v1a7k52.gif"
+              alt="These aren't the droids you're looking for"
+              width={272}
+              height={153}
+              className="w-90 h-auto rounded shadow-md"
+              unoptimized={true}
+              style={{ maxWidth: '290px' }}
+            />
+          </div>
+
+          <div className="flex justify-center">
+            <Button onClick={() => router.replace('/protected/groups')} className="bg-amber-700 text-white">
+              Go to groups
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error || !group) {
@@ -518,7 +549,7 @@ function GroupInfoSkeleton() {
           </Button>
           <h1 className="text-2xl font-bold">Error</h1>
         </div>
-        
+
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
@@ -606,7 +637,7 @@ function GroupInfoSkeleton() {
                   />
                 </div>
                 <div className="flex space-x-2">
-                  <Button 
+                  <Button
                     onClick={handleSaveGroup}
                     disabled={saving || !editForm.name.trim()}
                     className="flex-1"
@@ -614,7 +645,7 @@ function GroupInfoSkeleton() {
                     <Save className="w-4 h-4 mr-2" />
                     {saving ? 'Saving...' : 'Save'}
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => {
                       setEditForm({ name: group.name, description: group.description || '' });
@@ -686,7 +717,7 @@ function GroupInfoSkeleton() {
           <CardContent>
             <div className="space-y-3">
               {group.members.map((member) => (
-                <div 
+                <div
                   key={member.GroupMemberID}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
@@ -694,7 +725,7 @@ function GroupInfoSkeleton() {
                     <div className="flex items-center justify-center w-8 h-8 bg-amber-700 text-white rounded-full text-sm font-medium">
                       {member.profile.username.charAt(0).toUpperCase()}
                     </div>
-                    
+
                     <div>
                       <p className="font-medium">{member.profile.username}</p>
                       <div className="flex items-center space-x-2">
@@ -717,12 +748,12 @@ function GroupInfoSkeleton() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Remove member button - only for admins and not for the creator */}
                   {isUserAdmin() && member.profile.id !== group.createdBy && member.profile.id !== currentUserId && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="text-destructive"
                       onClick={() => handleRemoveMember(member.profile.id, member.profile.username)}
                     >
@@ -745,7 +776,7 @@ function GroupInfoSkeleton() {
                 </div>
               </div>
             )}
-            
+
             {/* Pending Invitations Section */}
             {isUserAdmin() && (
               <div className="mt-6">
@@ -756,7 +787,7 @@ function GroupInfoSkeleton() {
                   </h3>
                   <Badge variant="outline">{pendingInvitations.length}</Badge>
                 </div>
-                
+
                 {invitationsError ? (
                   <div className="text-center py-4">
                     <p className="text-destructive mb-2">{invitationsError}</p>
@@ -773,7 +804,7 @@ function GroupInfoSkeleton() {
                 ) : pendingInvitations.length > 0 ? (
                   <div className="space-y-3">
                     {pendingInvitations.map((invitation) => (
-                      <div 
+                      <div
                         key={invitation.InvitationID}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
@@ -781,7 +812,7 @@ function GroupInfoSkeleton() {
                           <div className="flex items-center justify-center w-8 h-8 bg-muted text-foreground rounded-full text-sm font-medium border">
                             {invitation.invitedUser.username.charAt(0).toUpperCase()}
                           </div>
-                          
+
                           <div>
                             <p className="font-medium">{invitation.invitedUser.username}</p>
                             <div className="flex items-center space-x-2">
@@ -795,18 +826,18 @@ function GroupInfoSkeleton() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="border-muted-foreground">
                             <Clock className="w-3 h-3 mr-1" />
                             Pending
                           </Badge>
-                          
+
                           {/* Cancel button - only show if current user sent the invitation */}
                           {invitation.invitedById === currentUserId && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="text-muted-foreground hover:text-destructive"
                               onClick={() => handleCancelInvitation(invitation.InvitationID, invitation.invitedUser.username)}
                             >
@@ -944,8 +975,8 @@ function GroupInfoSkeleton() {
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Leave Group - for non-creators */}
               {currentUserId !== group.createdBy && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="text-orange-600 hover:text-orange-700"
                   onClick={handleLeaveGroup}
                 >
@@ -956,7 +987,7 @@ function GroupInfoSkeleton() {
 
               {/* Delete Group - only for creators */}
               {isUserAdmin() && currentUserId === group.createdBy && (
-                <Button 
+                <Button
                   variant="destructive"
                   onClick={handleDeleteGroup}
                 >
@@ -968,19 +999,19 @@ function GroupInfoSkeleton() {
           </CardContent>
         </Card>
       )}
-        {/* Confirmation modal injected globally for this page */}
-        <ConfirmationModal
-          isOpen={confirmation.isOpen}
-          onClose={closeConfirmation}
-          onConfirm={handleConfirm}
-          type={confirmation.type}
-          title={confirmation.title}
-          message={confirmation.message}
-          confirmText={confirmation.confirmText}
-          cancelText={confirmation.cancelText}
-          isLoading={confirmation.isLoading}
-          customIcon={confirmation.customIcon}
-        />
-      </div>
-    );
-  }
+      {/* Confirmation modal injected globally for this page */}
+      <ConfirmationModal
+        isOpen={confirmation.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={handleConfirm}
+        type={confirmation.type}
+        title={confirmation.title}
+        message={confirmation.message}
+        confirmText={confirmation.confirmText}
+        cancelText={confirmation.cancelText}
+        isLoading={confirmation.isLoading}
+        customIcon={confirmation.customIcon}
+      />
+    </div>
+  );
+}

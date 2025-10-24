@@ -75,10 +75,11 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
       setTimeout(() => {
         if (onSuccess) {
           onSuccess(newGroup.GroupID);
+           router.replace(`/protected/groups/${newGroup.GroupID}`);
         } else {
-          router.push(`protected/groups/${newGroup.GroupID}`);
+          showError('Error creating group', "Unexpected error occurred");
         }
-      }, 800);
+      }, 1);
       
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';

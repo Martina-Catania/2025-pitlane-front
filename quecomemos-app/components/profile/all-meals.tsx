@@ -136,7 +136,7 @@ export function AllMeals() {
     if (loadingMeals) {
         return (
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-amber-200">Community Meals</h2>
+                <h2 className="text-xl font-semibold text-amber-200 mb-3">Community Meals</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[...Array(6)].map((_, i) => (
                         <div key={i} className="bg-amber-800/30 border border-amber-700/50 rounded-lg p-4">
@@ -167,7 +167,7 @@ export function AllMeals() {
             {userPreferences && userPreferences.hasPreferences && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-amber-200">Recommended for You</h2>
+                        <h2 className="text-xl font-semibold text-amber-200 mb-3">Recommended for You</h2>
                         <span className="text-sm text-gray-400">
                             Based on your preferences
                         </span>
@@ -219,9 +219,9 @@ export function AllMeals() {
             )}
 
             {/* Community Meals Section */}
-            <div className="space-y-4">
+            <div className="space-y-4 mt-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-amber-200">Community Meals</h2>
+                <h2 className="text-xl font-semibold text-amber-200 mb-3">Community Meals</h2>
                 <span className="text-sm text-gray-400">
                     {meals.length} meal{meals.length !== 1 ? 's' : ''}
                 </span>

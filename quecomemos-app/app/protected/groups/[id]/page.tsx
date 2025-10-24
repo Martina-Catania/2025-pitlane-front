@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Activity, Info, UtensilsCrossed, ChefHat } from 'lucide-react';
+import Image from 'next/image';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useMeals } from '@/lib/contexts/MealsContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
@@ -32,6 +33,7 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
 
   // Context hooks
@@ -44,7 +46,14 @@ export default function GroupDetailPage() {
       setLoading(true);
       console.debug('Fetching group', `${API_BASE_URL}/groups/${groupId}`);
       const res = await fetch(`${API_BASE_URL}/groups/${groupId}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          // Group deleted or doesn't exist
+          setNotFound(true);
+          return;
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
       const data = await res.json();
       console.debug('Group payload', data);
       setGroup(data);
@@ -146,6 +155,33 @@ export default function GroupDetailPage() {
           <div className="h-64 bg-muted animate-pulse rounded-lg" />
         </div>
       </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <h1 className="text-3xl font-bold mb-4">This is not the group you are looking for</h1>
+
+          <div className="flex justify-center mb-4">
+            <Image
+              src="https://gifdb.com/images/high/these-are-not-the-droids-you-re-looking-for-page-meme-ygs7tyrw9v1a7k52.gif"
+              alt="These aren't the droids you're looking for"
+              width={272}
+              height={153}
+              className="w-90 h-auto rounded shadow-md"
+              unoptimized={true}
+              style={{ maxWidth: '290px' }}
+            />
+          </div>
+          </div>
+          <div className="flex justify-center">
+            <Button onClick={() => router.replace('/protected/groups')} className="bg-amber-700 text-white">
+              Go to groups
+            </Button>
+          </div>
+        </div>
     );
   }
 
