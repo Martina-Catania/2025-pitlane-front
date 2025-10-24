@@ -46,6 +46,26 @@ interface GroupMember {
   };
 }
 
+interface PendingInvitation {
+  InvitationID: number;
+  groupId: number;
+  invitedUserId: string;
+  invitedById: string;
+  status: string;
+  message?: string;
+  createdAt: string;
+  invitedUser: {
+    id: string;
+    username: string;
+    role: string;
+  };
+  invitedBy: {
+    id: string;
+    username: string;
+    role: string;
+  };
+}
+
 interface Group {
   GroupID: number;
   name: string;
@@ -76,6 +96,9 @@ export default function GroupInfoPage() {
   const [mostConsumedMeals, setMostConsumedMeals] = useState<GroupMostConsumedResponse | null>(null);
   const [mealsLoading, setMealsLoading] = useState(false);
   const [mealsError, setMealsError] = useState<string | null>(null);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
+  const [invitationsError, setInvitationsError] = useState<string | null>(null);
   const currentUserId = userData?.profile?.id;
 
   const fetchGroup = useCallback(async () => {
@@ -121,10 +144,77 @@ export default function GroupInfoPage() {
     }
   }, [groupId]);
 
+  const fetchPendingInvitations = useCallback(async () => {
+    if (!currentUserId) return;
+    
+    try {
+      setInvitationsLoading(true);
+      setInvitationsError(null);
+      const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invitations?requesterId=${currentUserId}`);
+      
+      if (!response.ok) {
+        throw new Error('Error loading pending invitations');
+      }
+      
+      const data = await response.json();
+      setPendingInvitations(data);
+    } catch (err) {
+      console.error('Error fetching pending invitations:', err);
+      setInvitationsError(err instanceof Error ? err.message : 'Error loading invitations');
+      setPendingInvitations([]);
+    } finally {
+      setInvitationsLoading(false);
+    }
+  }, [groupId, currentUserId]);
+
+  const handleCancelInvitation = async (invitationId: number, username: string) => {
+    if (!currentUserId) return;
+
+    showConfirmation({
+      type: 'question',
+      title: 'Cancel invitation',
+      message: `Are you sure you want to cancel the invitation sent to ${username}?`,
+      confirmText: 'Cancel invitation',
+      cancelText: 'Keep invitation'
+    }, async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/groups/invitations/${invitationId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requesterId: currentUserId })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error((errorData && errorData.error) || 'Error cancelling invitation');
+        }
+
+        await fetchPendingInvitations(); // Refresh the list
+        showSuccess('Invitation cancelled', `Invitation to ${username} was cancelled successfully.`);
+      } catch (err) {
+        console.error('Error cancelling invitation:', err);
+        showError('Error cancelling invitation', err instanceof Error ? err.message : 'Error cancelling invitation');
+        throw err;
+      }
+    });
+  };
+
   useEffect(() => {
     fetchGroup();
     fetchMostConsumedMeals();
   }, [fetchGroup, fetchMostConsumedMeals]);
+
+  useEffect(() => {
+    if (group && currentUserId) {
+      const adminCheck = group.createdBy === currentUserId || 
+                        group.members.some(member => 
+                          member.profile.id === currentUserId && member.role === 'admin'
+                        );
+      if (adminCheck) {
+        fetchPendingInvitations();
+      }
+    }
+  }, [group, currentUserId, fetchPendingInvitations]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -170,6 +260,8 @@ export default function GroupInfoPage() {
       }
 
       await fetchGroup(); // Refresh group data
+      // Show success notification for global feedback
+      showSuccess('Group updated', `Group "${editForm.name || 'unnamed'}" was updated successfully.`);
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating group:', error);
@@ -293,17 +385,26 @@ export default function GroupInfoPage() {
         }),
       });
 
+      if (response.status === 409) {
+        // Already pending invitation
+        showError('Already invited', `${username} already has a pending invitation to this group.`);
+        return;
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Error sending invitation');
       }
 
-      // Show success message
-      alert(`Invitation sent to ${username} successfully`);
+      // Show success message using global notification
+      showSuccess('Invitation sent', `Invitation sent to ${username} successfully.`);
+      
+      // Refresh pending invitations list
+      fetchPendingInvitations();
 
     } catch (error) {
       console.error('Error inviting user:', error);
-      alert(error instanceof Error ? error.message : 'Error sending invitation');
+      showError('Error sending invitation', error instanceof Error ? error.message : 'Error sending invitation');
       throw error; // Re-throw para que UserSearch pueda manejarlo
     }
   };
@@ -564,6 +665,86 @@ export default function GroupInfoPage() {
                 </div>
               </div>
             )}
+            
+            {/* Pending Invitations Section */}
+            {isUserAdmin() && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center">
+                    <Clock className="w-5 h-5 mr-2" />
+                    Pending Invitations
+                  </h3>
+                  <Badge variant="outline">{pendingInvitations.length}</Badge>
+                </div>
+                
+                {invitationsError ? (
+                  <div className="text-center py-4">
+                    <p className="text-destructive mb-2">{invitationsError}</p>
+                    <Button variant="outline" size="sm" onClick={fetchPendingInvitations}>
+                      Try Again
+                    </Button>
+                  </div>
+                ) : invitationsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
+                    ))}
+                  </div>
+                ) : pendingInvitations.length > 0 ? (
+                  <div className="space-y-3">
+                    {pendingInvitations.map((invitation) => (
+                      <div 
+                        key={invitation.InvitationID}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-muted text-foreground rounded-full text-sm font-medium border">
+                            {invitation.invitedUser.username.charAt(0).toUpperCase()}
+                          </div>
+                          
+                          <div>
+                            <p className="font-medium">{invitation.invitedUser.username}</p>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-muted-foreground">
+                                Invited by {invitation.invitedBy.username}
+                              </span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(invitation.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="border-muted-foreground">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending
+                          </Badge>
+                          
+                          {/* Cancel button - only show if current user sent the invitation */}
+                          {invitation.invitedById === currentUserId && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-muted-foreground hover:text-destructive"
+                              onClick={() => handleCancelInvitation(invitation.InvitationID, invitation.invitedUser.username)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <UserPlus className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No pending invitations</p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -666,27 +847,6 @@ export default function GroupInfoPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Dashboard & History - new sections above Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 mr-2" />
-              Group Dashboard
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 mr-2" />
-              Group History
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
 
       {/* Group Preferences Bar Chart */}
       <GroupPreferencesBarChart groupId={groupId} members={group.members} />

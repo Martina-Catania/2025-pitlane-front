@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import ReactDOM from 'react-dom';
 import { CheckCircle, XCircle, X, AlertCircle, Info } from "lucide-react";
 
 export type NotificationType = "success" | "error" | "warning" | "info";
@@ -30,15 +31,15 @@ export function NotificationModal({
 }: NotificationModalProps) {
   
   // Auto close functionality
-  useEffect(() => {
-    if (isOpen && autoClose) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, autoCloseTime);
+    useEffect(() => {
+      if (isOpen && autoClose) {
+        const timer = setTimeout(() => {
+          onClose();
+        }, autoCloseTime);
 
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, autoClose, autoCloseTime, onClose]);
+        return () => clearTimeout(timer);
+      }
+    }, [isOpen, autoClose, autoCloseTime, onClose]);
 
   // Close modal with ESC
   useEffect(() => {
@@ -56,6 +57,22 @@ export function NotificationModal({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
+
+  // Portal container to escape any parent stacking contexts (filters/blur)
+  const portalElRef = useRef<HTMLDivElement | null>(null);
+  if (typeof document !== 'undefined' && !portalElRef.current) {
+    portalElRef.current = document.createElement('div');
+  }
+
+  useEffect(() => {
+    const el = portalElRef.current;
+    if (!el) return;
+    // ensure it's appended at the end of body so it's above other elements
+    document.body.appendChild(el);
+    return () => {
+      if (document.body.contains(el)) document.body.removeChild(el);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -118,8 +135,8 @@ export function NotificationModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed top-4 right-4 z-50 pointer-events-auto max-w-sm sm:max-w-md">      
+  const modal = (
+    <div className="fixed top-4 right-4 z-[99999] pointer-events-auto max-w-sm sm:max-w-md">      
       {/* Toast Notification */}
       <div className={`
         bg-card border ${borderColor} rounded-lg shadow-lg 
@@ -177,4 +194,11 @@ export function NotificationModal({
       `}</style>
     </div>
   );
+
+  // Render into portal to avoid being affected by parent filters/blur/stacks
+  if (portalElRef.current) {
+    return ReactDOM.createPortal(modal, portalElRef.current);
+  }
+
+  return modal;
 }
