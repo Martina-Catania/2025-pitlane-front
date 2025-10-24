@@ -134,7 +134,7 @@ export default function UserHistoryPage() {
         <div className="flex-1">
           <h1 className="text-3xl font-bold">My Personal Consumption History</h1>
           <p className="text-muted-foreground mt-1">
-            Record of your individual meal consumption activity (excludes group meals)
+            Record of your individual meal consumption activity
           </p>
         </div>
 

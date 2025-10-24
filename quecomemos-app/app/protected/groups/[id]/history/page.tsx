@@ -130,7 +130,7 @@ export default function GroupHistoryPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
@@ -146,28 +146,28 @@ export default function GroupHistoryPage() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search meals or descriptions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background"
+                className="w-full pl-10 pr-4 py-2 border border-amber-700/50 rounded-md bg-background/50 text-gray-300 placeholder:text-gray-500"
               />
             </div>
 
             {/* Sort */}
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Filter className="w-4 h-4 text-gray-400" />
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                className="px-3 py-2 border border-input rounded-md bg-background"
+                className="px-3 py-2 border border-amber-700/50 rounded-md bg-background/50 text-gray-300"
               >
                 <option value="desc">Newest First</option>
                 <option value="asc">Oldest First</option>
@@ -176,7 +176,7 @@ export default function GroupHistoryPage() {
           </div>
 
           {/* Stats */}
-          <div className="mt-4 pt-4 border-t flex items-center justify-between text-sm text-muted-foreground">
+          <div className="mt-4 pt-4 border-t border-amber-700/30 flex items-center justify-between text-sm text-gray-400">
             <span>
               {filteredAndSortedConsumptions.length} of {consumptions.length} activities
               {searchTerm && ` matching "${searchTerm}"`}
@@ -194,9 +194,9 @@ export default function GroupHistoryPage() {
       {filteredAndSortedConsumptions.length > 0 ? (
         <div className="space-y-6">
           {Object.entries(groupedConsumptions).map(([date, dayConsumptions]) => (
-            <Card key={date}>
+            <Card key={date} className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center text-lg">
+                <CardTitle className="flex items-center text-lg text-amber-200">
                   <Calendar className="w-5 h-5 mr-2" />
                   {new Date(date).toLocaleDateString('es-ES', { 
                     weekday: 'long',
@@ -204,7 +204,7 @@ export default function GroupHistoryPage() {
                     month: 'long', 
                     year: 'numeric' 
                   })}
-                  <span className="ml-auto text-sm font-normal text-muted-foreground">
+                  <span className="ml-auto text-sm font-normal text-gray-400">
                     {dayConsumptions.length} meal{dayConsumptions.length !== 1 ? 's' : ''}
                   </span>
                 </CardTitle>
@@ -214,20 +214,20 @@ export default function GroupHistoryPage() {
                   {dayConsumptions.map((consumption) => (
                     <div 
                       key={consumption.ConsumptionID} 
-                      className="border-l-4 border-primary pl-4 py-3 bg-muted/30 rounded-r-lg"
+                      className="border-l-4 border-amber-700 pl-4 py-3 bg-amber-900/20 rounded-r-lg"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <ChefHat className="w-4 h-4 text-primary" />
-                            <p className="font-medium">{consumption.name}</p>
+                            <ChefHat className="w-4 h-4 text-amber-700" />
+                            <p className="font-medium text-gray-300">{consumption.name}</p>
                           </div>
                           {consumption.description && (
-                            <p className="text-sm text-muted-foreground mt-1 ml-6">
+                            <p className="text-sm text-gray-400 mt-1 ml-6">
                               {consumption.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-4 mt-2 ml-6 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-4 mt-2 ml-6 text-xs text-gray-500">
                             <span>
                               {new Date(consumption.consumedAt).toLocaleTimeString('es-ES', {
                                 hour: '2-digit',
@@ -239,7 +239,7 @@ export default function GroupHistoryPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center text-muted-foreground">
+                        <div className="flex items-center text-amber-700">
                           <Activity className="w-4 h-4" />
                         </div>
                       </div>
@@ -251,21 +251,21 @@ export default function GroupHistoryPage() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
           <CardContent className="py-12">
             <div className="text-center">
-              <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">
+              <Activity className="w-12 h-12 mx-auto text-amber-700 mb-4" />
+              <h3 className="text-lg font-medium mb-2 text-gray-300">
                 {searchTerm ? 'No matching activities found' : 'No activity history'}
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-gray-400 mb-4">
                 {searchTerm 
                   ? `No activities match "${searchTerm}". Try adjusting your search terms.`
                   : 'This group has no recorded meal consumption history yet.'
                 }
               </p>
               {searchTerm && (
-                <Button variant="outline" onClick={() => setSearchTerm('')}>
+                <Button variant="outline" onClick={() => setSearchTerm('')} className="bg-amber-700 hover:bg-amber-600 text-white border-amber-600">
                   Clear Search
                 </Button>
               )}

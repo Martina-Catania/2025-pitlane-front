@@ -198,7 +198,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
                   size="sm"
                   onClick={() => handleInvitationResponse(invitation.InvitationID, 'accept')}
                   disabled={processing === invitation.InvitationID}
-                  className="flex-1"
+                  className="flex-1 bg-amber-700 hover:bg-amber-600 text-white"
                 >
                   <Check className="w-4 h-4 mr-1" />
                   Accept

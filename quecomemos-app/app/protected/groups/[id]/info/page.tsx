@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,6 +100,11 @@ export default function GroupInfoPage() {
   const [invitationsLoading, setInvitationsLoading] = useState(false);
   const [invitationsError, setInvitationsError] = useState<string | null>(null);
   const currentUserId = userData?.profile?.id;
+
+  // Memoize existing member ids to avoid passing a new array reference on every render
+  const existingMemberIds = useMemo(() => {
+    return group ? group.members.map(m => m.profile.id) : [];
+  }, [group]);
 
   const fetchGroup = useCallback(async () => {
     try {
@@ -464,7 +469,7 @@ export default function GroupInfoPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Button
@@ -575,7 +580,7 @@ export default function GroupInfoPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Your status</p>
-                  <Badge variant={isMember() ? 'default' : 'secondary'}>
+                  <Badge variant={isMember() ? 'default' : 'secondary'} className={isMember() ? 'bg-amber-700 hover:bg-amber-600' : ''}>
                     {isMember() ? 'Member' : 'Not a member'}
                   </Badge>
                 </div>
@@ -594,7 +599,12 @@ export default function GroupInfoPage() {
               </div>
               <div className="flex items-center space-x-2">
                 {isUserAdmin() && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowInviteSection(v => !v)}>
+                  <Button
+                    variant={showInviteSection ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setShowInviteSection(v => !v)}
+                    className={showInviteSection ? 'bg-amber-700 text-white hover:bg-amber-600' : ''}
+                  >
                     <UserPlus className="w-4 h-4 mr-2" />
                     Invite
                   </Button>
@@ -611,14 +621,14 @@ export default function GroupInfoPage() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-medium">
+                    <div className="flex items-center justify-center w-8 h-8 bg-amber-700 text-white rounded-full text-sm font-medium">
                       {member.profile.username.charAt(0).toUpperCase()}
                     </div>
                     
                     <div>
                       <p className="font-medium">{member.profile.username}</p>
                       <div className="flex items-center space-x-2">
-                        <Badge variant={member.role === 'admin' ? 'default' : 'outline'} className="text-xs">
+                        <Badge variant={member.role === 'admin' ? 'default' : 'outline'} className={member.role === 'admin' ? 'text-xs bg-amber-700 hover:bg-amber-600' : 'text-xs'}>
                           {member.role === 'admin' ? (
                             <>
                               <Crown className="w-3 h-3 mr-1" />
@@ -659,7 +669,7 @@ export default function GroupInfoPage() {
                 <div className="mt-3">
                   <UserSearch
                     currentUserId={currentUserId || ''}
-                    existingMemberIds={group.members.map(m => m.profile.id)}
+                    existingMemberIds={existingMemberIds}
                     onInvite={handleInviteUser}
                   />
                 </div>

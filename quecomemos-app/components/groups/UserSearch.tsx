@@ -76,6 +76,10 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
       
       // Remover usuario de la lista después de enviar invitación
       setUsers(prev => prev.filter(u => u.id !== user.id));
+
+      // Reset search input after successful invite
+      setQuery('');
+      setSearchPerformed(false);
     } catch (error) {
       console.error('Error inviting user:', error);
       // El error debería ser manejado por el componente padre
@@ -153,6 +157,7 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
                     size="sm"
                     onClick={() => handleInvite(user)}
                     disabled={inviting === user.id}
+                    className="bg-amber-700 hover:bg-amber-600 text-white"
                   >
                     {inviting === user.id ? (
                       <>

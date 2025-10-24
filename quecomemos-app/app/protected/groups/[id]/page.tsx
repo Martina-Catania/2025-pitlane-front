@@ -186,8 +186,13 @@ export default function GroupDetailPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={openRegisterMealModal} className="w-full sm:w-auto">
-            <ChefHat className="w-4 h-4 mr-2" /> Register Group Meal
+          <Button
+            variant="outline"
+            onClick={openRegisterMealModal}
+            className="w-full sm:w-auto bg-[#18120b] border border-amber-700 text-amber-600 hover:bg-[#1e1406] hover:text-amber-400 hover:border-amber-600 font-normal"
+            style={{ boxShadow: 'none' }}
+          >
+            <ChefHat className="w-4 h-4 mr-2 text-amber-600" /> Register Group Meal
           </Button>
           <Button variant="outline" onClick={goInfo} className="w-full sm:w-auto">
             <Info className="w-4 h-4 mr-2" /> Group information
@@ -196,9 +201,9 @@ export default function GroupDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-amber-200">
               <Activity className="w-5 h-5 mr-2" /> Recent Activity
             </CardTitle>
           </CardHeader>
@@ -208,13 +213,13 @@ export default function GroupDetailPage() {
                 {/* Scrollable container for activities */}
                 <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
                   {group!.consumptions!.slice(0, 10).map((c) => (
-                    <div key={c.ConsumptionID} className="border-l-4 border-primary pl-4 py-2">
+                    <div key={c.ConsumptionID} className="border-l-4 border-amber-700 pl-4 py-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">{c.name}</p>
-                          <p className="text-sm text-muted-foreground">{formatDate(c.consumedAt)}</p>
+                          <p className="font-medium text-gray-300">{c.name}</p>
+                          <p className="text-sm text-gray-400">{formatDate(c.consumedAt)}</p>
                         </div>
-                        <div className="flex items-center text-muted-foreground">
+                        <div className="flex items-center text-amber-700">
                           <ChefHat className="w-4 h-4" />
                         </div>
                       </div>
@@ -223,14 +228,14 @@ export default function GroupDetailPage() {
                 </div>
                 
                 {/* View more button */}
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t border-amber-700/30">
                   <div className="flex items-center justify-between">
                     {group!.consumptions!.length > 10 && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-gray-400">
                         Showing 10 of {group!.consumptions!.length} activities
                       </p>
                     )}
-                    <Button variant="outline" size="sm" onClick={goHistory} className="ml-auto">
+                    <Button variant="outline" size="sm" onClick={goHistory} className="ml-auto bg-amber-700 hover:bg-amber-600 text-white border-amber-600">
                       View Complete History
                     </Button>
                   </div>
@@ -238,11 +243,16 @@ export default function GroupDetailPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No recent activity</h3>
-                <p className="text-muted-foreground mb-4">Meals consumed by the group will appear here</p>
-                <Button variant="outline" onClick={openRegisterMealModal}>
-                  <ChefHat className="w-4 h-4 mr-2" />
+                <Activity className="w-12 h-12 mx-auto text-amber-700 mb-4" />
+                <h3 className="text-lg font-medium mb-2 text-gray-300">No recent activity</h3>
+                <p className="text-gray-400 mb-4">Meals consumed by the group will appear here</p>
+                <Button
+                  variant="outline"
+                  onClick={openRegisterMealModal}
+                  className="bg-[#18120b] border border-amber-700 text-amber-600 hover:bg-[#1e1406] hover:text-amber-400 hover:border-amber-600 font-normal"
+                  style={{ boxShadow: 'none' }}
+                >
+                  <ChefHat className="w-4 h-4 mr-2 text-amber-600" />
                   Register First Group Meal
                 </Button>
               </div>
@@ -250,19 +260,23 @@ export default function GroupDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-amber-200">
               <UtensilsCrossed className="w-5 h-5 mr-2" /> Group Meals
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">
-              <UtensilsCrossed className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Group meals</h3>
-              <p className="text-muted-foreground mb-4">Register and track meals consumed by this group</p>
-              <Button onClick={openRegisterMealModal}>
-                <ChefHat className="w-4 h-4 mr-2" />
+              <UtensilsCrossed className="w-12 h-12 mx-auto text-amber-700 mb-4" />
+              <h3 className="text-lg font-medium mb-2 text-gray-300">Group meals</h3>
+              <p className="text-gray-400 mb-4">Register and track meals consumed by this group</p>
+              <Button
+                onClick={openRegisterMealModal}
+                className="bg-[#18120b] border border-amber-700 text-amber-600 hover:bg-[#1e1406] hover:text-amber-400 hover:border-amber-600 font-normal"
+                style={{ boxShadow: 'none' }}
+              >
+                <ChefHat className="w-4 h-4 mr-2 text-amber-600" />
                 Register Group Meal
               </Button>
             </div>
