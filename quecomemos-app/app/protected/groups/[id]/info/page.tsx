@@ -423,15 +423,85 @@ export default function GroupInfoPage() {
 
 
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="space-y-6">
-          <div className="h-8 bg-muted animate-pulse rounded" />
-          <div className="h-64 bg-muted animate-pulse rounded-lg" />
+function GroupInfoSkeleton() {
+  return (
+    <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
+      {/* Header skeleton */}
+      <div className="flex items-center space-x-4">
+        <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
+        <div className="flex-1">
+          <div className="w-56 h-8 bg-muted rounded animate-pulse mb-2"></div>
+          <div className="w-80 h-4 bg-muted/70 rounded animate-pulse"></div>
         </div>
       </div>
-    );
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Group Details skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
+              <div className="w-16 h-8 bg-muted rounded animate-pulse"></div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="w-24 h-4 bg-muted/70 rounded animate-pulse"></div>
+              <div className="w-full h-10 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="w-32 h-4 bg-muted/70 rounded animate-pulse"></div>
+              <div className="w-full h-20 bg-muted rounded animate-pulse"></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Members skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="w-32 h-6 bg-muted rounded animate-pulse"></div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
+                  <div className="space-y-1">
+                    <div className="w-24 h-4 bg-muted rounded animate-pulse"></div>
+                    <div className="w-16 h-3 bg-muted/70 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="w-16 h-6 bg-muted rounded animate-pulse"></div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Charts skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="w-48 h-6 bg-muted rounded animate-pulse"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full h-64 bg-muted rounded animate-pulse"></div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full h-64 bg-muted rounded animate-pulse"></div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+  if (loading) {
+    return <GroupInfoSkeleton />;
   }
 
   if (error || !group) {

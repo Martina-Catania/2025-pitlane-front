@@ -94,15 +94,60 @@ export default function GroupHistoryPage() {
     return acc;
   }, {} as Record<string, Consumption[]>);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="space-y-6">
-          <div className="h-8 bg-muted animate-pulse rounded" />
-          <div className="h-64 bg-muted animate-pulse rounded-lg" />
+function GroupHistorySkeleton() {
+  return (
+    <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
+      {/* Header skeleton */}
+      <div className="flex items-center space-x-4">
+        <div className="w-8 h-8 bg-muted rounded animate-pulse"></div>
+        <div className="flex-1">
+          <div className="w-48 h-8 bg-muted rounded animate-pulse mb-2"></div>
+          <div className="w-96 h-4 bg-muted/70 rounded animate-pulse"></div>
         </div>
       </div>
-    );
+
+      {/* Filters skeleton */}
+      <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1 h-10 bg-muted rounded animate-pulse"></div>
+            <div className="w-32 h-10 bg-muted rounded animate-pulse"></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* History cards skeleton */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Card key={i} className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50 animate-pulse">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="w-6 h-6 bg-muted rounded animate-pulse"></div>
+                <div className="w-20 h-4 bg-muted/70 rounded animate-pulse"></div>
+              </div>
+              <div className="w-3/4 h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="w-full h-4 bg-muted/70 rounded animate-pulse"></div>
+              <div className="w-2/3 h-4 bg-muted/70 rounded animate-pulse"></div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-muted/70 rounded animate-pulse"></div>
+                <div className="w-32 h-4 bg-muted/70 rounded animate-pulse"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-muted/70 rounded animate-pulse"></div>
+                <div className="w-24 h-4 bg-muted/70 rounded animate-pulse"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+  if (loading) {
+    return <GroupHistorySkeleton />;
   }
 
   if (error) {

@@ -192,36 +192,95 @@ export default function GroupsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Groups</h1>
-          <Button disabled>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Group
-          </Button>
-        </div>
+function GroupsPageSkeleton() {
+  return (
+    <div className="container mx-auto p-6 space-y-6 border border-amber-700/50 rounded-lg bg-gradient-to-br from-amber-800/10 to-amber-900/10">
+      {/* Header skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="w-32 h-8 bg-muted rounded animate-pulse"></div>
+        <div className="w-40 h-10 bg-muted rounded animate-pulse"></div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
-                  ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main content skeleton */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Search and filters skeleton */}
+          <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="flex-1 h-10 bg-muted rounded animate-pulse"></div>
+                  <div className="w-24 h-10 bg-muted rounded animate-pulse"></div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex gap-2">
+                  <div className="w-16 h-8 bg-muted rounded animate-pulse"></div>
+                  <div className="w-24 h-8 bg-muted rounded animate-pulse"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Groups grid skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-32 h-6 bg-muted rounded animate-pulse"></div>
+                    <div className="w-20 h-4 bg-muted/70 rounded animate-pulse"></div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="w-full h-4 bg-muted/70 rounded animate-pulse"></div>
+                  <div className="w-3/4 h-4 bg-muted/70 rounded animate-pulse"></div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-muted/70 rounded animate-pulse"></div>
+                      <div className="w-16 h-4 bg-muted/70 rounded animate-pulse"></div>
+                    </div>
+                    <div className="w-24 h-8 bg-muted rounded animate-pulse"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          
-          <div>
-            <div className="h-64 bg-muted animate-pulse rounded-lg" />
-          </div>
+        </div>
+        
+        {/* Sidebar skeleton */}
+        <div className="space-y-6">
+          <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+            <CardHeader>
+              <div className="w-32 h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 border rounded">
+                  <div className="space-y-1">
+                    <div className="w-24 h-4 bg-muted rounded animate-pulse"></div>
+                    <div className="w-16 h-3 bg-muted/70 rounded animate-pulse"></div>
+                  </div>
+                  <div className="w-16 h-6 bg-muted rounded animate-pulse"></div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+            <CardHeader>
+              <div className="w-40 h-6 bg-muted rounded animate-pulse"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full h-32 bg-muted rounded animate-pulse"></div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    );
+    </div>
+  );
+}
+
+  if (loading) {
+    return <GroupsPageSkeleton />;
   }
 
   return (
