@@ -75,10 +75,11 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
       setTimeout(() => {
         if (onSuccess) {
           onSuccess(newGroup.GroupID);
+           router.replace(`/protected/groups/${newGroup.GroupID}`);
         } else {
-          router.push(`protected/groups/${newGroup.GroupID}`);
+          showError('Error creating group', "Unexpected error occurred");
         }
-      }, 800);
+      }, 1);
       
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -106,7 +107,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 border border-amber-700/50 rounded-lg p-6 bg-gradient-to-br from-amber-800/10 to-amber-900/10">
       <div className="flex items-center space-x-4">
         <Button
           variant="ghost"
@@ -170,7 +171,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
               <Button
                 type="submit"
                 disabled={loading || !formData.name.trim()}
-                className="flex-1"
+                className="flex-1 bg-amber-700 hover:bg-amber-600 text-white"
               >
                 {loading ? 'Creating...' : 'Create Group'}
               </Button>
@@ -194,19 +195,19 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
             <h3 className="font-medium">What happens next?</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
+                <span className="w-2 h-2 bg-amber-700 rounded-full mt-2 mr-3 flex-shrink-0" />
                 You will automatically be the group&apos;s administrator
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
+                <span className="w-2 h-2 bg-amber-700 rounded-full mt-2 mr-3 flex-shrink-0" />
                 You will be able to invite other users to join
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
+                <span className="w-2 h-2 bg-amber-700 rounded-full mt-2 mr-3 flex-shrink-0" />
                 Members will be able to log group consumptions
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
+                <span className="w-2 h-2 bg-amber-700 rounded-full mt-2 mr-3 flex-shrink-0" />
                 The system will filter foods based on all members&apos; restrictions
               </li>
             </ul>

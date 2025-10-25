@@ -3,20 +3,10 @@ import { FoodModal } from "@/components/modals";
 import { EditFoodForm } from "@/components/admin";
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
+import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 import { API_BASE_URL } from "@/lib/config/api";
 import { AddFoodForm } from "./forms";
 import {FoodCarousel } from "./carousels";
-
-interface Food {
-  FoodID: number;
-  name: string;
-  kCal: number;
-  svgLink?: string;
-  profileId?: string;
-  dietaryRestrictions?: { name?: string; DietaryRestrictionID?: number }[] | number[];
-  preferences?: { name?: string; PreferenceID?: number }[] | number[];
-  [key: string]: unknown;
-}
 
 interface UserOwnFoodsProps {
   refreshTrigger?: number;
@@ -26,6 +16,7 @@ interface UserOwnFoodsProps {
 
 export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
   const { userData } = useUser();
+  const { foods } = useFoods(); // Get global foods context
   const [userFoods, setUserFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +77,8 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedFood(null);
-    fetchUserFoods(); // Refresh the list after editing
+    // No need to refetch - EditFoodForm updates the global context
+    // and we'll update local state based on context changes
   };
 
   const openAddModal = () => {
@@ -95,13 +87,28 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    fetchUserFoods(); // Refresh the list after adding
+    // No need to refetch - AddFoodForm updates the global context
+    // and we'll update local state based on context changes
   };
 
   // Effects
   useEffect(() => {
     fetchUserFoods();
   }, [fetchUserFoods, refreshTrigger]);
+
+  // Sync local userFoods with global context when foods change
+  useEffect(() => {
+    if (userData.profile?.id) {
+      // Filter global foods to show only user-created foods
+      const userCreatedFoods = foods.filter(food => food.profileId === userData.profile?.id);
+      setUserFoods(userCreatedFoods);
+      
+      // If we have global foods loaded, we don't need loading state anymore
+      if (foods.length >= 0) { // >= 0 to handle empty array case
+        setLoading(false);
+      }
+    }
+  }, [foods, userData.profile?.id]);
 
   if (loading) {
     return (

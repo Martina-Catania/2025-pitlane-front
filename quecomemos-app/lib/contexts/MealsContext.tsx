@@ -48,6 +48,7 @@ interface MealsContextType {
   updateMeal: (mealId: number, updatedMeal: Partial<Meal>) => void;
   removeMeal: (mealId: number) => void;
   getMealById: (mealId: number) => Meal | undefined;
+  handleFoodDeletion: (foodId: number) => void;
   fetchAllMeals: (profileId?: string) => Promise<void>;
   fetchUserMeals: (profileId: string) => Promise<void>;
   fetchRecommendedMeals: (profileId: string) => Promise<void>;
@@ -143,6 +144,20 @@ export const MealsProvider: React.FC<MealsProviderProps> = ({ children, initialM
   const getMealById = useCallback((mealId: number) => {
     return allMeals.find(meal => meal.MealID === mealId);
   }, [allMeals]);
+
+  // Función para manejar eliminación de alimentos de las comidas
+  const handleFoodDeletion = useCallback((foodId: number) => {
+    const updateMealsAfterFoodDeletion = (prevMeals: Meal[]) => 
+      prevMeals.map(meal => ({
+        ...meal,
+        mealFoods: meal.mealFoods.filter(mealFood => mealFood.food.FoodID !== foodId)
+      })).filter(meal => meal.mealFoods.length > 0); // Remove meals that have no foods left
+    
+    setMealsState(updateMealsAfterFoodDeletion);
+    setAllMealsState(updateMealsAfterFoodDeletion);
+    setUserMealsState(updateMealsAfterFoodDeletion);
+    setRecommendedMealsState(updateMealsAfterFoodDeletion);
+  }, []);
 
   // Función para obtener todas las comidas
   const fetchAllMeals = useCallback(async (profileId?: string) => {
@@ -268,6 +283,7 @@ export const MealsProvider: React.FC<MealsProviderProps> = ({ children, initialM
     updateMeal,
     removeMeal,
     getMealById,
+    handleFoodDeletion,
     fetchAllMeals,
     fetchUserMeals,
     fetchRecommendedMeals,

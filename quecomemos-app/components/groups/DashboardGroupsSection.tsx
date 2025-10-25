@@ -116,7 +116,7 @@ export function DashboardGroupsSection({ userId }: DashboardGroupsSectionProps) 
   }
 
   return (
-    <Card>
+    <Card className="border-amber-700/50 bg-gradient-to-br from-amber-800/10 to-amber-900/10">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">

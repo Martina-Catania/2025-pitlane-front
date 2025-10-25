@@ -25,9 +25,10 @@ interface Invitation {
 
 interface GroupInvitationsProps {
   userId: string;
+  onInvitationAccepted?: () => void;
 }
 
-export function GroupInvitations({ userId }: GroupInvitationsProps) {
+export function GroupInvitations({ userId, onInvitationAccepted }: GroupInvitationsProps) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
@@ -83,11 +84,16 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
       const result = await res.json().catch(() => null);
       console.debug('[DEBUG] GroupInvitations.handleInvitationResponse - result', result);
 
-  // Remove the invitation from the list
-  setInvitations(prev => prev.filter(inv => inv.InvitationID !== invitationId));
+      // Remove the invitation from the list
+      setInvitations(prev => prev.filter(inv => inv.InvitationID !== invitationId));
       
-  // Show success message (optional - you can add a toast)
-  console.log(`Invitation ${response === 'accept' ? 'accepted' : 'rejected'} successfully`);
+      // If invitation was accepted, notify parent to refresh group list
+      if (response === 'accept' && onInvitationAccepted) {
+        onInvitationAccepted();
+      }
+      
+      // Show success message (optional - you can add a toast)
+      console.log(`Invitation ${response === 'accept' ? 'accepted' : 'rejected'} successfully`);
       
     } catch (error) {
       console.error('Error responding to invitation:', error);
@@ -198,7 +204,7 @@ export function GroupInvitations({ userId }: GroupInvitationsProps) {
                   size="sm"
                   onClick={() => handleInvitationResponse(invitation.InvitationID, 'accept')}
                   disabled={processing === invitation.InvitationID}
-                  className="flex-1"
+                  className="flex-1 bg-amber-700 hover:bg-amber-600 text-white"
                 >
                   <Check className="w-4 h-4 mr-1" />
                   Accept

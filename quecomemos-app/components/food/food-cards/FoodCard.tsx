@@ -4,7 +4,6 @@ import { useState, useRef } from 'react';
 import { Utensils, Heart, Eye, SquarePen } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 interface Food {
   FoodID: number;
@@ -68,7 +67,7 @@ export function FoodCard({
       <>
       <div
         ref={cardRef}
-        className={`group bg-gradient-to-br from-amber-800 to-amber-900 border border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden rounded-lg w-[200px] md:w-[220px] h-[280px] flex-shrink-0 touch-manipulation flex flex-col ${className || ''}`}
+        className={`group bg-amber-800/30 border-amber-700/50 hover:bg-amber-700/40 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden rounded-lg w-[200px] md:w-[220px] h-[280px] flex-shrink-0 touch-manipulation flex flex-col ${className || ''}`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onCardClick?.(food)}
@@ -81,41 +80,32 @@ export function FoodCard({
                 alt={food.name} 
                 width={60}
                 height={60}
-                className="object-contain transition-transform duration-300 group-hover:scale-110" 
+                className="object-contain transition-transform duration-300 group-hover:scale-105" 
               />
             ) : (
-              <Utensils className="w-12 h-12 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
+              <Utensils className="w-12 h-12 text-amber-200 transition-transform duration-300 group-hover:scale-105" />
             )}
             
             {/* Hover overlay */}
-            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
+            <div className={`absolute inset-0 bg-amber-900/20 flex items-center justify-center transition-opacity duration-300 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}>
-              <Eye className="w-6 h-6 text-white" />
+              <Eye className="w-6 h-6 text-amber-100" />
             </div>
 
-            {/* Match badge */}
-            {preferenceNamesArray.length > 0 && (
-              <div className="absolute top-1 right-1">
-                <div className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                  <Heart className="w-2.5 h-2.5" />
-                  <span className="text-xs">Match</span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Content Section */}
           <div className="p-3 space-y-2 flex-1 flex flex-col">
             {/* Title */}
-            <h3 className="text-sm font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2 leading-tight">
+            <h3 className="text-sm font-semibold text-amber-200 transition-colors line-clamp-2 leading-tight">
               {food.name}
             </h3>
 
             {/* Calories */}
             <div className="flex items-center gap-1">
               <span className="text-xs font-medium text-amber-200">Calories:</span>
-              <div className="bg-amber-900/50 border border-amber-400 text-amber-100 font-bold text-xs px-1.5 py-0.5 rounded">
+              <div className="bg-amber-900/30 border border-amber-700 text-amber-100 font-bold text-xs px-1.5 py-0.5 rounded">
                 {food.kCal} kCal
               </div>
             </div>
@@ -126,12 +116,12 @@ export function FoodCard({
                 <p className="text-xs font-medium text-amber-200">Preferences:</p>
                 <div className="flex flex-wrap gap-1">
                   {preferenceNamesArray.slice(0, 1).map((name, index) => (
-                    <div key={index} className="bg-amber-900/50 border border-amber-400 text-amber-100 text-xs px-1.5 py-0.5 rounded">
+                    <div key={index} className="bg-amber-700/30 border border-amber-600 text-amber-200 text-xs px-1.5 py-0.5 rounded">
                       {name}
                     </div>
                   ))}
                   {preferenceNamesArray.length > 1 && (
-                    <div className="bg-amber-900/50 border border-amber-400 text-amber-100 text-xs px-1.5 py-0.5 rounded">
+                    <div className="text-xs bg-amber-700/30 border border-amber-600 text-amber-100 px-1.5 py-0.5 rounded">
                       +{preferenceNamesArray.length - 1}
                     </div>
                   )}
@@ -145,12 +135,12 @@ export function FoodCard({
                 <p className="text-xs font-medium text-amber-200">Dietary Info:</p>
                 <div className="flex flex-wrap gap-1">
                   {restrictionNamesArray.slice(0, 2).map((name, index) => (
-                    <div key={index} className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded">
+                    <div key={index} className="bg-green-700/20 border border-green-600 text-green-200 text-xs px-1.5 py-0.5 rounded">
                       {name}
                     </div>
                   ))}
                   {restrictionNamesArray.length > 2 && (
-                    <div className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded">
+                    <div className="bg-muted border border-green-600 text-green-600 text-xs px-1.5 py-0.5 rounded">
                       +{restrictionNamesArray.length - 2}
                     </div>
                   )}
@@ -159,10 +149,9 @@ export function FoodCard({
             )}
 
             {/* Click indicator */}
-            <div className="flex items-center justify-between pt-1 border-t border-amber-600/30 mt-auto">
-              <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
-              </span>
-              <Eye className="w-3 h-3 text-amber-200 group-hover:text-amber-100 transition-colors" />
+            <div className="flex items-center justify-between pt-1 border-t border-amber-700/30 mt-auto">
+              <span className="text-xs text-amber-200"></span>
+              <Eye className="w-3 h-3 text-amber-200 transition-colors" />
             </div>
           </div>
         </div>
@@ -177,7 +166,7 @@ export function FoodCard({
     return (
       <Card
         ref={cardRef}
-        className={`group bg-gradient-to-br from-amber-800 to-amber-900 border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden w-[220px] flex-shrink-0 h-[400px] flex flex-col ${className || ''}`}
+        className={`group bg-amber-800/30 border-amber-700/50 hover:bg-amber-700/40 cursor-pointer transition-all duration-300 overflow-hidden w-[220px] flex-shrink-0 h-[400px] flex flex-col rounded-lg ${className || ''}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={() => onCardClick?.(food)}
@@ -191,26 +180,26 @@ export function FoodCard({
                 alt={food.name} 
                 width={80}
                 height={80}
-                className="object-contain transition-transform duration-300 group-hover:scale-110" 
+                className="object-contain transition-transform duration-300 group-hover:scale-105" 
               />
             ) : (
-              <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
+              <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-105" />
             )}
             
             {/* Hover overlay */}
-            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
+            <div className={`absolute inset-0 bg-amber-900/20 flex items-center justify-center transition-opacity duration-300 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}>
-              <Eye className="w-8 h-8 text-white" />
+              <Eye className="w-8 h-8 text-amber-100" />
             </div>
 
-            {/* Preference badge */}
-            {showPreferenceBadge && preferenceNamesList.length > 0 && (
+            {/* Preference badge: show only when both preferences AND dietary restrictions match */}
+            {showPreferenceBadge && preferenceNamesList.length > 0 && restrictionNamesList.length > 0 && (
               <div className="absolute top-2 right-2">
-                <Badge variant="secondary" className="bg-green-600 text-white text-xs">
-                  <Heart className="w-3 h-3 mr-1" />
-                  Match
-                </Badge>
+                <div className="bg-amber-700/30 border border-amber-600 text-amber-100 text-xs px-2 py-0.5 rounded">
+                  <Heart className="w-3 h-3 mr-1 inline-block text-amber-100" />
+                  <span className="align-middle">Match</span>
+                </div>
               </div>
             )}
           </div>
@@ -218,16 +207,16 @@ export function FoodCard({
           {/* Content Section */}
           <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
             {/* Title */}
-            <h3 className="text-lg font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
+            <h3 className="text-lg font-semibold text-amber-200 transition-colors line-clamp-2">
               {food.name}
             </h3>
 
             {/* Calories */}
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-amber-200">Calories:</span>
-              <Badge variant="outline" className="text-sm border-amber-400 text-amber-100 font-bold">
+              <div className="text-sm bg-amber-900/30 border border-amber-700 text-amber-100 font-bold px-2 py-0.5 rounded">
                 {food.kCal} kCal
-              </Badge>
+              </div>
             </div>
 
             {/* Preferences */}
@@ -236,14 +225,14 @@ export function FoodCard({
                 <p className="text-xs font-medium text-amber-200">Preferences:</p>
                 <div className="flex flex-wrap gap-1">
                   {preferenceNamesList.slice(0, 2).map((name, index) => (
-                    <Badge key={index} variant="outline" className="text-xs border-amber-400 text-amber-100">
+                    <div key={index} className="text-xs bg-amber-700/20 border border-amber-600 text-amber-200 px-2 py-0.5 rounded">
                       {name}
-                    </Badge>
+                    </div>
                   ))}
                   {preferenceNamesList.length > 2 && (
-                    <Badge variant="outline" className="text-xs border-amber-400 text-amber-100">
+                    <div className="text-xs bg-amber-700/30 border border-amber-600 text-amber-100 px-2 py-0.5 rounded">
                       +{preferenceNamesList.length - 2} more
-                    </Badge>
+                    </div>
                   )}
                 </div>
               </div>
@@ -255,25 +244,25 @@ export function FoodCard({
                 <p className="text-xs font-medium text-amber-200">Dietary Info:</p>
                 <div className="flex flex-wrap gap-1">
                   {restrictionNamesList.slice(0, 2).map((name, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs bg-green-600 text-white">
+                    <div key={index} className="text-xs bg-green-700/20 border border-green-600 text-green-200 px-2 py-0.5 rounded">
                       {name}
-                    </Badge>
+                    </div>
                   ))}
                   {restrictionNamesList.length > 2 && (
-                    <Badge variant="secondary" className="text-xs bg-green-600 text-white">
+                    <div className="text-xs border border-green-600 text-green-600 px-2 py-0.5 rounded">
                       +{restrictionNamesList.length - 2} more
-                    </Badge>
+                    </div>
                   )}
                 </div>
               </div>
             )}
 
             {/* Click to view more indicator */}
-            <div className="flex items-center justify-between pt-2 border-t border-amber-600/30 mt-auto">
-              <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
+            <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
+              <span className="text-xs text-amber-200">
                 Click for details
               </span>
-              <Eye className="w-4 h-4 text-amber-200 group-hover:text-amber-100 transition-colors" />
+              <Eye className="w-4 h-4 text-amber-200" />
             </div>
           </div>
         </CardContent>
@@ -288,7 +277,7 @@ export function FoodCard({
     return (
       <Card
         ref={cardRef}
-        className={`group bg-gradient-to-br from-amber-800 to-amber-900 border-amber-700 hover:from-amber-700 hover:to-amber-800 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl overflow-hidden w-[220px] flex-shrink-0 h-[400px] flex flex-col ${className || ''}`}
+        className={`group bg-amber-800/30 border-amber-700/50 hover:bg-amber-700/40 cursor-pointer transition-all duration-300 overflow-hidden w-[220px] flex-shrink-0 h-[400px] flex flex-col rounded-lg ${className || ''}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={() => onCardClick?.(food)}
@@ -316,26 +305,26 @@ export function FoodCard({
                 alt={food.name} 
                 width={80}
                 height={80}
-                className="object-contain transition-transform duration-300 group-hover:scale-110" 
+                className="object-contain transition-transform duration-300 group-hover:scale-105" 
               />
             ) : (
-              <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-110" />
+              <Utensils className="w-16 h-16 text-amber-200 transition-transform duration-300 group-hover:scale-105" />
             )}
             
             {/* Hover overlay */}
-            <div className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 ${
+            <div className={`absolute inset-0 bg-amber-900/20 flex items-center justify-center transition-opacity duration-300 ${
               isHovered ? 'opacity-100' : 'opacity-0'
             }`}>
-              <Eye className="w-8 h-8 text-white" />
+              <Eye className="w-8 h-8 text-amber-100" />
             </div>
 
-            {/* Preference badge */}
-            {showPreferenceBadge && preferenceNamesList.length > 0 && (
+            {/* Preference badge: show only when both preferences AND dietary restrictions match */}
+            {showPreferenceBadge && preferenceNamesList.length > 0 && restrictionNamesList.length > 0 && (
               <div className="absolute top-2 right-2">
-                <Badge variant="secondary" className="bg-green-600 text-white text-xs">
-                  <Heart className="w-3 h-3 mr-1" />
-                  Match
-                </Badge>
+                <div className="bg-amber-700/30 border border-amber-600 text-amber-100 text-xs px-2 py-0.5 rounded">
+                  <Heart className="w-3 h-3 mr-1 inline-block text-amber-100" />
+                  <span className="align-middle">Match</span>
+                </div>
               </div>
             )}
           </div>
@@ -343,16 +332,16 @@ export function FoodCard({
           {/* Content Section */}
           <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
             {/* Title */}
-            <h3 className="text-lg font-bold text-white group-hover:text-amber-100 transition-colors line-clamp-2">
+            <h3 className="text-lg font-semibold text-amber-200 transition-colors line-clamp-2">
               {food.name}
             </h3>
 
             {/* Calories */}
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-amber-200">Calories:</span>
-              <Badge variant="outline" className="text-sm border-amber-400 text-amber-100 font-bold">
+              <div className="text-sm bg-amber-900/30 border border-amber-700 text-amber-100 font-bold px-2 py-0.5 rounded">
                 {food.kCal} kCal
-              </Badge>
+              </div>
             </div>
 
             {/* Preferences */}
@@ -361,14 +350,14 @@ export function FoodCard({
                 <p className="text-xs font-medium text-amber-200">Preferences:</p>
                 <div className="flex flex-wrap gap-1">
                   {preferenceNamesList.slice(0, 2).map((name, index) => (
-                    <Badge key={index} variant="outline" className="text-xs border-amber-400 text-amber-100">
+                    <div key={index} className="text-xs bg-amber-700/20 border border-amber-600 text-amber-200 px-2 py-0.5 rounded">
                       {name}
-                    </Badge>
+                    </div>
                   ))}
                   {preferenceNamesList.length > 2 && (
-                    <Badge variant="outline" className="text-xs border-amber-400 text-amber-100">
+                    <div className="text-xs bg-amber-700/30 border border-amber-600 text-amber-100 px-2 py-0.5 rounded">
                       +{preferenceNamesList.length - 2} more
-                    </Badge>
+                    </div>
                   )}
                 </div>
               </div>
@@ -380,25 +369,25 @@ export function FoodCard({
                 <p className="text-xs font-medium text-amber-200">Dietary Info:</p>
                 <div className="flex flex-wrap gap-1">
                   {restrictionNamesList.slice(0, 2).map((name, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs bg-green-600 text-white">
+                    <div key={index} className="text-xs bg-green-700/20 border border-green-600 text-green-200 px-2 py-0.5 rounded">
                       {name}
-                    </Badge>
+                    </div>
                   ))}
                   {restrictionNamesList.length > 2 && (
-                    <Badge variant="secondary" className="text-xs bg-green-600 text-white">
+                    <div className="text-xs border border-green-600 text-green-600 px-2 py-0.5 rounded">
                       +{restrictionNamesList.length - 2} more
-                    </Badge>
+                    </div>
                   )}
                 </div>
               </div>
             )}
 
             {/* Click to view more indicator */}
-            <div className="flex items-center justify-between pt-2 border-t border-amber-600/30 mt-auto">
-              <span className="text-xs text-amber-200 group-hover:text-amber-100 transition-colors">
+            <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
+              <span className="text-xs text-amber-200">
                 Click for details
               </span>
-              <Eye className="w-4 h-4 text-amber-200 group-hover:text-amber-100 transition-colors" />
+              <Eye className="w-4 h-4 text-amber-200" />
             </div>
           </div>
         </CardContent>

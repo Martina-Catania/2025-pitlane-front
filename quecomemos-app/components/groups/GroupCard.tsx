@@ -57,25 +57,25 @@ const handleClick = () => {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <Card className="hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50 hover:from-amber-700/40 hover:to-amber-800/40">
       <div 
         className="cursor-pointer"
         onClick={handleClick}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold truncate">
+            <CardTitle className="text-lg font-semibold truncate text-amber-200">
               {group.name}
             </CardTitle>
             {showActivity && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-2 bg-amber-700/30 text-amber-200 border-amber-700/50">
                 <Activity className="w-3 h-3 mr-1" />
                 {group._count.consumptions}
               </Badge>
             )}
           </div>
           {group.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
+            <p className="text-sm text-gray-300 line-clamp-2">
               {group.description}
             </p>
           )}
@@ -84,15 +84,15 @@ const handleClick = () => {
         <CardContent className="pt-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-300">
                 {group.members.length} member{group.members.length !== 1 ? 's' : ''}
               </span>
             </div>
             
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-300">
                 {formatDate(group.updatedAt)}
               </span>
             </div>
@@ -103,7 +103,7 @@ const handleClick = () => {
             {group.members.slice(0, 3).map((member) => (
               <div 
                 key={member.profile.id} 
-                className="flex items-center justify-center w-6 h-6 text-xs font-medium text-white bg-primary rounded-full border-2 border-background"
+                className="flex items-center justify-center w-6 h-6 text-xs font-medium text-white bg-amber-700 rounded-full border-2 border-background"
               >
                 {getInitials(member.profile.username)}
               </div>
@@ -123,13 +123,14 @@ const handleClick = () => {
           <Button
             variant="outline"
             size="sm"
-            className="w-full"
+            className="w-full bg-[#18120b] border border-amber-700 text-amber-600 hover:bg-[#1e1406] hover:text-amber-400 hover:border-amber-600 font-normal"
+            style={{ boxShadow: 'none' }}
             onClick={(e) => {
               e.stopPropagation();
               onRegisterMeal(group);
             }}
           >
-            <ChefHat className="w-4 h-4 mr-2" />
+            <ChefHat className="w-4 h-4 mr-2 text-amber-600" />
             Register Group Meal
           </Button>
         </CardContent>
