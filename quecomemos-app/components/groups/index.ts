@@ -12,11 +12,13 @@ export interface Group {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  createdBy?: string;
   members: Array<{
     profile: {
       id: string;
       username: string;
     };
+    role?: string;
   }>;
   _count: {
     consumptions: number;
