@@ -132,7 +132,7 @@ export function UserFoods({ foods, mockUserData }: UserFoodsProps) {
       />
 
       <FoodCarousel
-        title="Recommended Foods"
+        title="Other Foods"
         foods={otherFoods}
         onCardClick={openModal}
         variant="simple"

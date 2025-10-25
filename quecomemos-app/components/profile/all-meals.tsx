@@ -9,8 +9,11 @@ import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { MealCard } from '@/components/meal';
 import { RegisterMealModal } from '@/components/modals';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { Button } from '../ui/button';
+import { useRouter } from 'next/navigation';
 
 export function AllMeals() {
+    const router = useRouter();
     const { userData } = useUser();
     const { showSuccess, showError } = useGlobalNotification();
     const {
@@ -25,11 +28,12 @@ export function AllMeals() {
         updateMeal,
         getMealById
     } = useMeals();
-    
+
     const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
     const [isMealModalOpen, setIsMealModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const profile = userData?.profile;
     const userPreferences = userData?.preferences;
@@ -119,12 +123,12 @@ export function AllMeals() {
 
             const consumption = await response.json();
             console.log('Meal consumption registered successfully:', consumption);
-            
+
             showSuccess(
-                'Meal Registered Successfully!', 
+                'Meal Registered Successfully!',
                 `"${mealName}" has been recorded for ${mealData.date}.`
             );
-            
+
             closeRegisterMealModal();
         } catch (error) {
             console.error('Error registering meal consumption:', error);
@@ -175,14 +179,18 @@ export function AllMeals() {
                         </span>
                     </div>
 
-                    <div className="mb-4">
-                        <button
-                            onClick={openRegisterMealModal}
-                            className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-200"
-                        >
+
+                    <Button
+                        type="submit"
+                        onClick={openRegisterMealModal}
+                        className="bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg"
+                    >
+                        <div className="flex items-center gap-2">
                             Do you want to register a meal you ate?
-                        </button>
-                    </div>
+                        </div>
+
+                    </Button>
+
 
                     {loadingRecommended ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -222,44 +230,109 @@ export function AllMeals() {
 
             {/* Community Meals Section */}
             <div className="space-y-4 mt-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-amber-200 mb-3">Community Meals</h2>
-                <span className="text-sm text-gray-400">
-                    {meals.length} meal{meals.length !== 1 ? 's' : ''}
-                </span>
-            </div>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-amber-200 mb-3">Community Meals</h2>
+                    <span className="text-sm text-gray-400">
+                        {meals.length} meal{meals.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
+                                        {/* Search Interface */}
+                        <div className="mt-6 p-4 bg-amber-900/20 rounded-lg border border-amber-700/50">
+                            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                                <div className="flex-1 w-full sm:max-w-md">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Search community meals..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    const query = searchQuery.trim();
+                                                    if (query) {
+                                                        router.push(`/protected/community-meals/search?q=${encodeURIComponent(query)}`);
+                                                    } else {
+                                                        router.push('/protected/community-meals/search');
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full px-4 py-2 pr-10 bg-amber-800/30 border border-amber-700/50 rounded-lg text-amber-100 placeholder-amber-300/70 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-transparent"
+                                        />
+                                        <svg
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-amber-300/70"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        const query = searchQuery.trim();
+                                        if (query) {
+                                            router.push(`/protected/community-meals/search?q=${encodeURIComponent(query)}`);
+                                        } else {
+                                            router.push('/protected/community-meals/search');
+                                        }
+                                    }}
+                                    className="bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg whitespace-nowrap"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        Search All Meals
+                                    </div>
+                                </Button>
+                            </div>
+                        </div>
+                
+                <div className="flex items-center justify-between">
+                    <h3 className="text-x3 font-semibold text-amber-200 mb-3">Recent Community Meals</h3>
+                    <span className="text-sm text-gray-400">
+                        {meals.length} meal{meals.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
 
-            {meals.length === 0 ? (
-                <div className="text-center py-12 bg-amber-900/20 rounded-lg border-2 border-dashed border-amber-700/50">
-                    <ChefHat className="mx-auto h-12 w-12 text-amber-600 mb-4" />
-                    <h3 className="text-lg font-medium text-amber-200 mb-2">No meals shared by other users</h3>
-                    <p className="text-gray-400 mb-4">
-                        Check back later to discover meals from the community!
-                    </p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {meals.map((meal) => (
-                        <MealCard
-                            key={meal.MealID}
-                            meal={meal}
-                            onClick={handleMealClick}
-                            showExtendedInfo={false}
-                            maxFoodsToShow={3}
-                        />
-                    ))}
-                </div>
-            )}
+                {meals.length === 0 ? (
+                    <div className="text-center py-12 bg-amber-900/20 rounded-lg border-2 border-dashed border-amber-700/50">
+                        <ChefHat className="mx-auto h-12 w-12 text-amber-600 mb-4" />
+                        <h3 className="text-lg font-medium text-amber-200 mb-2">No meals shared by other users</h3>
+                        <p className="text-gray-400 mb-4">
+                            Check back later to discover meals from the community!
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {meals
+                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                .slice(0, 9)
+                                .map((meal) => (
+                                    <MealCard
+                                        key={meal.MealID}
+                                        meal={meal}
+                                        onClick={handleMealClick}
+                                        showExtendedInfo={false}
+                                        maxFoodsToShow={3}
+                                    />
+                                ))
+                            }
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Meal Details Modal */}
-            <MealModal 
+            <MealModal
                 meal={selectedMeal}
                 isOpen={isMealModalOpen}
                 onClose={closeMealModal}
                 onEdit={handleEditMeal}
             />
-            
+
             {/* Register Meal Modal */}
             <RegisterMealModal
                 isOpen={isRegisterMealModalOpen}

@@ -95,20 +95,20 @@ export function UserPreferenceCards() {
         {preferences.map((preference) => (
           <Card
             key={preference.PreferenceID}
-            className="bg-gradient-to-r from-amber-800 to-amber-700 border-amber-600 hover:from-amber-700 hover:to-amber-600 transition-all duration-300 cursor-pointer group hover:scale-105 hover:shadow-lg"
+            className="bg-amber-800/30 border-amber-700/50 hover:bg-amber-700/40 transition-colors cursor-pointer group hover:scale-105 hover:shadow-lg rounded-lg"
             onClick={() => handlePreferenceClick(preference.PreferenceID)}
           >
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className="p-4 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-amber-600 rounded-full group-hover:bg-amber-500 transition-colors">
-                  <Utensils className="w-5 h-5 text-white" />
+                <div className="p-2 bg-amber-700/20 rounded-full transition-colors">
+                  <Utensils className="w-5 h-5 text-amber-200" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white text-lg">{preference.name}</h3>
-                  <p className="text-amber-100 text-sm">Explore matching foods</p>
+                  <h3 className="font-semibold text-amber-200 text-lg">{preference.name}</h3>
+                  <p className="text-sm text-amber-100">Explore matching foods</p>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-amber-200 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="w-5 h-5 text-amber-200 transition-transform group-hover:translate-x-1" />
             </CardContent>
           </Card>
         ))}
