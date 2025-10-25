@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Activity, Info, ChefHat } from 'lucide-react';
 import Image from 'next/image';
 import { GroupVotingSystem } from '@/components/voting';
+import { VotingProvider } from '@/lib/contexts/VotingContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import type { Group } from '@/components/groups';
 
@@ -145,32 +146,33 @@ export default function GroupDetailPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2 self-start">
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">{group?.name}</h1>
-          {group?.description && <p className="text-muted-foreground mt-1">{group.description}</p>}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={goInfo} className="w-full sm:w-auto">
-            <Info className="w-4 h-4 mr-2" /> Group information
+    <VotingProvider groupId={parseInt(groupId)}>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2 self-start">
+            <ArrowLeft className="w-4 h-4" />
           </Button>
+
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">{group?.name}</h1>
+            {group?.description && <p className="text-muted-foreground mt-1">{group.description}</p>}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={goInfo} className="w-full sm:w-auto">
+              <Info className="w-4 h-4 mr-2" /> Group information
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Group Voting System */}
-      <GroupVotingSystem 
-        group={group as Group} 
-        className="mb-6"
-        onVotingComplete={refreshConsumptions}
-      />
+        {/* Group Voting System */}
+        <GroupVotingSystem 
+          group={group as Group} 
+          className="mb-6"
+          onVotingComplete={refreshConsumptions}
+        />
 
-      {/* Recent Activity */}
+        {/* Recent Activity */}
       <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
         <CardHeader>
           <CardTitle className="flex items-center text-amber-200">
@@ -220,6 +222,7 @@ export default function GroupDetailPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </VotingProvider>
   );
 }

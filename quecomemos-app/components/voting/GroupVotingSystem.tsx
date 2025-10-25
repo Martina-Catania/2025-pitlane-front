@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Vote, ChefHat, Users, Clock } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
-import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { useVoting } from '@/lib/contexts/VotingContext';
 import { 
   VotingSessionCard, 
   StartVotingButton, 
   VotingInfoCard,
-  VotingService,
-  type VotingSession 
+  VotingResultsModal,
 } from '@/components/voting';
 import type { Group } from '@/components/groups/index';
 
@@ -22,85 +21,26 @@ interface GroupVotingSystemProps {
 
 export function GroupVotingSystem({ group, onVotingComplete, className = '' }: GroupVotingSystemProps) {
   const { userData } = useUser();
-  const { showError } = useGlobalNotification();
-  
-  const [activeSession, setActiveSession] = useState<VotingSession | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { activeSession, loading, startSession, showResultsModal, setShowResultsModal } = useVoting();
 
   const userId = userData?.profile?.id;
   const isGroupMember = group.members?.some(member => member.profile.id === userId) || false;
 
-  // Fetch active voting session
-  const fetchActiveSession = useCallback(async (showLoader = true) => {
-    if (!group.GroupID) return;
-    
-    try {
-      if (showLoader) setLoading(true);
-      
-      const sessions = await VotingService.getActiveVotingSessions(group.GroupID);
-      const session = sessions.length > 0 ? sessions[0] : null;
-      setActiveSession(session);
-    } catch (error) {
-      // No active session is expected, so we don't show an error for 404
-      if (error instanceof Error && !error.message.includes('404')) {
-        showError('Failed to Load Voting Session', error.message);
-      }
-      setActiveSession(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [group.GroupID, showError]);
-
-  // Initial fetch on mount and when group changes
-  useEffect(() => {
-    fetchActiveSession();
-  }, [fetchActiveSession]);
-
-  // Polling effect for active sessions - runs when we have an active session ID
-  useEffect(() => {
-    if (!activeSession?.VotingSessionID) return;
-
-    // Only poll if session is in an active state (not completed)
-    if (activeSession.status === 'completed' || activeSession.status === 'cancelled') {
-      return; // Don't poll for completed sessions
-    }
-
-    const pollInterval = setInterval(async () => {
-      // Use the latest group ID from the function scope
-      if (group.GroupID) {
-        try {
-          const sessions = await VotingService.getActiveVotingSessions(group.GroupID);
-          const session = sessions.length > 0 ? sessions[0] : null;
-          
-          // Only update if there are meaningful changes
-          if (!session && activeSession) {
-            // Session completed or ended - refresh fully
-            fetchActiveSession(false);
-          } else if (session && (
-            !activeSession || 
-            activeSession.status !== session.status ||
-            activeSession.proposals?.length !== session.proposals?.length
-          )) {
-            // Meaningful changes detected
-            setActiveSession(session);
-          }
-        } catch {
-          // Ignore errors during polling - session might have completed
-          if (activeSession) {
-            setActiveSession(null);
-          }
-        }
-      }
-    }, 15000); // Increased to 15 seconds to reduce load
-
-    return () => clearInterval(pollInterval);
-  }, [activeSession?.VotingSessionID, activeSession?.status, group.GroupID, activeSession, fetchActiveSession]);
+  console.debug('[GroupVotingSystem] render: group=', group.GroupID, 'loading=', loading, 'activeSession=', activeSession?.VotingSessionID, 'showResultsModal=', showResultsModal);
 
   const handleVotingStarted = () => {
-    fetchActiveSession();
+    console.debug('[GroupVotingSystem] handleVotingStarted called');
+    // Refresh the context to get the new session
+    startSession();
+  };
+
+  const handleCloseResults = () => {
+    console.debug('[GroupVotingSystem] handleCloseResults called');
+    setShowResultsModal(false);
   };
 
   if (loading) {
+    console.debug('[GroupVotingSystem] rendering: LOADING STATE');
     return (
       <Card className={`bg-gradient-to-br from-blue-800/30 to-blue-900/30 border-blue-700/50 ${className}`}>
         <CardContent className="p-6">
@@ -115,19 +55,36 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
 
   // If there's an active voting session, show the voting interface
   if (activeSession) {
+    console.debug('[GroupVotingSystem] rendering: ACTIVE SESSION');
     return (
-      <div className={`space-y-4 ${className}`}>
-        <VotingSessionCard
-          session={activeSession}
-          onUpdate={() => fetchActiveSession(false)}
-          onVotingComplete={onVotingComplete}
-          className="border-blue-700/50"
-        />
-      </div>
+      <>
+        <div className={`space-y-4 ${className}`}>
+          <VotingSessionCard
+            session={activeSession}
+            onVotingComplete={onVotingComplete}
+            className="border-blue-700/50"
+          />
+        </div>
+        
+        {/* Results modal displayed independently at group level */}
+        {showResultsModal && activeSession && (
+          <VotingResultsModal
+            isOpen={showResultsModal}
+            onClose={handleCloseResults}
+            onViewMeal={() => {
+              console.debug('[GroupVotingSystem] onViewMeal called');
+              handleCloseResults();
+            }}
+            session={activeSession}
+            winnerProposal={activeSession.proposals?.find(p => p.mealId === activeSession.winnerMealId)}
+          />
+        )}
+      </>
     );
   }
 
   // No active session - show the start voting interface
+  console.debug('[GroupVotingSystem] rendering: NO ACTIVE SESSION');
   return (
     <div className={`space-y-4 ${className}`}>
       <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">

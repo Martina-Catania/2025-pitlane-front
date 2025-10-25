@@ -8,41 +8,40 @@ import { Progress } from '@/components/ui/progress';
 import { Clock, Users, Trophy, Vote, Plus, CheckCircle } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
-import { useVotingPolling } from '@/lib/hooks/useVotingPolling';
+import { useVoting } from '@/lib/contexts/VotingContext';
+import { useVotingSession } from '@/lib/hooks/useVotingSession';
 import { VotingService } from './VotingService';
 import { MealProposalCard } from './MealProposalCard';
 import { VotingTimer } from './VotingTimer';
 import { ProposeMealModal } from './ProposeMealModal';
 import { EarlyCompletionModal } from './EarlyCompletionModal';
-import { VotingResultsModal } from './VotingResultsModal';
 import type { VotingSession, MealProposal } from './types';
 
 interface VotingSessionCardProps {
   session: VotingSession;
-  onUpdate?: () => void;
   onVotingComplete?: () => void;
   className?: string;
 }
 
-export function VotingSessionCard({ session, onUpdate, onVotingComplete, className = '' }: VotingSessionCardProps) {
+export function VotingSessionCard({ session: initialSession, onVotingComplete, className = '' }: VotingSessionCardProps) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
+  const { setShowResultsModal, refreshSession } = useVoting();
   
   const [loading, setLoading] = useState(false);
   const [showProposeMeal, setShowProposeMeal] = useState(false);
   const [showEarlyCompletion, setShowEarlyCompletion] = useState(false);
-  const [showVotingResults, setShowVotingResults] = useState(false);
 
   const userId = userData?.profile?.id;
 
-  // Use optimized polling hook
+  // Use the session polling hook for fine-grained updates
   const { 
     session: polledSession, 
     refresh: refreshPolling 
-  } = useVotingPolling({
-    sessionId: session.VotingSessionID,
+  } = useVotingSession({
+    sessionId: initialSession.VotingSessionID,
     enabled: true,
-    onVotingComplete: (completedSession) => {
+    onComplete: (completedSession) => {
       // Handle voting completion
       const winnerName = completedSession.winnerMeal?.name || 'Unknown meal';
       const voteCount = completedSession.totalVotes || 0;
@@ -51,11 +50,6 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
         '🎉 Voting Complete!', 
         `The winning meal is "${winnerName}" with ${voteCount} votes! Creating consumption record...`
       );
-
-      // Show results modal
-      setTimeout(() => {
-        setShowVotingResults(true);
-      }, 1000);
 
       // Auto-create group consumption
       if (userId && completedSession.winnerMealId) {
@@ -82,17 +76,13 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
         onVotingComplete?.();
       }
 
-      // Notify parent component
-      onUpdate?.();
-    },
-    onStatusChange: () => {
-      // Notify parent of any status changes
-      onUpdate?.();
+      // Refresh the context to detect session completion
+      refreshSession();
     }
   });
 
-  // Use the updated session from polling, fallback to prop
-  const updatedSession = polledSession || session;
+  // Use the polled session, fallback to initial prop
+  const updatedSession = polledSession || initialSession;
   
   // Debug logging for membership checks
   console.log('=== VotingSessionCard Debug ===');
@@ -181,7 +171,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
 
     setLoading(true);
     try {
-      await VotingService.startVotingPhase(session.VotingSessionID);
+      await VotingService.startVotingPhase(updatedSession.VotingSessionID);
       showSuccess('Voting Started!', 'The voting phase has begun. Members can now vote on proposed meals.');
       await refreshPolling();
     } catch (error) {
@@ -199,7 +189,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
 
     setLoading(true);
     try {
-      const result = await VotingService.completeVotingSession(session.VotingSessionID);
+      const result = await VotingService.completeVotingSession(updatedSession.VotingSessionID);
       const winnerName = result.winnerProposal?.meal?.name || 'Unknown meal';
       const voteCount = result.winnerProposal?.voteCount || 0;
       
@@ -208,7 +198,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
       // Auto-create consumption
       if (userId && result.session?.winnerMealId) {
         try {
-          await VotingService.createConsumptionFromVote(session.VotingSessionID, {
+          await VotingService.createConsumptionFromVote(updatedSession.VotingSessionID, {
             profileId: userId,
             name: winnerName,
             description: `Group meal from voting session: ${updatedSession.title || 'Meal Vote'}`,
@@ -225,7 +215,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
       }
       
       await refreshPolling();
-      setShowVotingResults(true);
+      setShowResultsModal(true);
     } catch (error) {
       showError('Error Completing Voting', error instanceof Error ? error.message : 'Failed to complete voting');
     } finally {
@@ -236,7 +226,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
   const handleEarlyCompleteVoting = async () => {
     setLoading(true);
     try {
-      const result = await VotingService.completeVotingSession(session.VotingSessionID);
+      const result = await VotingService.completeVotingSession(updatedSession.VotingSessionID);
       const winnerName = result.winnerProposal?.meal?.name || 'Unknown meal';
       const voteCount = result.winnerProposal?.voteCount || 0;
       
@@ -246,7 +236,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
       // Auto-create consumption
       if (userId && result.session?.winnerMealId) {
         try {
-          await VotingService.createConsumptionFromVote(session.VotingSessionID, {
+          await VotingService.createConsumptionFromVote(updatedSession.VotingSessionID, {
             profileId: userId,
             name: winnerName,
             description: `Group meal from voting session: ${updatedSession.title || 'Meal Vote'}`,
@@ -262,7 +252,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
         }
       }
       
-      setShowVotingResults(true);
+      setShowResultsModal(true);
       await refreshPolling();
     } catch (error) {
       showError('Error Completing Voting', error instanceof Error ? error.message : 'Failed to complete voting');
@@ -272,12 +262,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
   };
 
   const handleShowResults = () => {
-    setShowVotingResults(true);
-  };
-
-  const handleViewWinnerMeal = () => {
-    // This could navigate to meal details or open a meal modal
-    setShowVotingResults(false);
+    setShowResultsModal(true);
   };
 
   const handleVote = async (proposalId: number) => {
@@ -288,7 +273,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
 
     setLoading(true);
     try {
-      await VotingService.castVote(session.VotingSessionID, {
+      await VotingService.castVote(updatedSession.VotingSessionID, {
         mealProposalId: proposalId,
         voterId: userId,
         voteType: 'up'
@@ -309,7 +294,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
     }
 
     try {
-      await VotingService.proposeMeal(session.VotingSessionID, {
+      await VotingService.proposeMeal(updatedSession.VotingSessionID, {
         mealId,
         proposedById: userId
       });
@@ -329,7 +314,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
 
     setLoading(true);
     try {
-      const result = await VotingService.confirmReadyForVoting(session.VotingSessionID, userId);
+      const result = await VotingService.confirmReadyForVoting(updatedSession.VotingSessionID, userId);
       showSuccess('Ready Confirmed!', 'You have confirmed that you are ready for voting.');
       
       // Check if voting started automatically
@@ -355,11 +340,20 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
 
     setLoading(true);
     try {
-      const result = await VotingService.confirmVotes(session.VotingSessionID, userId);
+      console.debug('[VotingSessionCard] handleConfirmVotes: confirming votes');
+      const result = await VotingService.confirmVotes(updatedSession.VotingSessionID, userId);
+      console.debug('[VotingSessionCard] handleConfirmVotes: response', result);
+      
       showSuccess('Votes Confirmed!', 'You have confirmed your votes are final.');
+      
+      // Immediately refresh context to detect completion
+      console.debug('[VotingSessionCard] handleConfirmVotes: calling refreshSession');
+      await refreshSession();
+      console.debug('[VotingSessionCard] handleConfirmVotes: refreshSession complete');
       
       // Check if voting completed automatically
       if (result.votingCompleted && result.completionResult) {
+        console.debug('[VotingSessionCard] handleConfirmVotes: voting completed automatically');
         const winnerName = result.completionResult.winnerProposal?.meal?.name || 'Unknown meal';
         const voteCount = result.completionResult.winnerProposal?.voteCount || 0;
         
@@ -375,7 +369,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
         setTimeout(async () => {
           if (userId && result.completionResult?.session?.winnerMealId) {
             try {
-              await VotingService.createConsumptionFromVote(session.VotingSessionID, {
+              await VotingService.createConsumptionFromVote(updatedSession.VotingSessionID, {
                 profileId: userId,
                 name: winnerName,
                 description: `Group meal from voting session: ${updatedSession.title || 'Meal Vote'}`,
@@ -394,12 +388,14 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
 
         // Show results modal
         setTimeout(() => {
-          setShowVotingResults(true);
+          console.debug('[VotingSessionCard] handleConfirmVotes: showing results modal');
+          setShowResultsModal(true);
         }, 3000);
       }
       
       await refreshPolling();
     } catch (error) {
+      console.error('[VotingSessionCard] handleConfirmVotes: error', error);
       showError('Error Confirming Votes', error instanceof Error ? error.message : 'Failed to confirm votes');
     } finally {
       setLoading(false);
@@ -672,7 +668,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
         isOpen={showProposeMeal}
         onClose={() => setShowProposeMeal(false)}
         onPropose={handleProposeMeal}
-        groupId={session.groupId}
+        groupId={updatedSession.groupId}
       />
 
       {/* Early Completion Modal */}
@@ -685,14 +681,7 @@ export function VotingSessionCard({ session, onUpdate, onVotingComplete, classNa
         loading={loading}
       />
 
-      {/* Voting Results Modal */}
-      <VotingResultsModal
-        isOpen={showVotingResults}
-        onClose={() => setShowVotingResults(false)}
-        onViewMeal={handleViewWinnerMeal}
-        session={updatedSession}
-        winnerProposal={updatedSession.proposals?.find(p => p.mealId === updatedSession.winnerMealId)}
-      />
+      {/* Results Modal is now shown at GroupVotingSystem level to persist independently */}
     </Card>
       )}
     </>

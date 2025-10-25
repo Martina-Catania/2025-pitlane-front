@@ -23,7 +23,14 @@ export function VotingResultsModal({
   session,
   winnerProposal 
 }: VotingResultsModalProps) {
-  if (!isOpen || !winnerProposal) return null;
+  console.debug('[VotingResultsModal] rendering', { isOpen, hasWinner: !!winnerProposal });
+  
+  if (!isOpen || !winnerProposal) {
+    console.debug('[VotingResultsModal] not rendering - isOpen:', isOpen, 'hasWinner:', !!winnerProposal);
+    return null;
+  }
+
+  console.debug('[VotingResultsModal] rendering modal with winner', { winner: winnerProposal.meal.name });
 
   const sortedProposals = [...(session.proposals || [])].sort((a, b) => b.voteCount - a.voteCount);
   const totalVotes = sortedProposals.reduce((sum, p) => sum + p.voteCount, 0);
