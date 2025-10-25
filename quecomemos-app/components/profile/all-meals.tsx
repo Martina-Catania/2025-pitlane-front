@@ -22,7 +22,7 @@ export function AllMeals() {
         recommendedError,
         fetchAllMeals,
         fetchRecommendedMeals,
-        refetchMeals,
+        updateMeal,
         getMealById
     } = useMeals();
     
@@ -64,12 +64,14 @@ export function AllMeals() {
         setSelectedMeal(null);
     };
 
-    const handleEditSuccess = async () => {
-        // Refetch meals after successful edit
-        if (profile) {
-            await refetchMeals(profile.id);
-        }
+    const handleEditSuccess = () => {
         closeEditModal();
+    };
+
+    const handleMealUpdated = (updatedMealData: Partial<Meal>) => {
+        if (selectedMeal) {
+            updateMeal(selectedMeal.MealID, updatedMealData);
+        }
     };
 
     const openRegisterMealModal = () => {
@@ -295,6 +297,7 @@ export function AllMeals() {
                             <EditMealForm
                                 meal={selectedMeal}
                                 onSuccess={handleEditSuccess}
+                                onMealUpdated={handleMealUpdated}
                             />
                         </div>
                     </div>

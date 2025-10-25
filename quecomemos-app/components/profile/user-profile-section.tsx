@@ -57,6 +57,8 @@ export function UserProfileSection() {
 
       {/* Dashboard with groups and meals */}
       <div className="flex flex-col gap-8">
+        {/* Test component for stacking notifications */}
+
         {/* Groups section - now above meals */}
         <div>
           <DashboardGroupsSection userId={profile.id} />

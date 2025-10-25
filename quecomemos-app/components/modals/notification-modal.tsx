@@ -16,6 +16,9 @@ interface NotificationModalProps {
   autoCloseTime?: number;
   customIcon?: React.ReactNode;
   showProgressBar?: boolean;
+  isStacked?: boolean;
+  stackIndex?: number;
+  isClosing?: boolean;
 }
 
 export function NotificationModal({ 
@@ -27,19 +30,23 @@ export function NotificationModal({
   autoClose = true,
   autoCloseTime = 3000,
   customIcon,
-  showProgressBar = true
+  showProgressBar = true,
+  isStacked = false,
+  stackIndex = 0,
+  isClosing = false
 }: NotificationModalProps) {
   
   // Auto close functionality
     useEffect(() => {
-      if (isOpen && autoClose) {
+      // For stacked notifications, the global context handles auto-close timing
+      if (isOpen && autoClose && !isStacked) {
         const timer = setTimeout(() => {
           onClose();
         }, autoCloseTime);
 
         return () => clearTimeout(timer);
       }
-    }, [isOpen, autoClose, autoCloseTime, onClose]);
+  }, [isOpen, autoClose, autoCloseTime, onClose, isStacked]);
 
   // Close modal with ESC
   useEffect(() => {
@@ -60,19 +67,19 @@ export function NotificationModal({
 
   // Portal container to escape any parent stacking contexts (filters/blur)
   const portalElRef = useRef<HTMLDivElement | null>(null);
-  if (typeof document !== 'undefined' && !portalElRef.current) {
+  if (typeof document !== 'undefined' && !portalElRef.current && !isStacked) {
     portalElRef.current = document.createElement('div');
   }
 
   useEffect(() => {
     const el = portalElRef.current;
-    if (!el) return;
+    if (!el || isStacked) return;
     // ensure it's appended at the end of body so it's above other elements
     document.body.appendChild(el);
     return () => {
       if (document.body.contains(el)) document.body.removeChild(el);
     };
-  }, []);
+  }, [isStacked]);
 
   if (!isOpen) return null;
 
@@ -135,15 +142,21 @@ export function NotificationModal({
 
   if (!isOpen) return null;
 
+  const animationClass = isClosing
+    ? 'animate-out slide-out-to-right-full fade-out-0'
+    : 'animate-in slide-in-from-right-full fade-in-0';
+
+  const innerStyle: React.CSSProperties | undefined = isStacked
+    ? { filter: `saturate(${1 - Math.min(stackIndex * 0.05, 0.4)})` }
+    : undefined;
+
   const modal = (
-    <div className="fixed top-4 right-4 z-[99999] pointer-events-auto max-w-sm sm:max-w-md">      
+    <div className={`${isStacked ? '' : 'fixed top-4 right-4 z-[99999]'} pointer-events-auto max-w-sm sm:max-w-md`}>      
       {/* Toast Notification */}
-      <div className={`
-        bg-card border ${borderColor} rounded-lg shadow-lg 
-        w-full transform transition-all duration-300 ease-out
-        animate-in slide-in-from-right-full fade-in-0
-        pointer-events-auto mx-4 sm:mx-0
-      `}>
+      <div
+        className={`bg-card border ${borderColor} rounded-lg shadow-lg w-full transform transition-all duration-300 ease-out ${animationClass} pointer-events-auto ${isStacked ? '' : 'mx-4 sm:mx-0'}`}
+        style={innerStyle}
+      >
         {/* Header */}
         <div className="flex items-start justify-between p-4">
           <div className="flex items-start gap-3">
@@ -195,8 +208,7 @@ export function NotificationModal({
     </div>
   );
 
-  // Render into portal to avoid being affected by parent filters/blur/stacks
-  if (portalElRef.current) {
+  if (!isStacked && portalElRef.current) {
     return ReactDOM.createPortal(modal, portalElRef.current);
   }
 

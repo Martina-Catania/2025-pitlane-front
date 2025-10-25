@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/forms";
 import { useState } from "react";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
+import { useMeals } from "@/lib/contexts/MealsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "@/components/modals";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
@@ -21,6 +22,7 @@ interface EditFoodFormProps {
 
 export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   const { updateFood, removeFood } = useFoods();
+  const { handleFoodDeletion } = useMeals();
   const { showSuccess, showError } = useGlobalNotification();
   const { confirmation, showConfirmation, handleConfirm, closeConfirmation } = useConfirmation();
   const [foodName, setFoodName] = useState(food.name || "");
@@ -104,6 +106,9 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
 
     // Eliminar la comida del contexto
     removeFood(food.FoodID);
+    
+    // Actualizar las comidas que contienen esta comida
+    handleFoodDeletion(food.FoodID);
     
     showSuccess(
       "Food Deleted Successfully!",

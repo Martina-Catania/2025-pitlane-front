@@ -203,11 +203,13 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
         throw new Error(`Failed to create meal: ${errorData.error || 'Unknown error'}`);
       }
 
+      const createdMeal = await mealResponse.json();
+
       showSuccess(
         "Meal Created Successfully!",
         `"${mealName}" has been saved with ${foods.length} food${foods.length !== 1 ? 's' : ''}.`
       );
-      if (onFoodAdded) onFoodAdded({ MealID: mealResponse.ok ? (await mealResponse.json()).MealID : 0, name: mealName, description });
+      if (onFoodAdded) onFoodAdded(createdMeal);
       if (onClose) onClose();
 
       // Reset form

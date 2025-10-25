@@ -10,6 +10,7 @@ import { useConfirmation } from "@/lib/hooks/useConfirmation";
 import { SquarePen, Trash2, Plus, Utensils } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
 import { useFoods } from "@/lib/contexts/FoodsContext";
+import { useMeals } from "@/lib/contexts/MealsContext";
 import { useUser } from "@/lib/contexts/UserContext";
 import FoodModal from "../meal/FoodModal";
 
@@ -60,10 +61,12 @@ interface Meal {
 interface EditMealFormProps {
   meal: Meal;
   onSuccess: () => void;
+  onMealUpdated?: (updatedMeal: Partial<Meal>) => void;
 }
 
-export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
+export function EditMealForm({ meal, onSuccess, onMealUpdated }: EditMealFormProps) {
   const { foods, setFoods, addFood } = useFoods();
+  const { removeMeal, updateMeal } = useMeals();
   const { showSuccess, showError } = useGlobalNotification();
   const { confirmation, showConfirmation, handleConfirm, closeConfirmation } = useConfirmation();
   const { userData } = useUser();
@@ -204,6 +207,24 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
         throw new Error(data.error || "Failed to update meal");
       }
 
+      const updatedMeal = await response.json();
+
+      // Update the context directly
+      updateMeal(meal.MealID, {
+        ...updatedMeal,
+        name: mealName,
+        description: description
+      });
+
+      // Also call the optional callback for backward compatibility
+      if (onMealUpdated) {
+        onMealUpdated({
+          ...updatedMeal,
+          name: mealName,
+          description: description
+        });
+      }
+
       showSuccess(
         "Meal Updated Successfully!",
         `"${mealName}" has been updated with your latest changes.`,
@@ -234,6 +255,9 @@ export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
       const data = await response.json();
       throw new Error(data.error || "Failed to delete meal");
     }
+
+    // Remove meal from context
+    removeMeal(meal.MealID);
 
     showSuccess(
       "Meal Deleted Successfully!",

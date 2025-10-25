@@ -20,7 +20,8 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
     loadingUserMeals, 
     userMealsError, 
     fetchUserMeals, 
-    refetchUserMeals 
+    updateMeal,
+    addMeal
   } = useMeals();
   
   const [openCreator, setOpenCreator] = useState(false);
@@ -57,12 +58,15 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
     setSelectedMeal(null);
   };
 
-  const handleEditSuccess = async () => {
-    if (profile?.id) {
-      await refetchUserMeals(profile.id);
-    }
+  const handleEditSuccess = () => {
     closeEditModal();
     onfoodAdded?.();
+  };
+
+  const handleMealUpdated = (updatedMealData: Partial<Meal>) => {
+    if (selectedMeal) {
+      updateMeal(selectedMeal.MealID, updatedMealData);
+    }
   };
 
   if (loadingUserMeals) {
@@ -142,9 +146,11 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
             {/* Body */}
             <div className="p-4 max-h-[80vh] overflow-y-auto">
               <AddMealForm
-                onFoodAdded={async () => {
-                  if (profile?.id) {
-                    await refetchUserMeals(profile.id);
+                onFoodAdded={(newMeal) => {
+                  // Add the new meal to context instead of refetching
+                  if (profile?.id && newMeal) {
+                    // The API returns a complete meal object, so we can cast it safely
+                    addMeal(newMeal as Meal);
                   }
                   setOpenCreator(false);
                   onfoodAdded?.();
@@ -216,6 +222,7 @@ export function UserMeals({ onfoodAdded }: UserMealsProps = {}) {
               <EditMealForm
                 meal={selectedMeal}
                 onSuccess={handleEditSuccess}
+                onMealUpdated={handleMealUpdated}
               />
             </div>
           </div>

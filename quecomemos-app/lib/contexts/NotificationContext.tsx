@@ -1,19 +1,23 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { NotificationModal, NotificationType } from '@/components/modals/notification-modal';
+import { NotificationType } from '@/components/modals/StackedNotifications';
+import { StackedNotifications } from '@/components/modals/StackedNotifications';
 
-interface NotificationState {
-  isOpen: boolean;
+interface NotificationItem {
+  id: string;
   type: NotificationType;
   title: string;
   message: string;
   autoClose?: boolean;
   autoCloseTime?: number;
   customIcon?: React.ReactNode;
+  createdAt: number;
+  closing?: boolean;
 }
 
 interface NotificationContextType {
+  notifications: NotificationItem[];
   showNotification: (
     type: NotificationType,
     title: string,
@@ -28,20 +32,18 @@ interface NotificationContextType {
   showError: (title: string, message: string) => void;
   showWarning: (title: string, message: string) => void;
   showInfo: (title: string, message: string) => void;
-  closeNotification: () => void;
+  removeNotification: (id: string) => void;
+  startCloseNotification: (id: string) => void;
+  clearAllNotifications: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [notification, setNotification] = useState<NotificationState>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: '',
-    autoClose: true,
-    autoCloseTime: 4000,
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const generateId = () => `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const EXIT_ANIMATION_MS = 300; // duration for exit animation
 
   const showNotification = (
     type: NotificationType,
@@ -54,15 +56,39 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   ) => {
     console.log('Global notification triggered:', { type, title, message });
-    setNotification({
-      isOpen: true,
+    
+    const newNotification: NotificationItem = {
+      id: generateId(),
       type,
       title,
       message,
       autoClose: options?.autoClose ?? true,
       autoCloseTime: options?.autoCloseTime ?? 4000,
       customIcon: options?.customIcon,
-    });
+      createdAt: Date.now(),
+    };
+
+    setNotifications(prev => [...prev, newNotification]);
+
+    // Auto-remove notification if autoClose is enabled.
+    if (newNotification.autoClose) {
+      const startClosingAt = Math.max(0, (newNotification.autoCloseTime ?? 4000) - EXIT_ANIMATION_MS);
+      // start closing (trigger exit animation)
+      setTimeout(() => {
+        setNotifications(prev => prev.map(n => n.id === newNotification.id ? { ...n, closing: true } : n));
+      }, startClosingAt);
+
+      // remove after full duration
+      setTimeout(() => {
+        removeNotification(newNotification.id);
+      }, newNotification.autoCloseTime);
+    }
+  };
+
+  // Start close (manual or programmatic): mark as closing then remove after exit animation
+  const startCloseNotification = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, closing: true } : n));
+    setTimeout(() => removeNotification(id), EXIT_ANIMATION_MS);
   };
 
   const showSuccess = (title: string, message: string, customIcon?: React.ReactNode) => {
@@ -81,33 +107,35 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     showNotification('info', title, message);
   };
 
-  const closeNotification = () => {
-    setNotification((prev) => ({ ...prev, isOpen: false }));
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
   };
 
   return (
     <NotificationContext.Provider
       value={{
+        notifications,
         showNotification,
         showSuccess,
         showError,
         showWarning,
         showInfo,
-        closeNotification,
+        removeNotification,
+        startCloseNotification,
+        clearAllNotifications,
       }}
     >
       {children}
       
-      {/* Global Notification Toast - Non-blocking */}
-      <NotificationModal
-        isOpen={notification.isOpen}
-        onClose={closeNotification}
-        type={notification.type}
-        title={notification.title}
-        message={notification.message}
-        autoClose={notification.autoClose}
-        autoCloseTime={notification.autoCloseTime}
-        customIcon={notification.customIcon}
+      {/* Global Notification Stack - Non-blocking */}
+      <StackedNotifications 
+        notifications={notifications}
+        onRemove={removeNotification}
+        onStartClose={startCloseNotification}
       />
     </NotificationContext.Provider>
   );
