@@ -8,6 +8,9 @@ export { GroupVotingSystem } from './GroupVotingSystem';
 export { VoteConfirmationModal } from './VoteConfirmationModal';
 export { EarlyCompletionModal } from './EarlyCompletionModal';
 export { VotingResultsModal } from './VotingResultsModal';
+export { VotingHistorySection } from './VotingHistorySection';
+export { VotingDetailsModal } from './VotingDetailsModal';
+export { PortionSelectionModal } from './PortionSelectionModal';
 
 // Voting Service
 export { VotingService } from './VotingService';

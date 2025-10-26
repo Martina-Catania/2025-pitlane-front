@@ -26,7 +26,7 @@ interface VotingSessionCardProps {
 export function VotingSessionCard({ session: initialSession, onVotingComplete, className = '' }: VotingSessionCardProps) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
-  const { setShowResultsModal, refreshSession } = useVoting();
+  const { setShowResultsModal, refreshSession, notifyVotingCompleted } = useVoting();
   
   const [loading, setLoading] = useState(false);
   const [showProposeMeal, setShowProposeMeal] = useState(false);
@@ -66,6 +66,8 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
             );
             // Trigger parent refresh for Recent Activity
             onVotingComplete?.();
+            // Notify listeners via VotingContext
+            notifyVotingCompleted(completedSession.VotingSessionID);
           })
           .catch(error => {
             console.error('Error creating consumption:', error);
@@ -74,6 +76,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       } else {
         // Still trigger parent refresh even if no consumption created
         onVotingComplete?.();
+        notifyVotingCompleted(completedSession.VotingSessionID);
       }
 
       // Refresh the context to detect session completion
@@ -205,6 +208,9 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
             quantity: 1
           });
           showSuccess('✅ Consumption Registered!', `"${winnerName}" has been added to your group's consumption history.`);
+          // Trigger parent refresh and notify other listeners
+          onVotingComplete?.();
+          notifyVotingCompleted(updatedSession.VotingSessionID);
         } catch (consumptionError) {
           console.error('Error creating consumption:', consumptionError);
           const errorMessage = consumptionError instanceof Error ? consumptionError.message : '';
@@ -216,6 +222,9 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       
       await refreshPolling();
       setShowResultsModal(true);
+      // Ensure history and activity update
+      onVotingComplete?.();
+      notifyVotingCompleted(updatedSession.VotingSessionID);
     } catch (error) {
       showError('Error Completing Voting', error instanceof Error ? error.message : 'Failed to complete voting');
     } finally {
@@ -243,6 +252,9 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
             quantity: 1
           });
           showSuccess('✅ Consumption Registered!', `"${winnerName}" has been added to your group's consumption history.`);
+          // Trigger parent refresh and notify other listeners
+          onVotingComplete?.();
+          notifyVotingCompleted(updatedSession.VotingSessionID);
         } catch (consumptionError) {
           console.error('Error creating consumption:', consumptionError);
           const errorMessage = consumptionError instanceof Error ? consumptionError.message : '';
@@ -254,6 +266,9 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       
       setShowResultsModal(true);
       await refreshPolling();
+      // Ensure history and activity update
+      onVotingComplete?.();
+      notifyVotingCompleted(updatedSession.VotingSessionID);
     } catch (error) {
       showError('Error Completing Voting', error instanceof Error ? error.message : 'Failed to complete voting');
     } finally {
@@ -391,6 +406,11 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
           console.debug('[VotingSessionCard] handleConfirmVotes: showing results modal');
           setShowResultsModal(true);
         }, 3000);
+        // Also notify history/activity after a short delay so they can refresh
+        setTimeout(() => {
+          onVotingComplete?.();
+          notifyVotingCompleted(updatedSession.VotingSessionID);
+        }, 3200);
       }
       
       await refreshPolling();

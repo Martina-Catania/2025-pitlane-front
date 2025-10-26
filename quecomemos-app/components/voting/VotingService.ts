@@ -295,4 +295,105 @@ export class VotingService {
       return `${seconds}s`;
     }
   }
+
+  /**
+   * Get voting history for a group
+   */
+  static async getGroupVotingHistory(groupId: number, limit = 10, offset = 0) {
+    try {
+      const response = await fetch(
+        `${VOTING_BASE_URL}/history/groups/${groupId}?limit=${limit}&offset=${offset}`
+      );
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to get voting history';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If parsing error response fails, use default message
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('[VotingService] Voting history response:', data);
+      return data;
+    } catch (error) {
+      console.error('[VotingService] Error fetching voting history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get detailed voting session info including all proposals and participant portions
+   */
+  static async getVotingSessionDetails(sessionId: number) {
+    try {
+      const response = await fetch(`${VOTING_BASE_URL}/history/sessions/${sessionId}`);
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to get session details';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If parsing error response fails, use default message
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('[VotingService] Session details response:', data);
+      return data;
+    } catch (error) {
+      console.error('[VotingService] Error fetching session details:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Select meal portion for current user
+   */
+  static async selectMealPortion(
+    sessionId: number,
+    userId: string,
+    mealPortionFraction: number,
+    foodPortions: Array<{ foodId: number; portionFraction: number }>
+  ) {
+    const response = await fetch(`${VOTING_BASE_URL}/history/sessions/${sessionId}/portions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        mealPortionFraction,
+        foodPortions,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to select portion');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get participant status and portion selection info
+   */
+  static async getParticipantStatus(sessionId: number, userId: string) {
+    const response = await fetch(
+      `${VOTING_BASE_URL}/history/sessions/${sessionId}/participants/${userId}`
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to get participant status');
+    }
+
+    return response.json();
+  }
 }

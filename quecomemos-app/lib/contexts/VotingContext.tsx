@@ -18,6 +18,10 @@ interface VotingContextType {
   // Results modal state (persists across re-renders)
   showResultsModal: boolean;
   setShowResultsModal: (show: boolean) => void;
+  
+  // Notify when a voting session completes
+  notifyVotingCompleted: (sessionId: number) => void;
+  onVotingCompleted: (callback: (sessionId: number) => void) => () => void;
 }
 
 const VotingContext = createContext<VotingContextType | undefined>(undefined);
@@ -36,6 +40,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   const previousStatusRef = useRef<string | null>(null);
+  const completionListenersRef = useRef<Set<(sessionId: number) => void>>(new Set());
 
   // CRITICAL FIX: Set mountedRef to true on every mount
   useEffect(() => {
@@ -157,6 +162,30 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     setShowResultsModal(false);
     setError(null);
     console.debug('[VotingContext] clearSession: state cleared');
+  }, []);
+
+  // Notify all listeners that a voting session has completed
+  const notifyVotingCompleted = useCallback((sessionId: number) => {
+    console.debug('[VotingContext] notifyVotingCompleted:', sessionId, 'listeners:', completionListenersRef.current.size);
+    completionListenersRef.current.forEach(callback => {
+      try {
+        callback(sessionId);
+      } catch (err) {
+        console.error('[VotingContext] Error in completion listener:', err);
+      }
+    });
+  }, []);
+
+  // Register a listener for voting completion events
+  const onVotingCompleted = useCallback((callback: (sessionId: number) => void) => {
+    console.debug('[VotingContext] onVotingCompleted: registering listener');
+    completionListenersRef.current.add(callback);
+    
+    // Return cleanup function
+    return () => {
+      console.debug('[VotingContext] onVotingCompleted: unregistering listener');
+      completionListenersRef.current.delete(callback);
+    };
   }, []);
 
   // Initial fetch
@@ -281,6 +310,8 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     clearSession,
     showResultsModal,
     setShowResultsModal,
+    notifyVotingCompleted,
+    onVotingCompleted,
   };
 
   return (

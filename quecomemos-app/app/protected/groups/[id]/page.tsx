@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Activity, Info, ChefHat } from 'lucide-react';
 import Image from 'next/image';
-import { GroupVotingSystem } from '@/components/voting';
+import { GroupVotingSystem, VotingHistorySection } from '@/components/voting';
 import { VotingProvider } from '@/lib/contexts/VotingContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import type { Group } from '@/components/groups';
@@ -217,11 +217,14 @@ export default function GroupDetailPage() {
             <div className="text-center py-8">
               <Activity className="w-12 h-12 mx-auto text-amber-700 mb-4" />
               <h3 className="text-lg font-medium mb-2 text-gray-300">No recent activity</h3>
-              <p className="text-gray-400 mb-4">Group meals from voting sessions will appear here</p>
+                            <p className="text-gray-400 mb-4">Group meals from voting sessions will appear here</p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Voting History */}
+      <VotingHistorySection groupId={parseInt(groupId)} className="mb-6" />
       </div>
     </VotingProvider>
   );
