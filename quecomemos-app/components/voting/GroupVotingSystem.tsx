@@ -96,27 +96,23 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
       );
     }
 
-    // Show successful connection status when online (but only if recently synced)
-    if (lastSyncTime && Date.now() - lastSyncTime.getTime() < 60000) { // Show for 1 minute after sync
-      return (
-        <div className="mb-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg">
-          <div className="flex items-center justify-between text-green-200">
-            <div className="flex items-center">
-              <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-              <span className="text-sm">Connected • Last sync: {formatTime(lastSyncTime)}</span>
-            </div>
-            <button
-              onClick={forceSyncNow}
-              className="px-2 py-1 text-green-300 hover:text-green-100 text-xs opacity-70 hover:opacity-100 transition-opacity"
-            >
-              Refresh
-            </button>
+    // Always show connection status when online; keep Refresh button persistently available
+    return (
+      <div className="mb-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg">
+        <div className="flex items-center justify-between text-green-200">
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+            <span className="text-sm">Connected • Last sync: {formatTime(lastSyncTime)}</span>
           </div>
+          <button
+            onClick={forceSyncNow}
+            className="px-2 py-1 text-green-300 hover:text-green-100 text-xs opacity-70 hover:opacity-100 transition-opacity"
+          >
+            Refresh
+          </button>
         </div>
-      );
-    }
-
-    return null;
+      </div>
+    );
   };
 
   // If there's an active voting session, show the voting interface
