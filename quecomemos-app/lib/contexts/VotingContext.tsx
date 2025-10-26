@@ -271,7 +271,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       } catch (err) {
         console.error('[VotingContext] polling interval: error', err);
       }
-    }, 2000); // Poll every 20 seconds for lifecycle changes
+    }, 10000); // Poll every 10 seconds for lifecycle changes
     
     console.debug('[VotingContext] useEffect (polling setup): interval set up');
 

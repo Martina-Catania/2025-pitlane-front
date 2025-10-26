@@ -7,6 +7,7 @@ import type { VotingSession } from '@/components/voting/types';
 interface UseVotingSessionOptions {
   sessionId: number | null | undefined;
   enabled?: boolean;
+  enablePolling?: boolean; // New option to control automatic polling
   onComplete?: (session: VotingSession) => void;
 }
 
@@ -15,7 +16,7 @@ interface UseVotingSessionOptions {
  * This handles fine-grained updates (votes, proposals, confirmations)
  * Without causing parent component re-renders
  */
-export function useVotingSession({ sessionId, enabled = true, onComplete }: UseVotingSessionOptions) {
+export function useVotingSession({ sessionId, enabled = true, enablePolling = false, onComplete }: UseVotingSessionOptions) {
   const [session, setSession] = useState<VotingSession | null>(null);
   const [loading, setLoading] = useState(false);
   
@@ -84,7 +85,7 @@ export function useVotingSession({ sessionId, enabled = true, onComplete }: UseV
 
   // Polling for session updates
   useEffect(() => {
-    if (!enabled || !sessionId) return;
+    if (!enabled || !sessionId || !enablePolling) return;
 
     // Clear existing interval
     if (pollIntervalRef.current) {
@@ -96,7 +97,7 @@ export function useVotingSession({ sessionId, enabled = true, onComplete }: UseV
       return;
     }
 
-    // Poll every 8 seconds for session updates (votes, proposals)
+    // Poll every 8 seconds for session updates (votes, proposals) - only when enablePolling is true
     pollIntervalRef.current = setInterval(() => {
       if (mountedRef.current && session?.status !== 'completed' && session?.status !== 'cancelled') {
         fetchSession(false);
@@ -108,7 +109,7 @@ export function useVotingSession({ sessionId, enabled = true, onComplete }: UseV
         clearInterval(pollIntervalRef.current);
       }
     };
-  }, [enabled, sessionId, session?.status, fetchSession]);
+  }, [enabled, sessionId, enablePolling, session?.status, fetchSession]);
 
   // Cleanup
   useEffect(() => {

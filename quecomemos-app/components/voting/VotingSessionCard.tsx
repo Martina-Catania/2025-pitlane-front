@@ -35,12 +35,14 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
   const userId = userData?.profile?.id;
 
   // Use the session polling hook for fine-grained updates
+  // NOTE: We disable automatic polling here and rely on VotingContext for background sync (10s interval)
+  // This component only refreshes after user actions to reduce API calls
   const { 
-    session: polledSession, 
-    refresh: refreshPolling 
+    session: polledSession
   } = useVotingSession({
     sessionId: initialSession.VotingSessionID,
     enabled: true,
+    enablePolling: false, // Disable automatic polling - rely on VotingContext for background sync
     onComplete: (completedSession) => {
       // Handle voting completion
       const winnerName = completedSession.winnerMeal?.name || 'Unknown meal';
@@ -176,7 +178,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
     try {
       await VotingService.startVotingPhase(updatedSession.VotingSessionID);
       showSuccess('Voting Started!', 'The voting phase has begun. Members can now vote on proposed meals.');
-      await refreshPolling();
+      await refreshSession();
     } catch (error) {
       showError('Error Starting Voting', error instanceof Error ? error.message : 'Failed to start voting phase');
     } finally {
@@ -220,7 +222,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }
       }
       
-      await refreshPolling();
+      await refreshSession();
       setShowResultsModal(true);
       // Ensure history and activity update
       onVotingComplete?.();
@@ -265,7 +267,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       }
       
       setShowResultsModal(true);
-      await refreshPolling();
+      await refreshSession();
       // Ensure history and activity update
       onVotingComplete?.();
       notifyVotingCompleted(updatedSession.VotingSessionID);
@@ -294,7 +296,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         voteType: 'up'
       });
       showSuccess('Vote Cast!', 'Your vote has been recorded.');
-      await refreshPolling();
+      await refreshSession();
     } catch (error) {
       showError('Error Casting Vote', error instanceof Error ? error.message : 'Failed to cast vote');
     } finally {
@@ -315,7 +317,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       });
       showSuccess('Meal Proposed!', 'Your meal has been added to the voting pool.');
       setShowProposeMeal(false);
-      await refreshPolling();
+      await refreshSession();
     } catch (error) {
       showError('Error Proposing Meal', error instanceof Error ? error.message : 'Failed to propose meal');
     }
@@ -339,7 +341,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }, 1000);
       }
       
-      await refreshPolling();
+      await refreshSession();
     } catch (error) {
       showError('Error Confirming Readiness', error instanceof Error ? error.message : 'Failed to confirm readiness');
     } finally {
@@ -361,7 +363,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       
       showSuccess('Votes Confirmed!', 'You have confirmed your votes are final.');
       
-      // Immediately refresh context to detect completion
+      // Immediately refresh to get latest session state after action
       console.debug('[VotingSessionCard] handleConfirmVotes: calling refreshSession');
       await refreshSession();
       console.debug('[VotingSessionCard] handleConfirmVotes: refreshSession complete');
@@ -413,7 +415,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }, 3200);
       }
       
-      await refreshPolling();
+      await refreshSession();
     } catch (error) {
       console.error('[VotingSessionCard] handleConfirmVotes: error', error);
       showError('Error Confirming Votes', error instanceof Error ? error.message : 'Failed to confirm votes');

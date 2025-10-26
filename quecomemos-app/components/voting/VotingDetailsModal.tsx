@@ -217,15 +217,17 @@ export function VotingDetailsModal({ isOpen, onClose, sessionId }: VotingDetails
                     size="sm"
                     onClick={handleSelectPortion}
                     className={`flex-1 ${
-                      currentParticipant?.hasSelectedPortion
-                        ? 'border-green-600 text-green-300'
-                        : new Date() > new Date(currentParticipant?.portionDeadline || '')
+                      // If the deadline passed, show disabled/greyed style
+                      new Date() > new Date(currentParticipant?.portionDeadline || '')
                         ? 'border-gray-600 text-gray-400 cursor-not-allowed'
+                        // If user already selected and deadline not passed, show selected (but editable)
+                        : currentParticipant?.hasSelectedPortion
+                        ? 'border-green-600 text-green-300'
                         : 'border-amber-600 text-amber-300 hover:bg-amber-900/30'
                     }`}
                     disabled={
-                      currentParticipant?.defaultedToWhole || 
-                      currentParticipant?.hasSelectedPortion ||
+                      // Disable only if defaulted to whole OR deadline has passed
+                      currentParticipant?.defaultedToWhole ||
                       new Date() > new Date(currentParticipant?.portionDeadline || '')
                     }
                   >
