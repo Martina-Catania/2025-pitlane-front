@@ -86,7 +86,20 @@ export function AllMeals() {
         setIsRegisterMealModalOpen(false);
     };
 
-    const handleRegisterMeal = async (mealData: { mealId: number; date: string }) => {
+    const handleRegisterMeal = async (mealData: { 
+        mealId: number; 
+        date: string; 
+        portions?: {
+            mode: 'percentage' | 'absolute';
+            portionFraction: number;
+            foodPortions: Array<{
+                foodId: number;
+                portionFraction: number;
+                absoluteQuantity?: number;
+            }>;
+            totalCalories: number;
+        }
+    }) => {
         try {
             if (!profile) {
                 showError('Authentication Required', 'Please make sure you are logged in to register a meal.');
@@ -97,15 +110,23 @@ export function AllMeals() {
             const meal = getMealById(mealData.mealId);
             const mealName = meal?.name || `Meal #${mealData.mealId}`;
 
+            // Build description based on whether portions were specified
+            let description = `Registered meal consumed on ${mealData.date}`;
+            if (mealData.portions) {
+                const portionPercent = (mealData.portions.portionFraction * 100).toFixed(0);
+                description = `${portionPercent}% portion - ${description}`;
+            }
+
             const consumptionData = {
                 name: mealName,
-                description: `Registered meal consumed on ${mealData.date}`,
+                description,
                 meals: [{
                     mealId: mealData.mealId,
                     quantity: 1
                 }],
                 profileId: profile.id,
-                consumedAt: mealData.date
+                consumedAt: mealData.date,
+                portions: mealData.portions // Include portions if provided
             };
 
             const response = await fetch('http://localhost:3005/consumptions/individual', {

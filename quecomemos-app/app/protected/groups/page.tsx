@@ -129,7 +129,20 @@ export default function GroupsPage() {
     setSelectedGroupForMeal(null);
   };
 
-  const handleRegisterGroupMeal = async (mealData: { mealId: number; date: string }) => {
+  const handleRegisterGroupMeal = async (mealData: { 
+    mealId: number; 
+    date: string;
+    portions?: {
+      mode: 'percentage' | 'absolute';
+      portionFraction: number;
+      foodPortions: Array<{
+        foodId: number;
+        portionFraction: number;
+        absoluteQuantity?: number;
+      }>;
+      totalCalories: number;
+    }
+  }) => {
     try {
       if (!userData?.profile) {
         showError('Authentication Required', 'Please make sure you are logged in to register a meal.');
@@ -145,16 +158,24 @@ export default function GroupsPage() {
       const meal = getMealById(mealData.mealId);
       const mealName = meal?.name || `Meal #${mealData.mealId}`;
 
+      // Build description based on whether portions were specified
+      let description = `Group meal consumed on ${mealData.date}`;
+      if (mealData.portions) {
+        const portionPercent = (mealData.portions.portionFraction * 100).toFixed(0);
+        description = `${portionPercent}% portion - ${description}`;
+      }
+
       const consumptionData = {
         name: mealName,
-        description: `Group meal consumed on ${mealData.date}`,
+        description,
         meals: [{
           mealId: mealData.mealId,
           quantity: 1
         }],
         profileId: userData.profile.id,
         groupId: selectedGroupForMeal.GroupID,
-        consumedAt: mealData.date
+        consumedAt: mealData.date,
+        portions: mealData.portions // Include portions if provided
       };
 
       const response = await fetch('http://localhost:3005/consumptions/group', {

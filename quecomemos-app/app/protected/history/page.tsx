@@ -14,12 +14,32 @@ interface Consumption {
   description?: string;
   consumedAt: string;
   profileId?: string;
-  mealId?: number;
-  meal?: {
-    MealID: number;
-    name: string;
-    description?: string;
-  };
+  totalKcal?: number;
+  consumptionMeals?: Array<{
+    ConsumptionMealID: number;
+    mealId: number;
+    quantity: number;
+    meal: {
+      MealID: number;
+      name: string;
+      description?: string;
+    };
+    mealPortion?: {
+      MealPortionID: number;
+      portionFraction: number;
+      foodPortions: Array<{
+        FoodPortionID: number;
+        foodId: number;
+        portionFraction: number;
+        quantityConsumed: number;
+        food: {
+          FoodID: number;
+          name: string;
+          kCal: number;
+        };
+      }>;
+    };
+  }>;
 }
 
 function HistorySkeleton() {
@@ -91,6 +111,13 @@ export default function UserHistoryPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       console.debug('User history payload', data);
+      
+      // Log consumptions with meal portions
+      const consumptionsWithPortions = data.filter((c: Consumption) => 
+        c.consumptionMeals?.[0]?.mealPortion
+      );
+      console.debug('Consumptions with meal portions:', consumptionsWithPortions.length, 'out of', data.length);
+      
       setConsumptions(Array.isArray(data) ? data : []);
     } catch (err) {
       console.debug('Error fetching user history', err);
@@ -114,10 +141,10 @@ export default function UserHistoryPage() {
 
   // Filter and sort consumptions
   const filteredAndSortedConsumptions = consumptions
-    .filter(consumption => 
+    .filter((consumption) => 
       consumption.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (consumption.description && consumption.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (consumption.meal?.name && consumption.meal.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      (consumption.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (consumption.consumptionMeals?.[0]?.meal?.name && consumption.consumptionMeals[0].meal.name.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       const dateA = new Date(a.consumedAt).getTime();
@@ -262,42 +289,76 @@ export default function UserHistoryPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {dayConsumptions.map((consumption) => (
-                    <div 
-                      key={consumption.ConsumptionID} 
-                      className="border-l-4 border-primary pl-4 py-3 bg-muted/30 rounded-r-lg"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <ChefHat className="w-4 h-4 text-primary" />
-                            <p className="font-medium">{consumption.name}</p>
+                  {dayConsumptions.map((consumption) => {
+                    const consumptionMeal = consumption.consumptionMeals?.[0];
+                    const mealPortion = consumptionMeal?.mealPortion;
+                    const hasFoodPortions = mealPortion && mealPortion.foodPortions && mealPortion.foodPortions.length > 0;
+                    
+                    return (
+                      <div 
+                        key={consumption.ConsumptionID} 
+                        className="border-l-4 border-primary pl-4 py-3 bg-muted/30 rounded-r-lg"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <ChefHat className="w-4 h-4 text-primary" />
+                              <p className="font-medium">{consumption.name}</p>
+                              {mealPortion && (
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                                  {(mealPortion.portionFraction * 100).toFixed(0)}% of meal
+                                </span>
+                              )}
+                            </div>
+                            {consumption.description && (
+                              <p className="text-sm text-muted-foreground mt-1 ml-6">
+                                {consumption.description}
+                              </p>
+                            )}
+                            {consumptionMeal && consumptionMeal.meal.name !== consumption.name && (
+                              <p className="text-sm text-amber-600 mt-1 ml-6">
+                                From meal: {consumptionMeal.meal.name}
+                              </p>
+                            )}
+                            {hasFoodPortions && (
+                              <div className="mt-2 ml-6 p-2 bg-muted/50 rounded border border-muted">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">Food Portions Consumed:</p>
+                                <div className="grid grid-cols-2 gap-1">
+                                  {mealPortion.foodPortions.map((fp) => (
+                                    <div key={fp.FoodPortionID} className="text-xs flex items-center gap-1">
+                                      <span className="text-amber-600 font-medium">
+                                        {fp.quantityConsumed.toFixed(2)}u
+                                      </span>
+                                      <span className="text-muted-foreground">{fp.food.name}</span>
+                                      <span className="text-muted-foreground/70">
+                                        ({(fp.portionFraction * 100).toFixed(0)}%)
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {consumption.totalKcal !== undefined && (
+                              <p className="text-xs text-muted-foreground mt-1 ml-6">
+                                {consumption.totalKcal} kcal
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 mt-2 ml-6 text-xs text-muted-foreground">
+                              <span>
+                                {new Date(consumption.consumedAt).toLocaleTimeString('es-ES', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
                           </div>
-                          {consumption.description && (
-                            <p className="text-sm text-muted-foreground mt-1 ml-6">
-                              {consumption.description}
-                            </p>
-                          )}
-                          {consumption.meal && consumption.meal.name !== consumption.name && (
-                            <p className="text-sm text-amber-600 mt-1 ml-6">
-                              From meal: {consumption.meal.name}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-4 mt-2 ml-6 text-xs text-muted-foreground">
-                            <span>
-                              {new Date(consumption.consumedAt).toLocaleTimeString('es-ES', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
+                          <div className="flex items-center text-muted-foreground">
+                            <Activity className="w-4 h-4" />
                           </div>
-                        </div>
-                        <div className="flex items-center text-muted-foreground">
-                          <Activity className="w-4 h-4" />
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

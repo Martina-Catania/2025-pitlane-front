@@ -8,6 +8,7 @@ export { default as FoodsList } from "./FoodsList";
 export { default as MealExtras } from "./MealExtras";
 export { default as FoodModal } from "./FoodModal";
 export { CustomCheckbox } from "./CustomCheckbox";
+export { MealPortionSelector, type PortionData } from "./MealPortionSelector";
 
 // Common reusable components
 export { default as Modal } from "./common/Modal";

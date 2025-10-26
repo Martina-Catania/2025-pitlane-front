@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Users, Clock, PieChart, X, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { VotingService } from './VotingService';
-import { PortionSelectionModal } from './PortionSelectionModal';
 import { MealModal } from '@/components/modals/meal-modal';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
+import { PortionSelectionModal } from './PortionSelectionModal';
 
 interface Participant {
   userId: string;
@@ -17,6 +17,7 @@ interface Participant {
   hasSelectedPortion: boolean;
   defaultedToWhole: boolean;
   portionFraction?: number;
+  portionDeadline: string;
   joinedAt: string;
 }
 
@@ -218,13 +219,21 @@ export function VotingDetailsModal({ isOpen, onClose, sessionId }: VotingDetails
                     className={`flex-1 ${
                       currentParticipant?.hasSelectedPortion
                         ? 'border-green-600 text-green-300'
+                        : new Date() > new Date(currentParticipant?.portionDeadline || '')
+                        ? 'border-gray-600 text-gray-400 cursor-not-allowed'
                         : 'border-amber-600 text-amber-300 hover:bg-amber-900/30'
                     }`}
-                    disabled={currentParticipant?.defaultedToWhole}
+                    disabled={
+                      currentParticipant?.defaultedToWhole || 
+                      currentParticipant?.hasSelectedPortion ||
+                      new Date() > new Date(currentParticipant?.portionDeadline || '')
+                    }
                   >
                     <PieChart className="h-4 w-4 mr-2" />
                     {currentParticipant?.hasSelectedPortion
                       ? `Portion: ${Math.round((currentParticipant.portionFraction || 1) * 100)}%`
+                      : new Date() > new Date(currentParticipant?.portionDeadline || '')
+                      ? 'Deadline Passed'
                       : currentParticipant?.defaultedToWhole
                       ? 'Whole Meal (Default)'
                       : 'Select Your Portion'}
