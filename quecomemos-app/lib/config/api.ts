@@ -1,7 +1,23 @@
 /**
- * API configuration constants
- * All API-related configuration should be centralized here
+ * API configuration for the application
+ * 
+ * IMPORTANT FOR PRODUCTION DEPLOYMENT:
+ * Set the NEXT_PUBLIC_API_URL environment variable to your backend URL
+ * 
+ * For local development: http://localhost:3005
+ * For production: https://2025-pitlane-back.vercel.app
+ * 
+ * Without this, the voting system will fail to load in production!
  */
 
-// Get the API base URL from environment variables
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+import { getApiBaseUrl, validateEnvironment } from '@/lib/utils/environmentCheck';
+
+export const API_BASE_URL = getApiBaseUrl();
+
+// Validate environment on import (only in browser)
+if (typeof window !== 'undefined') {
+  const validation = validateEnvironment();
+  if (!validation.isValid) {
+    console.error('🚨 Environment validation failed:', validation.errors);
+  }
+}

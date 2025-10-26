@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { VotingService } from '@/components/voting/VotingService';
 import type { VotingSession } from '@/components/voting/types';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 
 interface VotingContextType {
   // Current active session for a group
@@ -22,6 +23,17 @@ interface VotingContextType {
   // Notify when a voting session completes
   notifyVotingCompleted: (sessionId: number) => void;
   onVotingCompleted: (callback: (sessionId: number) => void) => () => void;
+  
+  // Client-side optimistic updates
+  updateSessionOptimistically: (updates: Partial<VotingSession>) => void;
+  isOffline: boolean;
+  
+  // Manual sync control
+  forceSyncNow: () => Promise<void>;
+  lastSyncTime: Date | null;
+  
+  // User action tracking for notifications
+  markUserActionInProgress: (inProgress: boolean) => void;
 }
 
 const VotingContext = createContext<VotingContextType | undefined>(undefined);
@@ -36,11 +48,19 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
   const previousStatusRef = useRef<string | null>(null);
   const completionListenersRef = useRef<Set<(sessionId: number) => void>>(new Set());
+  const lastNetworkAttemptRef = useRef<number>(0);
+  const previousSessionDataRef = useRef<string | null>(null); // For detecting detailed changes
+  const userActionInProgressRef = useRef<boolean>(false); // Track if user is performing an action
+  
+  // Get notification functions
+  const { showSuccess, showInfo, showWarning } = useGlobalNotification();
 
   // CRITICAL FIX: Set mountedRef to true on every mount
   useEffect(() => {
@@ -51,6 +71,76 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       mountedRef.current = false;
     };
   }, []);
+
+  // Function to mark user actions in progress (prevents duplicate notifications)
+  const markUserActionInProgress = useCallback((inProgress: boolean) => {
+    console.debug('[VotingContext] markUserActionInProgress:', inProgress);
+    userActionInProgressRef.current = inProgress;
+    
+    // Auto-clear after 3 seconds to prevent getting stuck
+    if (inProgress) {
+      setTimeout(() => {
+        userActionInProgressRef.current = false;
+      }, 3000);
+    }
+  }, []);
+
+  // Network status monitoring
+  useEffect(() => {
+    const handleOnline = () => {
+      console.debug('[VotingContext] Network: back online, refreshing session');
+      setIsOffline(false);
+      // Immediately fetch when coming back online
+      if (groupId && typeof groupId === 'number') {
+        fetchActiveSession(false);
+      }
+    };
+    
+    const handleOffline = () => {
+      console.debug('[VotingContext] Network: gone offline');
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Set initial status
+    setIsOffline(!navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
+
+  // Optimistic update function for immediate UI feedback
+  const updateSessionOptimistically = useCallback((updates: Partial<VotingSession>) => {
+    console.debug('[VotingContext] updateSessionOptimistically:', updates);
+    setActiveSession(prev => {
+      if (!prev) {
+        console.debug('[VotingContext] updateSessionOptimistically: no active session to update');
+        return prev;
+      }
+      const updated = { ...prev, ...updates };
+      console.debug('[VotingContext] updateSessionOptimistically: session updated optimistically', updated);
+      
+      // Schedule a network refresh to verify the changes
+      const now = Date.now();
+      if (now - lastNetworkAttemptRef.current > 2000) { // Rate limit to every 2s
+        lastNetworkAttemptRef.current = now;
+        setTimeout(() => {
+          if (mountedRef.current && !isOffline) {
+            console.debug('[VotingContext] updateSessionOptimistically: scheduled refresh');
+            fetchActiveSession(false);
+          }
+        }, 1000); // Refresh after 1s
+      }
+      
+      return updated;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOffline]);
 
   // Fetch active voting session for this group
   // NOTE: Do NOT include fetchActiveSession in any useEffect deps except initial fetch
@@ -87,22 +177,72 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
         return;
       }
       
-      // Detect status changes
-      if (session?.status !== previousStatusRef.current) {
-        console.debug('[VotingContext] fetchActiveSession: status changed', { previous: previousStatusRef.current, current: session?.status });
-        // If session just completed, show results modal
-        if (previousStatusRef.current === 'voting_phase' && session?.status === 'completed') {
-          console.debug('[VotingContext] fetchActiveSession: session completed from voting_phase, showing results modal');
-          setShowResultsModal(true);
-        } else if (session?.status === 'completed' && !previousStatusRef.current?.includes('completed')) {
-          // Also catch completion if we didn't see the voting_phase (in case we missed a poll)
-          console.debug('[VotingContext] fetchActiveSession: session completed (not from voting_phase), showing results modal');
-          setShowResultsModal(true);
+      // Update sync time
+      setLastSyncTime(new Date());
+      setIsOffline(false);
+      
+      // Detect and notify about session changes
+      const previousSession = activeSession;
+      const currentSessionStr = session ? JSON.stringify({
+        id: session.VotingSessionID,
+        status: session.status,
+        proposalsCount: session.proposals?.length || 0,
+        totalVotes: session.totalVotes,
+        winnerMealId: session.winnerMealId
+      }) : null;
+      
+      previousSessionDataRef.current = currentSessionStr;
+      
+      // Detect specific changes and notify users (only if not user-initiated)
+      if (session && previousSession && !userActionInProgressRef.current) {
+        // Session status changes
+        if (session.status !== previousSession.status) {
+          console.debug('[VotingContext] fetchActiveSession: status changed (external)', { 
+            previous: previousSession.status, 
+            current: session.status 
+          });
+          
+          if (session.status === 'voting_phase' && previousSession.status === 'proposal_phase') {
+            showInfo('🗳️ Voting Started!', 'The voting phase has begun. You can now vote on the proposed meals.');
+          } else if (session.status === 'completed' && previousSession.status === 'voting_phase') {
+            const winnerName = session.winnerMeal?.name || 'Unknown meal';
+            showSuccess('🎉 Voting Completed!', `The winning meal is "${winnerName}" with ${session.totalVotes} total votes!`);
+            setShowResultsModal(true);
+          }
         }
-        previousStatusRef.current = session?.status || null;
-      } else {
-        console.debug('[VotingContext] fetchActiveSession: status unchanged', { status: session?.status });
+        
+        // New proposals added (only significant changes to avoid spam)
+        if (session.proposals?.length > (previousSession.proposals?.length || 0)) {
+          const newProposalsCount = session.proposals.length - (previousSession.proposals?.length || 0);
+          if (newProposalsCount > 0) {
+            showInfo('🍽️ New Meal Proposed!', 
+              newProposalsCount === 1 
+                ? 'A new meal has been added to the voting pool.'
+                : `${newProposalsCount} new meals have been added to the voting pool.`
+            );
+          }
+        }
+        
+        // Vote count changes (but only show for significant changes to avoid spam)
+        if (session.totalVotes > previousSession.totalVotes && 
+            session.totalVotes % 5 === 0 && // Only show every 5th vote to reduce spam
+            session.status === 'voting_phase') {
+          showInfo('📊 Votes Updated', `Total votes: ${session.totalVotes}`);
+        }
+      } else if (session && !previousSession && !userActionInProgressRef.current) {
+        // New session started (not by current user)
+        showSuccess('🚀 New Voting Session!', 'A new voting session has been started for this group.');
+      } else if (!session && previousSession && !userActionInProgressRef.current) {
+        // Session ended (not by current user)
+        showWarning('⏰ Voting Session Ended', 'The voting session has been completed or cancelled.');
       }
+      
+      // Handle completion modal
+      if (session?.status === 'completed' && previousSession?.status !== 'completed') {
+        setShowResultsModal(true);
+      }
+      
+      previousStatusRef.current = session?.status || null;
       
       console.debug('[VotingContext] fetchActiveSession: success, setting session state', { session });
       setActiveSession(session);
@@ -114,17 +254,39 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
         return;
       }
       
-      // No active session is expected, so we don't set error for 404
+      // Handle different types of errors gracefully
       if (err instanceof Error) {
-        console.error('[VotingContext] fetchActiveSession: error details', { message: err.message, includes404: err.message.includes('404') });
-        if (!err.message.includes('404')) {
-          console.error('[VotingContext] fetchActiveSession: setting error state', err.message);
-          setError(err.message);
+        console.error('[VotingContext] fetchActiveSession: error details', { 
+          message: err.message, 
+          includes404: err.message.includes('404'),
+          includesTimeout: err.message.includes('timeout') || err.message.includes('AbortError'),
+          includesNetwork: err.message.includes('fetch') || err.message.includes('network')
+        });
+        
+        if (err.message.includes('404')) {
+          // 404 is normal when no active session exists
+          console.debug('[VotingContext] fetchActiveSession: 404 error (no active session), clearing session');
+          setActiveSession(null);
+          setError(null);
+          setIsOffline(false);
+        } else if (err.message.includes('timeout') || err.name === 'AbortError' || 
+                   err.message.includes('fetch') || err.message.includes('network')) {
+          // Network issues - mark as offline but keep existing session
+          console.debug('[VotingContext] fetchActiveSession: network/timeout error, marking offline');
+          setIsOffline(true);
+          setError(`Connection issue: ${err.message}`);
+          // Don't clear activeSession - keep showing the last known state
         } else {
-          console.debug('[VotingContext] fetchActiveSession: 404 error (no active session), ignoring');
+          // Other errors
+          console.error('[VotingContext] fetchActiveSession: other error, setting error state');
+          setError(err.message);
+          setIsOffline(false);
         }
+      } else {
+        console.error('[VotingContext] fetchActiveSession: unknown error type', err);
+        setError('Unknown error occurred');
+        setIsOffline(true);
       }
-      setActiveSession(null);
     } finally {
       if (mountedRef.current) {
         console.debug('[VotingContext] fetchActiveSession: FINALLY block - setting loading to false');
@@ -133,7 +295,10 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
         console.debug('[VotingContext] fetchActiveSession: FINALLY block - component not mounted, NOT setting loading');
       }
     }
-  }, [groupId]);  // Manual refresh function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Keep dependencies minimal to avoid recreating the function constantly
+
+  // Manual refresh function
   const refreshSession = useCallback(async () => {
     console.debug('[VotingContext] refreshSession called', { groupId });
     if (typeof groupId !== 'number' || Number.isNaN(groupId)) {
@@ -143,6 +308,24 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     console.debug('[VotingContext] refreshSession: calling fetchActiveSession');
     await fetchActiveSession(false);
   }, [fetchActiveSession, groupId]);
+
+  // Force sync now function - manual refresh with user feedback
+  const forceSyncNow = useCallback(async () => {
+    console.debug('[VotingContext] forceSyncNow called');
+    if (typeof groupId !== 'number' || Number.isNaN(groupId)) {
+      console.debug('[VotingContext] forceSyncNow: invalid groupId', groupId);
+      return;
+    }
+    
+    try {
+      showInfo('🔄 Syncing...', 'Manually refreshing voting session data...');
+      await fetchActiveSession(true); // Show loader for manual sync
+      showSuccess('✅ Sync Complete', 'Voting session data has been refreshed.');
+    } catch (error) {
+      console.error('[VotingContext] forceSyncNow: error', error);
+      showWarning('⚠️ Sync Failed', 'Could not refresh voting session data. Please try again.');
+    }
+  }, [fetchActiveSession, groupId, showInfo, showSuccess, showWarning]);
 
   // Start a new session
   const startSession = useCallback(async () => {
@@ -211,67 +394,62 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       clearInterval(pollIntervalRef.current);
     }
 
-    // Only poll if we might need to detect changes
+    // Only poll if we might need to detect changes and are online
     // We poll less frequently for lifecycle changes (session start/end)
-    pollIntervalRef.current = setInterval(async () => {
-      if (!mountedRef.current) {
-        console.debug('[VotingContext] polling interval: component not mounted, skipping');
-        return;
-      }
-      if (!groupId) {
-        console.debug('[VotingContext] polling interval: no groupId, skipping');
-        return;
-      }
-      
-      console.debug('[VotingContext] polling interval: fetching sessions, groupId=', groupId);
-      try {
-        const sessions = await VotingService.getActiveVotingSessions(groupId);
-        const session = sessions.length > 0 ? sessions[0] : null;
-        
-        console.debug('[VotingContext] polling interval: fetch result', { sessionId: session?.VotingSessionID, status: session?.status });
-        
+    if (!isOffline) {
+      pollIntervalRef.current = setInterval(async () => {
         if (!mountedRef.current) {
-          console.debug('[VotingContext] polling interval: component unmounted after fetch, skipping state update');
+          console.debug('[VotingContext] polling interval: component not mounted, skipping');
+          return;
+        }
+        if (!groupId || isOffline) {
+          console.debug('[VotingContext] polling interval: no groupId or offline, skipping');
           return;
         }
         
-        // Only update if:
-        // 1. Session appeared (was null, now exists)
-        // 2. Session disappeared (existed, now null)
-        // 3. Different session (different ID)
-        // 4. Status changed (proposal -> voting -> completed)
-        const shouldUpdate = 
-          (!activeSession && session) ||
-          (activeSession && !session) ||
-          (activeSession && session && activeSession.VotingSessionID !== session.VotingSessionID) ||
-          (activeSession && session && activeSession.status !== session.status) ||
-          (activeSession && session && activeSession.proposals?.length !== session.proposals?.length);
-        
-        console.debug('[VotingContext] polling interval: shouldUpdate=', shouldUpdate, { 
-          had: activeSession?.VotingSessionID, 
-          now: session?.VotingSessionID,
-          hadStatus: activeSession?.status,
-          nowStatus: session?.status
-        });
-        
-        if (shouldUpdate) {
-          console.debug('[VotingContext] polling interval: updating session state');
-          // Detect completion
-          if (activeSession?.status === 'voting_phase' && session?.status === 'completed') {
-            console.debug('[VotingContext] polling interval: session completed from voting_phase, showing results modal');
-            setShowResultsModal(true);
-          } else if (session?.status === 'completed' && activeSession?.status !== 'completed') {
-            console.debug('[VotingContext] polling interval: session completed (status changed to completed), showing results modal');
-            setShowResultsModal(true);
+        console.debug('[VotingContext] polling interval: fetching sessions, groupId=', groupId);
+        try {
+          const sessions = await VotingService.getActiveVotingSessions(groupId);
+          const session = sessions.length > 0 ? sessions[0] : null;
+          
+          console.debug('[VotingContext] polling interval: fetch result', { sessionId: session?.VotingSessionID, status: session?.status });
+          
+          if (!mountedRef.current) {
+            console.debug('[VotingContext] polling interval: component unmounted after fetch, skipping state update');
+            return;
           }
           
-          setActiveSession(session);
-          previousStatusRef.current = session?.status || null;
+          // Only update if there are meaningful changes
+          const shouldUpdate = 
+            (!activeSession && session) ||
+            (activeSession && !session) ||
+            (activeSession && session && activeSession.VotingSessionID !== session.VotingSessionID) ||
+            (activeSession && session && activeSession.status !== session.status) ||
+            (activeSession && session && activeSession.proposals?.length !== session.proposals?.length);
+          
+          console.debug('[VotingContext] polling interval: shouldUpdate=', shouldUpdate);
+          
+          if (shouldUpdate) {
+            console.debug('[VotingContext] polling interval: updating session state');
+            // Detect completion
+            if (activeSession?.status === 'voting_phase' && session?.status === 'completed') {
+              console.debug('[VotingContext] polling interval: session completed, showing results modal');
+              setShowResultsModal(true);
+            } else if (session?.status === 'completed' && activeSession?.status !== 'completed') {
+              console.debug('[VotingContext] polling interval: session completed (status changed), showing results modal');
+              setShowResultsModal(true);
+            }
+            
+            setActiveSession(session);
+            previousStatusRef.current = session?.status || null;
+            setIsOffline(false); // We successfully fetched, so we're online
+          }
+        } catch (err) {
+          console.error('[VotingContext] polling interval: error', err);
+          // Don't update isOffline here - let it be handled by network events
         }
-      } catch (err) {
-        console.error('[VotingContext] polling interval: error', err);
-      }
-    }, 10000); // Poll every 10 seconds for lifecycle changes
+      }, 15000); // Poll every 15 seconds instead of 10 for less load
+    }
     
     console.debug('[VotingContext] useEffect (polling setup): interval set up');
 
@@ -312,6 +490,11 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     setShowResultsModal,
     notifyVotingCompleted,
     onVotingCompleted,
+    updateSessionOptimistically,
+    isOffline,
+    forceSyncNow,
+    lastSyncTime,
+    markUserActionInProgress,
   };
 
   return (

@@ -26,7 +26,7 @@ interface VotingSessionCardProps {
 export function VotingSessionCard({ session: initialSession, onVotingComplete, className = '' }: VotingSessionCardProps) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
-  const { setShowResultsModal, refreshSession, notifyVotingCompleted } = useVoting();
+  const { setShowResultsModal, refreshSession, notifyVotingCompleted, updateSessionOptimistically, isOffline } = useVoting();
   
   const [loading, setLoading] = useState(false);
   const [showProposeMeal, setShowProposeMeal] = useState(false);
@@ -176,11 +176,24 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
     setLoading(true);
     try {
+      // Optimistic update - immediately show the voting phase
+      updateSessionOptimistically({
+        status: 'voting_phase'
+      });
+      
       await VotingService.startVotingPhase(updatedSession.VotingSessionID);
       showSuccess('Voting Started!', 'The voting phase has begun. Members can now vote on proposed meals.');
-      await refreshSession();
+      
+      // Only refresh if we're online and the optimistic update might be wrong
+      if (!isOffline) {
+        setTimeout(() => refreshSession(), 2000);
+      }
     } catch (error) {
       showError('Error Starting Voting', error instanceof Error ? error.message : 'Failed to start voting phase');
+      // Revert optimistic update on error
+      updateSessionOptimistically({
+        status: 'proposal_phase'
+      });
     } finally {
       setLoading(false);
     }
@@ -290,15 +303,53 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
     setLoading(true);
     try {
+      // Optimistic update - immediately update the vote count and user's vote
+      const updatedProposals = updatedSession.proposals.map(proposal => {
+        if (proposal.MealProposalID === proposalId) {
+          return {
+            ...proposal,
+            voteCount: proposal.voteCount + 1,
+            votes: [
+              ...proposal.votes,
+              {
+                VoteID: Date.now(), // Temporary ID
+                votingSessionId: updatedSession.VotingSessionID,
+                mealProposalId: proposalId,
+                voterId: userId,
+                voteType: 'up' as const,
+                votedAt: new Date().toISOString(),
+                isActive: true,
+                voter: {
+                  id: userId,
+                  username: userData?.profile?.username || 'You'
+                }
+              }
+            ]
+          };
+        }
+        return proposal;
+      });
+
+      updateSessionOptimistically({
+        proposals: updatedProposals,
+        totalVotes: updatedSession.totalVotes + 1
+      });
+
       await VotingService.castVote(updatedSession.VotingSessionID, {
         mealProposalId: proposalId,
         voterId: userId,
         voteType: 'up'
       });
       showSuccess('Vote Cast!', 'Your vote has been recorded.');
-      await refreshSession();
+      
+      // Refresh after a short delay to get accurate server state
+      if (!isOffline) {
+        setTimeout(() => refreshSession(), 1500);
+      }
     } catch (error) {
       showError('Error Casting Vote', error instanceof Error ? error.message : 'Failed to cast vote');
+      // Revert optimistic update on error - just refresh to get correct state
+      refreshSession();
     } finally {
       setLoading(false);
     }

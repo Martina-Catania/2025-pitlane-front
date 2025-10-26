@@ -50,14 +50,56 @@ export class VotingService {
    * Get active voting sessions for a group
    */
   static async getActiveVotingSessions(groupId: number): Promise<VotingSession[]> {
-    const response = await fetch(`${VOTING_BASE_URL}/groups/${groupId}/active`);
+    try {
+      // Add timeout and retry logic for production environment
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      console.debug('[VotingService] getActiveVotingSessions: calling', `${VOTING_BASE_URL}/groups/${groupId}/active`);
+      
+      const response = await fetch(`${VOTING_BASE_URL}/groups/${groupId}/active`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to get active voting sessions');
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}` };
+        }
+        
+        console.error('[VotingService] getActiveVotingSessions: API error', { 
+          status: response.status, 
+          statusText: response.statusText,
+          error: errorData.error,
+          url: `${VOTING_BASE_URL}/groups/${groupId}/active`
+        });
+        
+        throw new Error(errorData.error || `Failed to get active voting sessions (${response.status})`);
+      }
+
+      const result = await response.json();
+      console.debug('[VotingService] getActiveVotingSessions: success', { count: result?.length, result });
+      return result;
+    } catch (error) {
+      console.error('[VotingService] getActiveVotingSessions: catch block', error);
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout - please check your connection');
+        }
+        throw error;
+      }
+      
+      throw new Error('Unknown error occurred while fetching voting sessions');
     }
-
-    return response.json();
   }
 
   /**

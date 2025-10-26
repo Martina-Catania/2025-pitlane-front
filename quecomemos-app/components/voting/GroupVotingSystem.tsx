@@ -21,12 +21,21 @@ interface GroupVotingSystemProps {
 
 export function GroupVotingSystem({ group, onVotingComplete, className = '' }: GroupVotingSystemProps) {
   const { userData } = useUser();
-  const { activeSession, loading, startSession, showResultsModal, setShowResultsModal } = useVoting();
+  const { 
+    activeSession, 
+    loading, 
+    startSession, 
+    showResultsModal, 
+    setShowResultsModal, 
+    isOffline, 
+    forceSyncNow, 
+    lastSyncTime 
+  } = useVoting();
 
   const userId = userData?.profile?.id;
   const isGroupMember = group.members?.some(member => member.profile.id === userId) || false;
 
-  console.debug('[GroupVotingSystem] render: group=', group.GroupID, 'loading=', loading, 'activeSession=', activeSession?.VotingSessionID, 'showResultsModal=', showResultsModal);
+  console.debug('[GroupVotingSystem] render: group=', group.GroupID, 'loading=', loading, 'activeSession=', activeSession?.VotingSessionID, 'showResultsModal=', showResultsModal, 'isOffline=', isOffline);
 
   const handleVotingStarted = () => {
     console.debug('[GroupVotingSystem] handleVotingStarted called');
@@ -53,12 +62,72 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
     );
   }
 
+  // Enhanced connection status indicator with manual sync
+  const ConnectionStatusIndicator = () => {
+    const formatTime = (date: Date | null) => {
+      if (!date) return 'Never';
+      return date.toLocaleTimeString();
+    };
+
+    if (isOffline) {
+      return (
+        <div className="mb-4 p-4 bg-yellow-900/50 border border-yellow-700/50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-yellow-200">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3 animate-pulse"></div>
+              <div>
+                <div className="text-sm font-medium">Connection Issues Detected</div>
+                <div className="text-xs text-yellow-300 mt-1">
+                  Showing last known state. Last sync: {formatTime(lastSyncTime)}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={forceSyncNow}
+              className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-yellow-100 text-xs rounded-md transition-colors flex items-center gap-1"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Sync Now
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Show successful connection status when online (but only if recently synced)
+    if (lastSyncTime && Date.now() - lastSyncTime.getTime() < 60000) { // Show for 1 minute after sync
+      return (
+        <div className="mb-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg">
+          <div className="flex items-center justify-between text-green-200">
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+              <span className="text-sm">Connected • Last sync: {formatTime(lastSyncTime)}</span>
+            </div>
+            <button
+              onClick={forceSyncNow}
+              className="px-2 py-1 text-green-300 hover:text-green-100 text-xs opacity-70 hover:opacity-100 transition-opacity"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   // If there's an active voting session, show the voting interface
   if (activeSession) {
     console.debug('[GroupVotingSystem] rendering: ACTIVE SESSION');
     return (
       <>
         <div className={`space-y-4 ${className}`}>
+          {/* Connection status indicator */}
+          <ConnectionStatusIndicator />
+          
           <VotingSessionCard
             session={activeSession}
             onVotingComplete={onVotingComplete}
@@ -87,6 +156,9 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   console.debug('[GroupVotingSystem] rendering: NO ACTIVE SESSION');
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Connection status indicator */}
+      <ConnectionStatusIndicator />
+      
       <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
         <CardHeader>
           <CardTitle className="flex items-center text-amber-200">
