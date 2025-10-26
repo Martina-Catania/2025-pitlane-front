@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { MealSearchBar } from '../meal/MealSearchBar';
 import { MealComposition } from '../meal/MealComposition';
+import AddMealForm from '../meal/AddMealForm';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { useUser } from '@/lib/contexts/UserContext';
 import { fetchGroupDietaryInfo } from '@/lib/utils/groupService';
@@ -32,6 +33,7 @@ export function ProposeMealModal({ isOpen, onClose, onPropose, groupId }: Propos
   
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [groupDietaryInfo, setGroupDietaryInfo] = useState<GroupDietaryInfo | null>(null);
+  const [showCreateMeal, setShowCreateMeal] = useState(false);
 
   const userRestrictions = userData?.preferences?.dietaryRestrictions || [];
   const groupRestrictions = groupDietaryInfo?.dietaryRestrictions?.map(r => r.DietaryRestrictionID) || [];
@@ -61,7 +63,15 @@ export function ProposeMealModal({ isOpen, onClose, onPropose, groupId }: Propos
 
   const handleClose = () => {
     setSelectedMeal(null);
+    setShowCreateMeal(false);
     onClose();
+  };
+
+  const handleMealCreated = (createdMeal: Partial<Meal> & { MealID: number }) => {
+    // When a new meal is created, select it automatically and show it
+    setShowCreateMeal(false);
+    // Cast to Meal since we know it has the essential properties
+    setSelectedMeal(createdMeal as Meal);
   };
 
   if (!isOpen) return null;
@@ -103,43 +113,77 @@ export function ProposeMealModal({ isOpen, onClose, onPropose, groupId }: Propos
 
           {/* Meal Search */}
           <div className="space-y-4">
-            <MealSearchBar
-              allMeals={allMeals}
-              selectedMeal={selectedMeal}
-              onMealSelect={setSelectedMeal}
-              userRestrictions={userRestrictions}
-              groupRestrictions={groupRestrictions}
-              isGroupMode={true}
-              showAdvancedFilters={true}
-              placeholder="Search for a meal to propose..."
-            />
-
-            {/* Selected Meal Composition */}
-            {selectedMeal && (
-              <div className="space-y-4">
-                <MealComposition meal={selectedMeal} />
-                
-                <div className="flex justify-end gap-3">
+            {!showCreateMeal ? (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-gray-400">Search for an existing meal or create a new one</p>
                   <button
-                    onClick={handleClose}
-                    className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                    onClick={() => setShowCreateMeal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePropose}
-                    className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors font-medium"
-                  >
-                    Propose This Meal
+                    <Plus className="w-4 h-4" />
+                    Create New Meal
                   </button>
                 </div>
-              </div>
-            )}
 
-            {!selectedMeal && (
-              <div className="text-center py-8 text-gray-400">
-                <p>Select a meal from the search above to propose it for voting</p>
-              </div>
+                <MealSearchBar
+                  allMeals={allMeals}
+                  selectedMeal={selectedMeal}
+                  onMealSelect={setSelectedMeal}
+                  userRestrictions={userRestrictions}
+                  groupRestrictions={groupRestrictions}
+                  isGroupMode={true}
+                  showAdvancedFilters={true}
+                  placeholder="Search for a meal to propose..."
+                />
+
+                {/* Selected Meal Composition */}
+                {selectedMeal && (
+                  <div className="space-y-4">
+                    <MealComposition meal={selectedMeal} />
+                    
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={handleClose}
+                        className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handlePropose}
+                        className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors font-medium"
+                      >
+                        Propose This Meal
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!selectedMeal && (
+                  <div className="text-center py-8 text-gray-400">
+                    <p>Select a meal from the search above to propose it for voting</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => setShowCreateMeal(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm"
+                  >
+                    <X className="w-4 h-4" />
+                    Back to Search
+                  </button>
+                </div>
+
+                <div className="bg-neutral-800 rounded-lg p-6">
+                  <AddMealForm 
+                    onFoodAdded={handleMealCreated}
+                    onClose={() => setShowCreateMeal(false)}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
