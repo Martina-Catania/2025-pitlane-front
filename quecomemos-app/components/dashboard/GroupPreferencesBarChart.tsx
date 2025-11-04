@@ -100,7 +100,7 @@ export default function GroupPreferencesBarChart({ groupId, members }: GroupPref
               });
             }
           } catch (memberError) {
-            console.warn(`Failed to fetch preferences for member ${member.profile.username}:`, memberError);
+            console.warn(`Failed to fetch preferences for member ${member.profile.username || 'Anonymous'}:`, memberError);
           }
         }
 

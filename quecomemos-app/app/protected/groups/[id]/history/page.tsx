@@ -279,8 +279,8 @@ function GroupHistorySkeleton() {
                                 minute: '2-digit'
                               })}
                             </span>
-                            {consumption.profile?.username && (
-                              <span>by {consumption.profile.username}</span>
+                            {consumption.profile && (
+                              <span>by {consumption.profile.username || 'Anonymous'}</span>
                             )}
                           </div>
                         </div>

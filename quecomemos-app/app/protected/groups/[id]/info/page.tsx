@@ -676,7 +676,7 @@ export default function GroupInfoPage() {
                   <p className="text-sm text-muted-foreground">Creator</p>
                   <div className="flex items-center space-x-2">
                     <Crown className="w-4 h-4 text-yellow-500" />
-                    <p className="font-medium">{group.creator.username}</p>
+                    <p className="font-medium">{group.creator.username || 'Anonymous'}</p>
                   </div>
                 </div>
                 <div>
@@ -723,11 +723,11 @@ export default function GroupInfoPage() {
                 >
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center justify-center w-8 h-8 bg-amber-700 text-white rounded-full text-sm font-medium">
-                      {member.profile.username.charAt(0).toUpperCase()}
+                      {(member.profile.username || 'Anonymous').charAt(0).toUpperCase()}
                     </div>
 
                     <div>
-                      <p className="font-medium">{member.profile.username}</p>
+                      <p className="font-medium">{member.profile.username || 'Anonymous'}</p>
                       <div className="flex items-center space-x-2">
                         <Badge variant={member.role === 'admin' ? 'default' : 'outline'} className={member.role === 'admin' ? 'text-xs bg-amber-700 hover:bg-amber-600' : 'text-xs'}>
                           {member.role === 'admin' ? (
@@ -755,7 +755,7 @@ export default function GroupInfoPage() {
                       variant="ghost"
                       size="sm"
                       className="text-destructive"
-                      onClick={() => handleRemoveMember(member.profile.id, member.profile.username)}
+                      onClick={() => handleRemoveMember(member.profile.id, member.profile.username || 'Anonymous')}
                     >
                       <UserMinus className="w-4 h-4" />
                     </Button>
@@ -810,14 +810,14 @@ export default function GroupInfoPage() {
                       >
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center justify-center w-8 h-8 bg-muted text-foreground rounded-full text-sm font-medium border">
-                            {invitation.invitedUser.username.charAt(0).toUpperCase()}
+                            {(invitation.invitedUser.username || 'Anonymous').charAt(0).toUpperCase()}
                           </div>
 
                           <div>
-                            <p className="font-medium">{invitation.invitedUser.username}</p>
+                            <p className="font-medium">{invitation.invitedUser.username || 'Anonymous'}</p>
                             <div className="flex items-center space-x-2">
                               <span className="text-xs text-muted-foreground">
-                                Invited by {invitation.invitedBy.username}
+                                Invited by {invitation.invitedBy.username || 'Anonymous'}
                               </span>
                               <span className="text-xs text-muted-foreground">•</span>
                               <span className="text-xs text-muted-foreground">
@@ -839,7 +839,7 @@ export default function GroupInfoPage() {
                               variant="ghost"
                               size="sm"
                               className="text-muted-foreground hover:text-destructive"
-                              onClick={() => handleCancelInvitation(invitation.InvitationID, invitation.invitedUser.username)}
+                              onClick={() => handleCancelInvitation(invitation.InvitationID, invitation.invitedUser.username || 'Anonymous')}
                             >
                               <X className="w-4 h-4" />
                             </Button>

@@ -104,7 +104,7 @@ export default function GroupMealPreferencesPieChart({ groupId, members }: Group
             });
 
             if (!consumptionResponse.ok) {
-              console.warn(`Failed to fetch consumption for member ${member.profile.username}`);
+              console.warn(`Failed to fetch consumption for member ${member.profile.username || 'Anonymous'}`);
               continue;
             }
 
@@ -144,7 +144,7 @@ export default function GroupMealPreferencesPieChart({ groupId, members }: Group
               });
             });
           } catch (memberError) {
-            console.warn(`Failed to process consumption for member ${member.profile.username}:`, memberError);
+            console.warn(`Failed to process consumption for member ${member.profile.username || 'Anonymous'}:`, memberError);
           }
         }
 

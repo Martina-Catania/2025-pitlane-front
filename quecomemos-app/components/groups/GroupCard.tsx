@@ -48,6 +48,7 @@ const handleClick = () => {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return '?';
     return name
       .split(' ')
       .map(word => word[0])
@@ -105,7 +106,7 @@ const handleClick = () => {
                 key={member.profile.id} 
                 className="flex items-center justify-center w-6 h-6 text-xs font-medium text-white bg-amber-700 rounded-full border-2 border-background"
               >
-                {getInitials(member.profile.username)}
+                {getInitials(member.profile.username || 'Anonymous')}
               </div>
             ))}
             {group.members.length > 3 && (
