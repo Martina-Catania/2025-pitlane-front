@@ -45,9 +45,6 @@ export function useCalorieProgress(date?: Date) {
       if (!response.ok) throw new Error('Failed to fetch calorie progress');
 
       const data = await response.json();
-      console.log('🔍 Calorie progress data received:', data);
-      console.log('🔍 Raw consumed value:', data.consumed);
-      console.log('🔍 Raw goal value:', data.goal);
       
       // Calcular remaining y percentage en el frontend
       const consumed = data.consumed || 0;
@@ -71,7 +68,6 @@ export function useCalorieProgress(date?: Date) {
 
   const updateCalorieGoal = async (newGoal: number) => {
     try {
-      console.log('Updating calorie goal to:', newGoal);
       const supabase = createClient();
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -87,13 +83,10 @@ export function useCalorieProgress(date?: Date) {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Failed to update calorie goal:', response.status, errorData);
         throw new Error(`Failed to update calorie goal: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('Update calorie goal response:', result);
 
       await fetchProgress();
       return true;
