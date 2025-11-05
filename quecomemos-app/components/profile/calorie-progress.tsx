@@ -40,19 +40,19 @@ export function CalorieProgressCard({
   const statusConfig = {
     exceeded: {
       variant: 'destructive' as const,
-      text: 'Pasaste el objetivo',
+      text: 'Goal exceeded',
       icon: TrendingUp,
       color: 'text-red-500'
     },
     close: {
       variant: 'secondary' as const,
-      text: 'Cerca del objetivo',
+      text: 'Close to goal',
       icon: Target,
       color: 'text-yellow-500'
     },
     'on-track': {
       variant: 'default' as const,
-      text: 'En progreso',
+      text: 'In progress',
       icon: TrendingDown,
       color: 'text-green-500'
     }
@@ -66,7 +66,7 @@ export function CalorieProgressCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-500" />
-          Progreso de Calorías Hoy
+          Today's Calorie Progress
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
