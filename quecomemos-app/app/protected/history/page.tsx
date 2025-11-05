@@ -4,9 +4,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User } from 'lucide-react';
+import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User, History, Target } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
+import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
+import { CalorieProgressCard } from '@/components/profile/calorie-progress';
+import { CalorieGoalSettings } from '@/components/profile/calorie-goal-settings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Consumption {
   ConsumptionID: number;
@@ -96,10 +100,12 @@ export default function UserHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [activeTab, setActiveTab] = useState('history');
 
   // Context hooks
   const { userData } = useUser();
   const profile = userData.profile;
+  const { progress, loading: loadingProgress, updateCalorieGoal: updateCalorieGoalFromHook } = useCalorieProgress();
 
   const fetchUserHistory = useCallback(async () => {
     if (!profile?.id) return;
@@ -190,6 +196,35 @@ export default function UserHistoryPage() {
     );
   }
 
+  const updateCalorieGoal = async (newGoal: number): Promise<boolean> => {
+    if (!profile?.id) {
+      console.error('No profile ID available');
+      return false;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/profiles/${profile.id}/calorie-goal`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ calorieGoal: newGoal }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update calorie goal: ${response.status}`);
+      }
+
+      // Update the hook's state by calling the hook's update function
+      await updateCalorieGoalFromHook(newGoal);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating calorie goal:', error);
+      return false;
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -223,7 +258,22 @@ export default function UserHistoryPage() {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Tabs for Profile Sections */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            Consumption History
+          </TabsTrigger>
+          <TabsTrigger value="goals" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Calorie Goals
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab: Consumption History */}
+        <TabsContent value="history" className="mt-6">
+          {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -387,6 +437,26 @@ export default function UserHistoryPage() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        {/* Tab: Calorie Goals */}
+        <TabsContent value="goals" className="space-y-6 mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <CalorieProgressCard
+              consumed={progress?.consumed || 0}
+              goal={progress?.goal || 2000}
+              remaining={progress?.remaining || 2000}
+              percentage={progress?.percentage || 0}
+              loading={loadingProgress}
+            />
+
+            <CalorieGoalSettings
+              currentGoal={progress?.goal || 2000} // Usa un valor por defecto si progress está vacío
+              onUpdate={updateCalorieGoal}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

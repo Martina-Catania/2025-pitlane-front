@@ -190,9 +190,9 @@ export function UserSidebar() {
           >
             <Activity className="w-5 h-5 text-amber-300" />
             <div>
-              <div className="font-medium text-sm text-card-foreground">My Personal History</div>
+              <div className="font-medium text-sm text-card-foreground">My Profile</div>
               <div className="text-xs text-muted-foreground">
-                View your individual consumption history
+                View your consumption history and calorie goals
               </div>
             </div>
           </Link>
