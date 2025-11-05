@@ -1,7 +1,7 @@
 'use client';
 
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
-import { CalorieProgressCard } from '@/components/profile/calorie-progress';
+import { CalorieProgressWithHistory } from '@/components/profile/calorie-progress-with-history';
 import { CalorieGoalSettings } from '@/components/profile/calorie-goal-settings';
 
 export default function ProfilePage() {
@@ -10,31 +10,34 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Mi Perfil</h1>
+        <h1 className="text-3xl font-bold">My Profile</h1>
         <p className="text-muted-foreground">
-          Configura tus preferencias y objetivos nutricionales
+          Configure your preferences and nutritional goals
         </p>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Progreso de calorías */}
+      <div className="space-y-6">
+        {/* Progreso de calorías con historial */}
         {progress && (
-          <CalorieProgressCard
+          <CalorieProgressWithHistory
             consumed={progress.consumed}
             goal={progress.goal}
             remaining={progress.remaining}
             percentage={progress.percentage}
             loading={loading}
+            consumptionHistory={progress.consumptionHistory}
           />
         )}
 
         {/* Configuración de objetivo */}
-        {progress && (
-          <CalorieGoalSettings
-            currentGoal={progress.goal}
-            onUpdate={updateCalorieGoal}
-          />
-        )}
+        <div className="max-w-md mx-auto">
+          {progress && (
+            <CalorieGoalSettings
+              currentGoal={progress.goal}
+              onUpdate={updateCalorieGoal}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

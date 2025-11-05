@@ -3,11 +3,19 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+interface ConsumptionItem {
+  name: string;
+  calories: number;
+  time: string;
+  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+
 interface CalorieProgress {
   consumed: number;
   goal: number;
   remaining: number;
   percentage: number;
+  consumptionHistory?: ConsumptionItem[];
 }
 
 export function useCalorieProgress(date?: Date) {
@@ -28,7 +36,7 @@ export function useCalorieProgress(date?: Date) {
       if (!user) throw new Error('No user found');
 
       const dateParam = date ? `?date=${date.toISOString()}` : '';
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/calorie-progress${dateParam}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/${user.id}/calorie-progress${dateParam}`, {
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
@@ -37,7 +45,22 @@ export function useCalorieProgress(date?: Date) {
       if (!response.ok) throw new Error('Failed to fetch calorie progress');
 
       const data = await response.json();
-      setProgress(data);
+      console.log('🔍 Calorie progress data received:', data);
+      console.log('🔍 Raw consumed value:', data.consumed);
+      console.log('🔍 Raw goal value:', data.goal);
+      
+      // Calcular remaining y percentage en el frontend
+      const consumed = data.consumed || 0;
+      const goal = data.goal || 2000;
+      const remaining = Math.max(0, goal - consumed);
+      const percentage = goal > 0 ? Math.min(100, (consumed / goal) * 100) : 0;
+      
+      setProgress({
+        consumed,
+        goal,
+        remaining,
+        percentage: Math.round(percentage * 100) / 100 // Redondear a 2 decimales
+      });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -48,18 +71,29 @@ export function useCalorieProgress(date?: Date) {
 
   const updateCalorieGoal = async (newGoal: number) => {
     try {
+      console.log('Updating calorie goal to:', newGoal);
       const supabase = createClient();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/calorie-goal`, {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/${user.id}/calorie-goal`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
-        body: JSON.stringify({ calorie_goal: newGoal })
+        body: JSON.stringify({ calorieGoal: newGoal })
       });
 
-      if (!response.ok) throw new Error('Failed to update calorie goal');
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Failed to update calorie goal:', response.status, errorData);
+        throw new Error(`Failed to update calorie goal: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Update calorie goal response:', result);
 
       await fetchProgress();
       return true;

@@ -4,13 +4,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User, History, Target } from 'lucide-react';
+import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User, History, Target, Flame } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
-import { CalorieProgressCard } from '@/components/profile/calorie-progress';
+import { CalorieCircleProgress } from '@/components/profile/calorie-circle-progress';
 import { CalorieGoalSettings } from '@/components/profile/calorie-goal-settings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createClient } from '@/lib/supabase/client';
 
 interface Consumption {
   ConsumptionID: number;
@@ -203,10 +204,18 @@ export default function UserHistoryPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/profiles/${profile.id}/calorie-goal`, {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/profile/${profile.id}/calorie-goal`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ calorieGoal: newGoal }),
       });
@@ -441,8 +450,46 @@ export default function UserHistoryPage() {
 
         {/* Tab: Calorie Goals */}
         <TabsContent value="goals" className="space-y-6 mt-6">
+          {/* Calorie Summary Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-orange-500" />
+                Total Calories Consumed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                  <div className="text-3xl font-bold text-primary">
+                    {loadingProgress ? '...' : (progress?.consumed || 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Total kcal consumed
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-green-500/5 rounded-lg">
+                  <div className="text-3xl font-bold text-green-600">
+                    {loadingProgress ? '...' : (progress?.goal || 2000).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Daily goal
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-blue-500/5 rounded-lg">
+                  <div className="text-3xl font-bold text-blue-600">
+                    {loadingProgress ? '...' : Math.round((progress?.consumed || 0) / (progress?.goal || 2000) * 100)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Of daily goal
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid gap-6 md:grid-cols-2">
-            <CalorieProgressCard
+            <CalorieCircleProgress
               consumed={progress?.consumed || 0}
               goal={progress?.goal || 2000}
               remaining={progress?.remaining || 2000}

@@ -60,9 +60,6 @@ export function CalorieGoalSettings({ currentGoal, onUpdate }: CalorieGoalSettin
               onChange={(e) => setGoal(e.target.value)}
               placeholder="2000"
             />
-            <p className="text-xs text-muted-foreground">
-              Recommended: 1500-2500 kcal for maintenance
-            </p>
           </div>
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? (
