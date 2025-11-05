@@ -6,6 +6,7 @@ import { FoodsProvider } from "@/lib/contexts/FoodsContext";
 import { MealsProvider } from "@/lib/contexts/MealsContext";
 import { UserProvider } from "@/lib/contexts/UserContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
+import { CalorieProgressProvider } from "@/lib/contexts/CalorieProgressContext";
 
 
 const defaultUrl = process.env.VERCEL_URL
@@ -36,14 +37,16 @@ export default function RootLayout({
           <FoodsProvider>
             <MealsProvider>
               <NotificationProvider>
-                <ThemeProvider
-                  attribute="class"
-                  defaultTheme="system"
-                  enableSystem
-                  disableTransitionOnChange
-                >
-                  {children}
-                </ThemeProvider>
+                <CalorieProgressProvider>
+                  <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                  >
+                    {children}
+                  </ThemeProvider>
+                </CalorieProgressProvider>
               </NotificationProvider>
             </MealsProvider>
           </FoodsProvider>

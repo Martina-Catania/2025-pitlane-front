@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useCalorieProgressRefresh } from '@/lib/contexts/CalorieProgressContext';
 
 interface ConsumptionItem {
   name: string;
@@ -22,10 +23,6 @@ export function useCalorieProgress(date?: Date) {
   const [progress, setProgress] = useState<CalorieProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchProgress();
-  }, [date]);
 
   const fetchProgress = async () => {
     try {
@@ -65,6 +62,13 @@ export function useCalorieProgress(date?: Date) {
       setLoading(false);
     }
   };
+
+  // Register this hook to refresh when meals are registered
+  useCalorieProgressRefresh(fetchProgress);
+
+  useEffect(() => {
+    fetchProgress();
+  }, [date]);
 
   const updateCalorieGoal = async (newGoal: number) => {
     try {

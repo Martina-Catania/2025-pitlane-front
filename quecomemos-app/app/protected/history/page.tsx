@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RegisterMealModal } from '@/components/modals';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useMeals } from '@/lib/contexts/MealsContext';
+import { useCalorieProgressContext } from '@/lib/contexts/CalorieProgressContext';
+import { MealService, type RegisterMealData } from '@/lib/services/MealService';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -115,6 +117,7 @@ export default function UserHistoryPage() {
   const { progress, loading: loadingProgress, updateCalorieGoal: updateCalorieGoalFromHook } = useCalorieProgress();
   const { allMeals, fetchAllMeals } = useMeals();
   const { showNotification } = useGlobalNotification();
+  const { triggerRefresh } = useCalorieProgressContext();
 
   const fetchUserHistory = useCallback(async () => {
     if (!profile?.id) return;
@@ -258,80 +261,43 @@ export default function UserHistoryPage() {
   };
 
   const handleRegisterMeal = async (mealData: { mealId: number; date: string; portions?: any }) => {
-    try {
-      console.log('Attempting to register meal:', mealData);
-      console.log('Available meals:', allMeals.length, allMeals.map(m => ({ id: m.MealID, name: m.name })));
-      
-      const meal = allMeals.find(m => m.MealID === mealData.mealId);
-      if (!meal) {
-        console.error('Meal not found in allMeals array:', mealData.mealId);
-        showNotification('error', 'Meal not found', 'Please try refreshing the page.');
-        return;
-      }
+    const meal = allMeals.find(m => m.MealID === mealData.mealId);
+    if (!meal) {
+      console.error('Meal not found in allMeals array:', mealData.mealId);
+      showNotification('error', 'Meal not found', 'Please try refreshing the page.');
+      return;
+    }
 
-      if (!profile?.id) {
-        showNotification('error', 'Profile not found', 'User profile is required to register meals.');
-        return;
-      }
+    if (!profile?.id) {
+      showNotification('error', 'Profile not found', 'User profile is required to register meals.');
+      return;
+    }
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        showNotification('error', 'Authentication required', 'Please log in to register meals.');
-        return;
-      }
+    const registerMealData: RegisterMealData = {
+      mealId: mealData.mealId,
+      date: mealData.date,
+      portions: mealData.portions
+    };
 
-      console.log('Registering meal:', {
-        mealId: mealData.mealId,
-        date: mealData.date,
-        portions: mealData.portions,
-        profileId: profile.id,
-        mealName: meal.name
-      });
+    const result = await MealService.registerIndividualMeal(
+      registerMealData,
+      profile.id,
+      meal.name,
+      triggerRefresh // This will trigger calorie progress refresh
+    );
 
-      // Calculate quantity based on portions (default to 1 for full meal)
-      const quantity = mealData.portions?.portionFraction || 1;
-      const description = `Consumption of ${meal.name} at ${new Date(mealData.date).toLocaleString()}`;
-
-      const response = await fetch(`${API_BASE_URL}/consumptions/individual`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          name: description,
-          description: description,
-          profileId: profile.id,
-          meals: [{
-            mealId: mealData.mealId,
-            quantity: quantity
-          }],
-          consumedAt: mealData.date,
-          portions: mealData.portions || null
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to register meal: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('Meal registered successfully:', result);
-
+    if (result.success) {
       showNotification('success', 'Meal registered successfully', `${meal.name} has been added to your consumption history.`);
       
       // Refresh the history to show the new consumption
       await fetchUserHistory();
       
       closeRegisterMealModal();
-    } catch (error) {
-      console.error('Error registering meal:', error);
+    } else {
       showNotification(
         'error',
         'Failed to register meal',
-        error instanceof Error ? error.message : 'An unexpected error occurred.'
+        result.error || 'An unexpected error occurred.'
       );
     }
   };
