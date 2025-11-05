@@ -73,12 +73,12 @@ export function CalorieProgressCard({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-3xl font-bold">{consumed.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Consumidas</p>
+            <p className="text-sm text-muted-foreground">Consumed</p>
           </div>
           <div className="h-12 w-px bg-border" />
           <div className="space-y-1 text-right">
             <p className="text-3xl font-bold">{goal.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Objetivo</p>
+            <p className="text-sm text-muted-foreground">Goal</p>
           </div>
         </div>
 
@@ -88,7 +88,7 @@ export function CalorieProgressCard({
             className="h-3"
           />
           <p className="text-xs text-muted-foreground text-right">
-            {percentage}% del objetivo
+            {percentage}% of goal
           </p>
         </div>
 
@@ -99,8 +99,8 @@ export function CalorieProgressCard({
           </Badge>
           <span className={`text-sm font-medium ${remaining > 0 ? 'text-muted-foreground' : 'text-red-500'}`}>
             {remaining > 0 
-              ? `${remaining.toLocaleString()} kcal restantes` 
-              : `${Math.abs(remaining).toLocaleString()} kcal de más`}
+              ? `${remaining.toLocaleString()} kcal remaining` 
+              : `${Math.abs(remaining).toLocaleString()} kcal over`}
           </span>
         </div>
       </CardContent>
