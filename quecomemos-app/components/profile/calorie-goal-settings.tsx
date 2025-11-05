@@ -26,7 +26,7 @@ export function CalorieGoalSettings({ currentGoal, onUpdate }: CalorieGoalSettin
 
     const newGoal = parseInt(goal);
     if (isNaN(newGoal) || newGoal < 500 || newGoal > 10000) {
-      toast.error('El objetivo debe estar entre 500 y 10,000 calorías');
+      toast.error('The goal must be between 500 and 10,000 calories');
       return;
     }
 
@@ -35,21 +35,21 @@ export function CalorieGoalSettings({ currentGoal, onUpdate }: CalorieGoalSettin
     setLoading(false);
 
     if (success) {
-      toast.success(`Tu nuevo objetivo es ${newGoal.toLocaleString()} calorías por día`);
+      toast.success(`Your new goal is ${newGoal.toLocaleString()} calories per day`);
     } else {
-      toast.error('No se pudo actualizar el objetivo');
+      toast.error('Failed to update the goal');
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Establecer Objetivo de Calorías</CardTitle>
+        <CardTitle>Set Calorie Goal</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="calorie-goal">Calorías objetivo (kcal/día)</Label>
+            <Label htmlFor="calorie-goal">Calorie Goal (kcal/day)</Label>
             <Input
               id="calorie-goal"
               type="number"
@@ -61,19 +61,19 @@ export function CalorieGoalSettings({ currentGoal, onUpdate }: CalorieGoalSettin
               placeholder="2000"
             />
             <p className="text-xs text-muted-foreground">
-              Recomendado: 1500-2500 kcal para mantenimiento
+              Recommended: 1500-2500 kcal for maintenance
             </p>
           </div>
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Guardando...
+                Saving...
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Guardar Objetivo
+                Save Goal
               </>
             )}
           </Button>
