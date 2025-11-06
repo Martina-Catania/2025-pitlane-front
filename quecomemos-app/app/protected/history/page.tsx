@@ -330,7 +330,7 @@ export default function UserHistoryPage() {
             {allMeals.length === 0 && <span className="text-xs ml-1">(Loading...)</span>}
           </Button>
 
-          {/* User Info */}
+          {/* User Info
           {profile && (
             <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg border">
               <div className="w-10 h-10 bg-amber-800/30 border border-amber-700/50 rounded-full flex items-center justify-center">
@@ -345,7 +345,7 @@ export default function UserHistoryPage() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
 
