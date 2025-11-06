@@ -4,9 +4,21 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User } from 'lucide-react';
+import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User, History, Target, Flame, Plus } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
+import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
+import { CalorieCircleProgress } from '@/components/profile/calorie-circle-progress';
+import CalorieGoalSettings from '@/components/profile/CalorieGoalSettings';
+import { CalorieProgressDisplay } from '@/components/profile/CalorieProgressDisplay';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RegisterMealModal } from '@/components/modals';
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { useMeals } from '@/lib/contexts/MealsContext';
+import { useCalorieProgressContext } from '@/lib/contexts/CalorieProgressContext';
+import { MealService, type RegisterMealData } from '@/lib/services/MealService';
+
+import { createClient } from '@/lib/supabase/client';
 
 interface Consumption {
   ConsumptionID: number;
@@ -96,10 +108,16 @@ export default function UserHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [activeTab, setActiveTab] = useState('history');
+  const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
 
   // Context hooks
   const { userData } = useUser();
   const profile = userData.profile;
+  const { progress, loading: loadingProgress, updateCalorieGoal: updateCalorieGoalFromHook } = useCalorieProgress();
+  const { allMeals, fetchAllMeals } = useMeals();
+  const { showNotification } = useGlobalNotification();
+  const { triggerRefresh } = useCalorieProgressContext();
 
   const fetchUserHistory = useCallback(async () => {
     if (!profile?.id) return;
@@ -130,6 +148,13 @@ export default function UserHistoryPage() {
   useEffect(() => {
     fetchUserHistory();
   }, [fetchUserHistory]);
+
+  // Fetch meals for the register meal functionality
+  useEffect(() => {
+    if (profile?.id) {
+      fetchAllMeals(profile.id);
+    }
+  }, [profile?.id, fetchAllMeals]);
 
 
 
@@ -190,6 +215,93 @@ export default function UserHistoryPage() {
     );
   }
 
+  const updateCalorieGoal = async (newGoal: number): Promise<boolean> => {
+    if (!profile?.id) {
+      console.error('No profile ID available');
+      return false;
+    }
+
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/profile/${profile.id}/calorie-goal`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ calorieGoal: newGoal }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update calorie goal: ${response.status}`);
+      }
+
+      // Update the hook's state by calling the hook's update function
+      await updateCalorieGoalFromHook(newGoal);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating calorie goal:', error);
+      return false;
+    }
+  };
+
+  const openRegisterMealModal = () => {
+    setIsRegisterMealModalOpen(true);
+  };
+
+  const closeRegisterMealModal = () => {
+    setIsRegisterMealModalOpen(false);
+  };
+
+  const handleRegisterMeal = async (mealData: { mealId: number; date: string; portions?: any }) => {
+    const meal = allMeals.find(m => m.MealID === mealData.mealId);
+    if (!meal) {
+      console.error('Meal not found in allMeals array:', mealData.mealId);
+      showNotification('error', 'Meal not found', 'Please try refreshing the page.');
+      return;
+    }
+
+    if (!profile?.id) {
+      showNotification('error', 'Profile not found', 'User profile is required to register meals.');
+      return;
+    }
+
+    const registerMealData: RegisterMealData = {
+      mealId: mealData.mealId,
+      date: mealData.date,
+      portions: mealData.portions
+    };
+
+    const result = await MealService.registerIndividualMeal(
+      registerMealData,
+      profile.id,
+      meal.name,
+      triggerRefresh // This will trigger calorie progress refresh
+    );
+
+    if (result.success) {
+      showNotification('success', 'Meal registered successfully', `${meal.name} has been added to your consumption history.`);
+      
+      // Refresh the history to show the new consumption
+      await fetchUserHistory();
+      
+      closeRegisterMealModal();
+    } else {
+      showNotification(
+        'error',
+        'Failed to register meal',
+        result.error || 'An unexpected error occurred.'
+      );
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -205,25 +317,55 @@ export default function UserHistoryPage() {
           </p>
         </div>
 
-        {/* User Info */}
-        {profile && (
-          <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg border">
-            <div className="w-10 h-10 bg-amber-800/30 border border-amber-700/50 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-amber-200" />
-            </div>
-            <div>
-              <div className="font-medium text-sm">
-                {profile.username || 'User'}
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          {/* Register Meal Button */}
+          <Button 
+            onClick={openRegisterMealModal}
+            disabled={allMeals.length === 0}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-500 disabled:cursor-not-allowed"
+            title={allMeals.length === 0 ? "Loading meals..." : "Register a meal"}
+          >
+            <Plus className="w-4 h-4" />
+            Register Meal
+            {allMeals.length === 0 && <span className="text-xs ml-1">(Loading...)</span>}
+          </Button>
+
+          {/* User Info */}
+          {profile && (
+            <div className="flex items-center gap-3 bg-muted/50 p-3 rounded-lg border">
+              <div className="w-10 h-10 bg-amber-800/30 border border-amber-700/50 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-amber-200" />
               </div>
-              <div className="text-xs text-muted-foreground capitalize">
-                {profile.role}
+              <div>
+                <div className="font-medium text-sm">
+                  {profile.username || 'User'}
+                </div>
+                <div className="text-xs text-muted-foreground capitalize">
+                  {profile.role}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* Tabs for Profile Sections */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            Consumption History
+          </TabsTrigger>
+          <TabsTrigger value="goals" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Calorie Goals
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab: Consumption History */}
+        <TabsContent value="history" className="mt-6">
+          {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -387,6 +529,69 @@ export default function UserHistoryPage() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        {/* Tab: Calorie Goals */}
+        <TabsContent value="goals" className="space-y-6 mt-6">
+          {/* Calorie Summary Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-orange-500" />
+                Total Calories Consumed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                  <div className="text-3xl font-bold text-primary">
+                    {loadingProgress ? '...' : (progress?.consumed || 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Total kcal consumed
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-green-500/5 rounded-lg">
+                  <div className="text-3xl font-bold text-green-600">
+                    {loadingProgress ? '...' : (progress?.goal || 2000).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Daily goal
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-blue-500/5 rounded-lg">
+                  <div className="text-3xl font-bold text-blue-600">
+                    {loadingProgress ? '...' : Math.round((progress?.consumed || 0) / (progress?.goal || 2000) * 100)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Of daily goal
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <CalorieProgressDisplay
+              consumed={progress?.consumed || 0}
+              goal={progress?.goal || 2000}
+              loading={loadingProgress}
+            />
+
+            <CalorieGoalSettings
+              currentGoal={progress?.goal || 2000}
+              onUpdate={updateCalorieGoal}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Register Meal Modal */}
+      <RegisterMealModal
+        isOpen={isRegisterMealModalOpen}
+        onClose={closeRegisterMealModal}
+        onSubmit={handleRegisterMeal}
+      />
     </div>
   );
 }

@@ -7,15 +7,13 @@ import { EditMealForm } from '@/components/modals';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { MealCard } from '@/components/meal';
-import { RegisterMealModal } from '@/components/modals';
-import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
 
 export function AllMeals() {
     const router = useRouter();
     const { userData } = useUser();
-    const { showSuccess, showError } = useGlobalNotification();
     const {
         meals,
         recommendedMeals,
@@ -32,7 +30,7 @@ export function AllMeals() {
     const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
     const [isMealModalOpen, setIsMealModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+
     const [searchQuery, setSearchQuery] = useState('');
 
     const profile = userData?.profile;
@@ -78,87 +76,7 @@ export function AllMeals() {
         }
     };
 
-    const openRegisterMealModal = () => {
-        setIsRegisterMealModalOpen(true);
-    };
 
-    const closeRegisterMealModal = () => {
-        setIsRegisterMealModalOpen(false);
-    };
-
-    const handleRegisterMeal = async (mealData: { 
-        mealId: number; 
-        date: string; 
-        portions?: {
-            mode: 'percentage' | 'absolute';
-            portionFraction: number;
-            foodPortions: Array<{
-                foodId: number;
-                portionFraction: number;
-                absoluteQuantity?: number;
-            }>;
-            totalCalories: number;
-        }
-    }) => {
-        try {
-            if (!profile) {
-                showError('Authentication Required', 'Please make sure you are logged in to register a meal.');
-                return;
-            }
-
-            // Get the meal information from context
-            const meal = getMealById(mealData.mealId);
-            const mealName = meal?.name || `Meal #${mealData.mealId}`;
-
-            // Build description based on whether portions were specified
-            let description = `Registered meal consumed on ${mealData.date}`;
-            if (mealData.portions) {
-                const portionPercent = (mealData.portions.portionFraction * 100).toFixed(0);
-                description = `${portionPercent}% portion - ${description}`;
-            }
-
-            const consumptionData = {
-                name: mealName,
-                description,
-                meals: [{
-                    mealId: mealData.mealId,
-                    quantity: 1
-                }],
-                profileId: profile.id,
-                consumedAt: mealData.date,
-                portions: mealData.portions // Include portions if provided
-            };
-
-            const response = await fetch('http://localhost:3005/consumptions/individual', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(consumptionData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to register meal consumption');
-            }
-
-            const consumption = await response.json();
-            console.log('Meal consumption registered successfully:', consumption);
-
-            showSuccess(
-                'Meal Registered Successfully!',
-                `"${mealName}" has been recorded for ${mealData.date}.`
-            );
-
-            closeRegisterMealModal();
-        } catch (error) {
-            console.error('Error registering meal consumption:', error);
-            showError(
-                'Registration Failed',
-                error instanceof Error ? error.message : 'An unexpected error occurred while registering your meal. Please try again.'
-            );
-        }
-    };
 
     if (loadingMeals) {
         return (
@@ -201,16 +119,7 @@ export function AllMeals() {
                     </div>
 
 
-                    <Button
-                        type="submit"
-                        onClick={openRegisterMealModal}
-                        className="bg-amber-700 hover:bg-amber-600 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-lg"
-                    >
-                        <div className="flex items-center gap-2">
-                            Do you want to register a meal you ate?
-                        </div>
 
-                    </Button>
 
 
                     {loadingRecommended ? (
@@ -354,12 +263,7 @@ export function AllMeals() {
                 onEdit={handleEditMeal}
             />
 
-            {/* Register Meal Modal */}
-            <RegisterMealModal
-                isOpen={isRegisterMealModalOpen}
-                onClose={closeRegisterMealModal}
-                onSubmit={handleRegisterMeal}
-            />
+
 
             {/* Edit Meal Modal */}
             {isEditModalOpen && selectedMeal && (
