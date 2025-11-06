@@ -78,7 +78,7 @@ export function CalorieCircleProgress({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-500" />
-          Today's Calorie Progress
+          Today&apos;s Calorie Progress
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

@@ -20,7 +20,8 @@ export async function PUT(request: Request) {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
               )
-            } catch (error) {
+            } catch {
+              // Ignore cookie setting errors
             }
           },
         },

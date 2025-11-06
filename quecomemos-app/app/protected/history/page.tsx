@@ -8,7 +8,6 @@ import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User, History, 
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
-import { CalorieCircleProgress } from '@/components/profile/calorie-circle-progress';
 import CalorieGoalSettings from '@/components/profile/CalorieGoalSettings';
 import { CalorieProgressDisplay } from '@/components/profile/CalorieProgressDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -260,7 +259,7 @@ export default function UserHistoryPage() {
     setIsRegisterMealModalOpen(false);
   };
 
-  const handleRegisterMeal = async (mealData: { mealId: number; date: string; portions?: any }) => {
+  const handleRegisterMeal = async (mealData: { mealId: number; date: string; portions?: { portionFraction: number; foodPortions: Array<{ foodId: number; portionFraction: number; absoluteQuantity?: number; }>; } }) => {
     const meal = allMeals.find(m => m.MealID === mealData.mealId);
     if (!meal) {
       console.error('Meal not found in allMeals array:', mealData.mealId);

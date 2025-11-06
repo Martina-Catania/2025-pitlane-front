@@ -23,8 +23,7 @@ export function AllMeals() {
         recommendedError,
         fetchAllMeals,
         fetchRecommendedMeals,
-        updateMeal,
-        getMealById
+        updateMeal
     } = useMeals();
 
     const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);

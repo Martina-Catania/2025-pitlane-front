@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Flame, Target, TrendingUp, TrendingDown, Clock, Utensils } from 'lucide-react';
+import { Clock, Utensils } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalorieCircleProgress } from './calorie-circle-progress';
 
@@ -87,7 +87,7 @@ export function CalorieProgressWithHistory({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Utensils className="h-5 w-5 text-blue-500" />
-            Today's Consumption History
+            Today&apos;s Consumption History
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -19,7 +19,14 @@ export interface RegisterMealData {
 
 export interface MealRegistrationResult {
   success: boolean;
-  consumption?: any;
+  consumption?: {
+    ConsumptionID: number;
+    name: string;
+    description?: string;
+    consumedAt: string;
+    profileId?: string;
+    totalKcal?: number;
+  };
   error?: string;
 }
 

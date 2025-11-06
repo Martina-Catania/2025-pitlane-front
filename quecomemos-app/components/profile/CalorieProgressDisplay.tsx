@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Target, TrendingUp, Calendar, Sparkles } from 'lucide-react'
+import { Target, Sparkles } from 'lucide-react'
 
 interface CalorieProgressDisplayProps {
   consumed: number
@@ -40,16 +40,6 @@ export function CalorieProgressDisplay({ consumed, goal, loading }: CalorieProgr
 
   const percentage = goal > 0 ? Math.min(100, (consumed / goal) * 100) : 0
   const isAtGoal = consumed >= goal
-  const isClose = percentage >= 80 && percentage < 100
-
-  // Determinar el color del progreso de manera neutral
-  const getProgressColor = () => {
-    if (percentage <= 25) return 'bg-blue-500' // Inicio del día
-    if (percentage <= 50) return 'bg-green-500' // Buen progreso
-    if (percentage <= 80) return 'bg-yellow-500' // Acercándose
-    if (percentage <= 100) return 'bg-orange-500' // Cerca del objetivo
-    return 'bg-purple-500' // Superado el objetivo
-  }
 
   const getStatusMessage = () => {
     if (percentage === 0) return 'Start your nutritious day 🌅'

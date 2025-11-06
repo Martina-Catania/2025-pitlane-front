@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Flame, Target, TrendingUp, TrendingDown } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface CalorieCircleCompactProps {
   consumed: number;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useCalorieProgressRefresh } from '@/lib/contexts/CalorieProgressContext';
 
@@ -24,7 +24,7 @@ export function useCalorieProgress(date?: Date) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProgress = async () => {
+  const fetchProgress = useCallback(async () => {
     try {
       setLoading(true);
       const supabase = createClient();
@@ -61,14 +61,14 @@ export function useCalorieProgress(date?: Date) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [date]);
 
   // Register this hook to refresh when meals are registered
   useCalorieProgressRefresh(fetchProgress);
 
   useEffect(() => {
     fetchProgress();
-  }, [date]);
+  }, [fetchProgress]);
 
   const updateCalorieGoal = async (newGoal: number) => {
     try {
@@ -90,7 +90,7 @@ export function useCalorieProgress(date?: Date) {
         throw new Error(`Failed to update calorie goal: ${response.status}`);
       }
 
-      const result = await response.json();
+      await response.json();
 
       await fetchProgress();
       return true;
