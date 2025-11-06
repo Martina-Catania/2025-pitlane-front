@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, User, History, Target, Flame, Plus } from 'lucide-react';
+import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, History, Target, Flame, Plus } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
