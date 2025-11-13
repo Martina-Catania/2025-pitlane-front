@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Slider } from '@/components/ui/slider'
+import { SingleValueSlider } from '@/components/common/sliders'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
@@ -22,9 +22,24 @@ const PRESET_GOALS = [
   { label: 'Athletic', value: 3200, description: 'For athletes and very high activity' }
 ]
 
+const MIN_CALORIES = 1200
+const MAX_CALORIES = 3500
+const DEFAULT_CALORIES = 2000
+
 export default function CalorieGoalSettings({ currentGoal, onGoalUpdated, onUpdate }: CalorieGoalSettingsProps) {
-  const [goal, setGoal] = useState(currentGoal)
+  // Ensure we start with a valid number
+  const initialGoal = Number.isFinite(currentGoal) && currentGoal >= MIN_CALORIES && currentGoal <= MAX_CALORIES 
+    ? currentGoal 
+    : DEFAULT_CALORIES
+
+  const [goal, setGoal] = useState(initialGoal)
+  const [inputValue, setInputValue] = useState(initialGoal.toString())
   const [isLoading, setIsLoading] = useState(false)
+
+  // Sync input value with goal when goal changes from slider or presets
+  useEffect(() => {
+    setInputValue(goal.toString())
+  }, [goal])
 
   const handleSave = async () => {
     try {
@@ -49,6 +64,33 @@ export default function CalorieGoalSettings({ currentGoal, onGoalUpdated, onUpda
       toast.error('Error updating goal')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setInputValue(value)
+    
+    // Parse and validate the input
+    const numValue = parseInt(value, 10)
+    if (!isNaN(numValue)) {
+      // Clamp the value to valid range
+      const clampedValue = Math.max(MIN_CALORIES, Math.min(MAX_CALORIES, numValue))
+      setGoal(clampedValue)
+    }
+  }
+
+  const handleInputBlur = () => {
+    // On blur, ensure the input shows a valid value
+    const numValue = parseInt(inputValue, 10)
+    if (isNaN(numValue)) {
+      // If invalid, reset to current goal
+      setInputValue(goal.toString())
+    } else {
+      // Clamp and update both input and goal
+      const clampedValue = Math.max(MIN_CALORIES, Math.min(MAX_CALORIES, numValue))
+      setGoal(clampedValue)
+      setInputValue(clampedValue.toString())
     }
   }
 
@@ -88,21 +130,21 @@ export default function CalorieGoalSettings({ currentGoal, onGoalUpdated, onUpda
           <Label className="text-sm font-medium">Custom</Label>
           
           <div className="space-y-4">
-            <Slider
-              value={[goal]}
-              onValueChange={(value) => setGoal(value[0])}
-              min={1200}
-              max={3500}
+            <SingleValueSlider
+              value={goal}
+              onValueChange={setGoal}
+              min={MIN_CALORIES}
+              max={MAX_CALORIES}
               step={50}
               className="w-full"
             />
             
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>1200 kcal</span>
+              <span>{MIN_CALORIES} kcal</span>
               <Badge variant="secondary" className="text-base font-semibold">
                 {goal.toLocaleString()} kcal
               </Badge>
-              <span>3500 kcal</span>
+              <span>{MAX_CALORIES} kcal</span>
             </div>
           </div>
 
@@ -114,10 +156,11 @@ export default function CalorieGoalSettings({ currentGoal, onGoalUpdated, onUpda
             <Input
               id="goal-input"
               type="number"
-              value={goal}
-              onChange={(e) => setGoal(Math.max(1200, Math.min(3500, parseInt(e.target.value) || 2000)))}
-              min={1200}
-              max={3500}
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              min={MIN_CALORIES}
+              max={MAX_CALORIES}
               className="w-24"
             />
             <span className="text-sm text-muted-foreground">kcal</span>

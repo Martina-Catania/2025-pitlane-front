@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, X, Plus, ChevronDown, Info } from 'lucide-react';
 import { Meal } from '@/lib/contexts/MealsContext';
-import { CalorieRangeSlider } from '@/components/common/CalorieRangeSlider';
+import { CalorieRangeSlider } from '@/components/common/sliders';
 import { MultiSelect } from '@/components/common/MultiSelect';
 import { fetchAllPreferences, fetchAllDietaryRestrictions, Preference, DietaryRestriction } from '@/lib/utils/preferencesService';
 

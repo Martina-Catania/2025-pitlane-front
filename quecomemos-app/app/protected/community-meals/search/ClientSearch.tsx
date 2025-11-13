@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MealCard } from '@/components/meal';
 import { MealModal } from '@/components/modals';
-import { CalorieRangeSlider } from '@/components/common/CalorieRangeSlider';
+import { CalorieRangeSlider } from '@/components/common/sliders';
 import { MultiSelect } from '@/components/common/MultiSelect';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { useUser } from '@/lib/contexts/UserContext';

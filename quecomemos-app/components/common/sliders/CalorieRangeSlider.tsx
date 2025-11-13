@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Slider } from '../ui/slider';
+import { DoubleValueSlider } from './DoubleValueSlider';
 
 interface CalorieRangeSliderProps {
   minValue: number;
@@ -24,7 +24,7 @@ export function CalorieRangeSlider({
 }: CalorieRangeSliderProps) {
   const [localMin, setLocalMin] = useState(minValue);
   const [localMax, setLocalMax] = useState(maxValue);
-  const [range, setRange] = useState([minValue, maxValue]);
+  const [range, setRange] = useState<[number, number]>([minValue, maxValue]);
 
   useEffect(() => {
     setLocalMin(minValue);
@@ -32,7 +32,7 @@ export function CalorieRangeSlider({
     setRange([minValue, maxValue]);
   }, [minValue, maxValue]);
 
-  const handleSliderChange = (values: number[]) => {
+  const handleSliderChange = (values: [number, number]) => {
     const [min, max] = values;
     setRange(values);
     setLocalMin(min);
@@ -81,7 +81,7 @@ export function CalorieRangeSlider({
         
         {/* Range Slider */}
         <div className="px-3 py-2">
-          <Slider
+          <DoubleValueSlider
             value={range}
             onValueChange={handleSliderChange}
             max={absoluteMax}

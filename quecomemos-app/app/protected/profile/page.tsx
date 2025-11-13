@@ -2,7 +2,7 @@
 
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
 import { CalorieProgressWithHistory } from '@/components/profile/calorie-progress-with-history';
-import { CalorieGoalSettings } from '@/components/profile/calorie-goal-settings';
+import { CalorieGoalSettings } from '@/components/profile/calorie-goal';
 
 export default function ProfilePage() {
   const { progress, loading, updateCalorieGoal } = useCalorieProgress();

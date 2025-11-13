@@ -8,7 +8,7 @@ import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, History, Target
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
-import CalorieGoalSettings from '@/components/profile/CalorieGoalSettings';
+import { CalorieGoalSettings } from '@/components/profile/calorie-goal';
 import { CalorieProgressDisplay } from '@/components/profile/CalorieProgressDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RegisterMealModal } from '@/components/modals';
