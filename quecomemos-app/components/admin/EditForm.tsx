@@ -7,11 +7,10 @@ import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/forms";
 import { useState, useEffect } from "react";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
-import { useMeals } from "@/lib/contexts/MealsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "@/components/modals";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
-import { SquarePen, Trash2, Hexagon, Loader2, AlertCircle } from "lucide-react";
+import { SquarePen, Hexagon, Loader2, AlertCircle } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
 
 interface KorvenProduct {
@@ -24,10 +23,9 @@ interface EditFoodFormProps {
 }
 
 export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
-  const { updateFood, removeFood } = useFoods();
-  const { handleFoodDeletion } = useMeals();
+  const { updateFood } = useFoods();
   const { showSuccess, showError } = useGlobalNotification();
-  const { confirmation, showConfirmation, handleConfirm, closeConfirmation } = useConfirmation();
+  const { confirmation, handleConfirm, closeConfirmation } = useConfirmation();
   
   const [foodName, setFoodName] = useState(food.name || "");
   const [kCal, setKCal] = useState<number>(food.kCal || 0);
@@ -46,8 +44,6 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   
   // Korven integration states
   const [korvenProducts, setKorvenProducts] = useState<KorvenProduct[]>([]);
-  const [isLoadingKorven, setIsLoadingKorven] = useState(false);
-  const [showKorvenOptions, setShowKorvenOptions] = useState(false);
   const [selectedKorvenProduct, setSelectedKorvenProduct] = useState<string | null>(null);
   const [isKorvenInspired, setIsKorvenInspired] = useState(false);
 
@@ -61,7 +57,6 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   // Fetch Korven products on mount
   useEffect(() => {
     const fetchKorvenProducts = async () => {
-      setIsLoadingKorven(true);
       try {
         const response = await fetch('/api/korven-products', {
           method: 'GET',
@@ -77,8 +72,6 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
         }
       } catch (error) {
         console.error('Error fetching Korven products:', error);
-      } finally {
-        setIsLoadingKorven(false);
       }
     };
 
@@ -193,157 +186,60 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
     }
   };
 
-  const handleDeleteFood = async () => {
-    const response = await fetch(`${API_BASE_URL}/foods/${food.FoodID}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    });
-    
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Failed to delete food");
-    }
-
-    removeFood(food.FoodID);
-    handleFoodDeletion(food.FoodID);
-    
-    showSuccess(
-      "Food Deleted Successfully!",
-      `"${food.name}" has been permanently removed from your food list.`,
-      <Trash2 className="w-8 h-8" />
-    );
-    
-    setTimeout(() => {
-      onSuccess();
-    }, 1000);
-  };
-
-  const handleDeleteClick = () => {
-    showConfirmation(
-      {
-        type: 'danger',
-        title: 'Delete Food',
-        message: `Are you sure you want to delete "${food.name}"? This action cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-        customIcon: <Trash2 className="w-6 h-6" />
-      },
-      handleDeleteFood
-    );
-  };
-
   const inputClass = "w-full p-3 rounded-lg border border-amber-700 bg-amber-800 text-amber-100 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500";
 
   return (
     <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleEditFood} className="space-y-4">
-        {/* Korven Inspiration Section */}
-        <div className="bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border border-amber-600/50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Hexagon className="w-5 h-5 text-amber-400 fill-amber-400/20" />
-              <Label className="text-amber-100 text-sm font-semibold">
-                Get Korven Inspired
-              </Label>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowKorvenOptions(!showKorvenOptions)}
-              className="text-xs text-amber-300 hover:text-amber-100 underline"
-            >
-              {showKorvenOptions ? 'Hide' : 'Show'} options
-            </button>
-          </div>
-          
-          {showKorvenOptions && (
-            <div className="space-y-2">
-              {isLoadingKorven ? (
-                <div className="flex items-center justify-center gap-2 text-amber-300 py-4">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Loading Korven products...</span>
-                </div>
-              ) : korvenProducts.length > 0 ? (
-                <div className="max-h-40 overflow-y-auto space-y-1">
-                  {korvenProducts.map((product, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        setFoodName(product.name);
-                        setSelectedKorvenProduct(product.name);
-                        setIsKorvenInspired(true);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                        selectedKorvenProduct === product.name
-                          ? 'bg-amber-600 text-white border border-amber-500'
-                          : 'bg-amber-900/20 text-amber-200 hover:bg-amber-800/40 border border-amber-700/30'
-                      }`}
-                    >
-                      {product.name}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-amber-300 text-center py-3">
-                  No Korven products available for individual foods.
-                </p>
-              )}
-              {selectedKorvenProduct && (
-                <div className="text-xs text-amber-300 bg-amber-900/30 border border-amber-700 rounded p-2 flex items-center gap-2">
-                  <Hexagon className="w-3 h-3 fill-amber-400/20" />
-                  <span>Using Korven inspired name: <strong>{selectedKorvenProduct}</strong></span>
-                </div>
-              )}
-            </div>
-          )}
+        
+        {/* Food Name */}
+        <div>
+          <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
+            Food Name
+            {isKorvenInspired && (
+              <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                Korven
+              </span>
+            )}
+          </Label>
+          <Input
+            value={foodName}
+            onChange={(e) => {
+              setFoodName(e.target.value);
+              if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
+                setIsKorvenInspired(false);
+                setSelectedKorvenProduct(null);
+              }
+            }}
+            placeholder="Enter food name"
+            disabled={isLoading}
+            className={`${inputClass} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
+              isDuplicateName ? 'border-red-500 focus:ring-red-500' : ''
+            }`}
+          />
+          {/* Show validation messages */}
+          {isCheckingName ? (
+            <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Checking availability...
+            </p>
+          ) : isDuplicateName ? (
+            <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              A food with this name already exists. Please choose a different name.
+            </p>
+          ) : isNameChanged && foodName.trim().length > 0 ? (
+            <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
+              ✓ Food name is available
+            </p>
+          ) : null}
         </div>
 
-        {/* Basic Info - Two columns */}
+        {/* Second row - Two columns: Calories and Icon */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
-              Food Name
-              {isKorvenInspired && (
-                <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Hexagon className="w-3 h-3 fill-amber-400/30" />
-                  Korven
-                </span>
-              )}
-            </Label>
-            <Input
-              value={foodName}
-              onChange={(e) => {
-                setFoodName(e.target.value);
-                if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
-                  setIsKorvenInspired(false);
-                  setSelectedKorvenProduct(null);
-                }
-              }}
-              placeholder="Enter food name"
-              disabled={isLoading}
-              className={`${inputClass} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
-                isDuplicateName ? 'border-red-500 focus:ring-red-500' : ''
-              }`}
-            />
-            {/* Show validation messages */}
-            {isCheckingName ? (
-              <p className="mt-1 text-xs text-gray-400 flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Checking availability...
-              </p>
-            ) : isDuplicateName ? (
-              <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                A food with this name already exists. Please choose a different name.
-              </p>
-            ) : isNameChanged && foodName.trim().length > 0 ? (
-              <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
-                ✓ Food name is available
-              </p>
-            ) : null}
-          </div>
-          <div>
-            <Label className="text-amber-200 text-sm mb-2 block">Calories (kCal)</Label>
+            <Label className="text-amber-200 text-sm mb-2 block">Calories per unit</Label>
             <Input
               type="number"
               min="0"
@@ -353,19 +249,21 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
               disabled={isLoading}
               className={`${inputClass} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
+            <p className="mt-1 text-xs text-amber-400">Total: {kCal} kcal</p>
           </div>
-        </div>
-
-        {/* Icon */}
-        <div>
-          <Label className="text-amber-200 text-sm mb-2 block">Icon</Label>
-          <IconSelect onSelectionChange={setIcon} />
+          <div>
+            <Label className="text-amber-200 text-sm mb-2 block">Icon</Label>
+            <IconSelect onSelectionChange={setIcon} />
+          </div>
         </div>
 
         {/* Dietary Information */}
         <div className="border-t border-amber-800/30 pt-4">
           <Label className="text-amber-200 text-sm mb-3 block">Dietary Information (Optional)</Label>
-          <div className="space-y-3">
+          
+          {/* Preferences */}
+          <div className="mb-3">
+            <Label className="text-amber-200 text-sm mb-2 block">Preferences</Label>
             <DropdownWrapper label="Preferences">
               <CustomCheckbox
                 initialOptions={preferences}
@@ -373,45 +271,65 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
                 onSelectionChange={setPreferences}
               />
             </DropdownWrapper>
+          </div>
 
-            <DropdownWrapper label="Dietary Restrictions">
-              <CustomCheckbox
-                initialOptions={restrictions}
-                endpoint="dietary-restrictions"
-                onSelectionChange={setRestrictions}
-              />
-            </DropdownWrapper>
+          {/* Dietary Restrictions */}
+          <div className="mb-3">
+            <Label className="text-amber-200 text-sm mb-2 block">Does this food have dietary restrictions?</Label>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                type="button"
+                onClick={() => setRestrictions([])}
+                className={`py-2 px-4 rounded-lg transition-colors ${
+                  restrictions.length === 0
+                    ? 'bg-gray-700 text-white border border-gray-600'
+                    : 'bg-transparent text-gray-400 border border-gray-700 hover:bg-gray-800'
+                }`}
+              >
+                No restrictions (For Everyone)
+              </Button>
+              <Button
+                type="button"
+                className={`py-2 px-4 rounded-lg transition-colors ${
+                  restrictions.length > 0
+                    ? 'bg-orange-600 text-white border border-orange-500'
+                    : 'bg-transparent text-gray-400 border border-gray-700 hover:bg-gray-800'
+                }`}
+              >
+                Has restrictions
+              </Button>
+            </div>
+            
+            {restrictions.length > 0 && (
+              <div>
+                <Label className="text-amber-200 text-sm mb-2 block">Select Dietary Restrictions</Label>
+                <DropdownWrapper label="Select Dietary Restrictions">
+                  <CustomCheckbox
+                    initialOptions={restrictions}
+                    endpoint="dietary-restrictions"
+                    onSelectionChange={setRestrictions}
+                  />
+                </DropdownWrapper>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-4 pt-4">
+        {/* Action Button */}
+        <div className="flex justify-center pt-4">
           <Button 
             type="submit" 
             disabled={isLoading || confirmation.isLoading || isDuplicateName || isCheckingName}
-            className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 text-white font-semibold py-3 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-lg transition-all disabled:opacity-50"
           >
             {isLoading ? (
-              <>
+              <div className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Updating Food...</span>
-              </>
+                <span>Updating...</span>
+              </div>
             ) : (
-              <>
-                <SquarePen className="w-4 h-4" />
-                <span>Update Food</span>
-              </>
+              'Update food'
             )}
-          </Button>
-          
-          <Button 
-            type="button"
-            onClick={handleDeleteClick}
-            disabled={isLoading || confirmation.isLoading}
-            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Delete</span>
           </Button>
         </div>
       </form>
