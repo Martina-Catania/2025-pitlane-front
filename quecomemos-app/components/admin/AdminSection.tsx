@@ -1,11 +1,17 @@
 "use client";
 import { useState } from "react";
 import { AdminFoodForm } from "./AdminFoodForm";
-import { AddFoodForm } from "@/components/food/forms";
+import { FoodFormModal } from "@/components/food/forms/FoodFormModal";
 import { EditFoodForm } from "./EditForm";
 import { FoodCard } from "@/components/food/food-cards";
 import { FoodModal } from "@/components/modals";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 
 export function AdminSection() {
@@ -57,22 +63,11 @@ export function AdminSection() {
       </div>
 
       {/* MODAL: Agregar comida */}
-      {showAddModal && ( 
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
-            <button
-              className="absolute top-4 right-4 text-amber-200 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-2 rounded-full transition-all"
-              onClick={handleCloseAddModal}
-              aria-label="Cerrar modal"
-            >
-              ✖
-            </button>
-            <div className="mt-4">
-              <AddFoodForm onSuccess={handleCloseAddModal} />
-            </div>
-          </div>
-        </div>
-      )}
+      <FoodFormModal
+        isOpen={showAddModal}
+        onClose={handleCloseAddModal}
+        mode="create"
+      />
 
       {/* MODAL: Ver comida */}
       <FoodModal
@@ -81,27 +76,22 @@ export function AdminSection() {
         onClose={handleCloseViewModal}
       />
 
-      {/* MODAL: Editar comida */}
-      {showEditModal && selectedFood && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative p-6 border border-amber-800/30">
-            <button
-              className="absolute top-4 right-4 text-amber-200 hover:text-amber-100 bg-amber-800/20 hover:bg-amber-700/30 p-2 rounded-full transition-all"
-              onClick={handleCloseEditModal}
-              aria-label="Cerrar modal"
-            >
-              ✖
-            </button>
-
-            <div className="mt-4">
-              <EditFoodForm
-                food={selectedFood}
-                onSuccess={handleCloseEditModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODAL: Editar comida - Using EditForm with Korven integration */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-[600px] bg-neutral-900/95 border-amber-800/30 backdrop-blur-sm">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-amber-100">
+              Edit Food
+            </DialogTitle>
+          </DialogHeader>
+          {selectedFood && (
+            <EditFoodForm
+              food={selectedFood}
+              onSuccess={handleCloseEditModal}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

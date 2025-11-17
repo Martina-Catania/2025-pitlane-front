@@ -18,7 +18,8 @@ import { useState } from "react";
 import { useFoods } from "@/lib/contexts/FoodsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { useUser } from "@/lib/contexts/UserContext";
-import { Plus } from "lucide-react";
+import { Plus, Hexagon, Loader2 } from "lucide-react";
+import { useKorvenCheck } from "@/components/meal/hooks/useKorvenCheck";
 
 interface AddFoodFormProps {
   onSuccess?: () => void
@@ -36,6 +37,21 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
   const [icon, setIcon] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasRestrictions, setHasRestrictions] = useState<boolean | null>(null);
+
+  // Korven inspiration state
+  const { korvenProducts, isLoadingKorven } = useKorvenCheck();
+  const [showKorvenOptions, setShowKorvenOptions] = useState(false);
+  const [selectedKorvenProduct, setSelectedKorvenProduct] = useState<string | null>(null);
+  const [isKorvenInspired, setIsKorvenInspired] = useState(false);
+
+  // Filter products without connectors for foods
+  const hasConnectors = (name: string) => {
+    const connectors = ['con', 'y', 'de', 'al', 'en', 'para', 'sin', 'a', 'el', 'la', 'los', 'las'];
+    const words = name.toLowerCase().split(' ');
+    return words.some(word => connectors.includes(word));
+  };
+
+  const filteredKorvenProducts = (korvenProducts || []).filter(product => !hasConnectors(product.name));
 
   const handleAddFood = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +97,9 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
       setRestrictions([]);
       setIcon(null);
       setHasRestrictions(null);
+      setSelectedKorvenProduct(null);
+      setIsKorvenInspired(false);
+      setShowKorvenOptions(false);
 
       console.log('About to show success notification for:', foodName);
       showSuccess(
@@ -117,8 +136,78 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
         <CardContent>
           <form onSubmit={handleAddFood}>
             <div className="grid gap-4">
+              {/* Korven Inspiration Section */}
+              <div className="bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border border-amber-600/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Hexagon className="w-5 h-5 text-amber-400 fill-amber-400/20" />
+                    <Label className="text-amber-100 text-sm font-semibold">
+                      Get Korven Inspired
+                    </Label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowKorvenOptions(!showKorvenOptions)}
+                    className="text-xs text-amber-300 hover:text-amber-100 underline"
+                  >
+                    {showKorvenOptions ? 'Hide' : 'Show'} options
+                  </button>
+                </div>
+
+                {showKorvenOptions && (
+                  <div className="space-y-2">
+                    {isLoadingKorven ? (
+                      <div className="flex items-center justify-center gap-2 text-amber-300 py-4">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">Loading Korven products...</span>
+                      </div>
+                    ) : filteredKorvenProducts.length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {filteredKorvenProducts.map((product, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => {
+                              setFoodName(product.name);
+                              setSelectedKorvenProduct(product.name);
+                              setIsKorvenInspired(true);
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                              selectedKorvenProduct === product.name
+                                ? 'bg-amber-600 text-white border border-amber-500'
+                                : 'bg-amber-900/20 text-amber-200 hover:bg-amber-800/40 border border-amber-700/30'
+                            }`}
+                          >
+                            {product.name}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-amber-300 text-center py-3">
+                        No Korven food products available
+                      </p>
+                    )}
+
+                    {selectedKorvenProduct && (
+                      <div className="text-xs text-amber-300 bg-amber-900/30 border border-amber-700 rounded p-2 flex items-center gap-2">
+                        <Hexagon className="w-3 h-3 fill-amber-400/20" />
+                        <span>Using Korven inspired name: <strong>{selectedKorvenProduct}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div>
-                <Label htmlFor="food-name" className="text-amber-200">Food Name</Label>
+                <Label htmlFor="food-name" className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
+                  Food Name
+                  {isKorvenInspired && (
+                    <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                      Korven
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="food-name"
                   value={foodName}

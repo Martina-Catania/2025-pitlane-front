@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Utensils } from "lucide-react";
+import { X, Utensils, Hexagon } from "lucide-react";
 import Image from "next/image";
+import { useKorvenCheck } from "@/components/meal/hooks/useKorvenCheck";
 
 interface Food {
   FoodID: number;
@@ -23,6 +24,8 @@ interface FoodModalProps {
 export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
   const [showAllPreferences, setShowAllPreferences] = useState(false);
   const [showAllRestrictions, setShowAllRestrictions] = useState(false);
+  const { isKorvenInspiredFood } = useKorvenCheck();
+  
   // Cerrar modal con ESC
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -93,8 +96,16 @@ export function FoodModal({ food, isOpen, onClose }: FoodModalProps) {
                 <Utensils className="w-12 h-12 text-amber-400" />
               )}
             </div>
-            <h3 className="text-2xl font-bold text-amber-100 mb-2">{food.name}</h3>
-            <div className="inline-flex items-center bg-amber-800/30 border border-amber-700/50 rounded-full px-3 py-1 mb-4">
+            <div className="flex flex-col items-center gap-2">
+              <h3 className="text-2xl font-bold text-amber-100">{food.name}</h3>
+              {isKorvenInspiredFood(food.name) && (
+                <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                  Korven
+                </span>
+              )}
+            </div>
+            <div className="inline-flex items-center bg-amber-800/30 border border-amber-700/50 rounded-full px-3 py-1 mb-4 mt-2">
               <span className="text-amber-200 font-semibold">{food.kCal} kCal</span>
             </div>
           </div>

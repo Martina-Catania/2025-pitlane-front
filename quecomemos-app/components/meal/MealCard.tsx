@@ -1,8 +1,9 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { ChefHat, Clock, User, Users } from "lucide-react";
+import { ChefHat, Clock, User, Users, Hexagon } from "lucide-react";
 import { DEFAULTS } from "./constants";
+import { useKorvenCheck } from "./hooks/useKorvenCheck";
 
 interface MealFood {
   food: {
@@ -46,6 +47,9 @@ export function MealCard({
   maxFoodsToShow = DEFAULTS.MAX_FOODS_TO_SHOW,
   className = ""
 }: MealCardProps) {
+  const { isKorvenInspiredMeal } = useKorvenCheck();
+  const isKorven = isKorvenInspiredMeal(meal.name);
+
   const handleClick = () => {
     if (onClick) {
       onClick(meal);
@@ -66,9 +70,17 @@ export function MealCard({
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-amber-200 mb-1 line-clamp-1 flex-1">
-            {meal.name}
-          </h3>
+          <div className="flex-1 flex items-center gap-2">
+            <h3 className="font-semibold text-amber-200 mb-1 line-clamp-1">
+              {meal.name}
+            </h3>
+            {isKorven && (
+              <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+                <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                Korven
+              </span>
+            )}
+          </div>
           <div className="flex items-center text-xs text-gray-400 ml-2">
             <User className="h-3 w-3 mr-1" />
             <span className="capitalize">{meal.profile.role}</span>

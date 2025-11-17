@@ -8,6 +8,7 @@ export type FoodItem = {
   preferences?: number[];
   dietaryRestrictions?: number[];
   hasNoRestrictions?: boolean | null;
+  isKorvenInspired?: boolean; // Flag to indicate if the name comes from Korven API
 };
 
 export type ExistingFood = {
@@ -26,6 +27,7 @@ export type Meal = {
   MealID: number;
   name: string;
   description?: string;
+  isKorvenInspired?: boolean; // Flag to indicate if the name comes from Korven API
 };
 
 export interface AddMealFormProps {

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { DropdownWrapper } from "@/components/forms";
 import { CustomCheckbox } from "@/components/forms";
 import { IconSelect } from "@/components/forms";
-import { X, Utensils, Plus, Loader2, Search, AlertCircle } from "lucide-react";
+import { X, Utensils, Plus, Loader2, Search, AlertCircle, Hexagon, Trash2 } from "lucide-react";
 import { ExistingFood, FoodItem } from "./types";
 import { getKcalFromFood } from "./utils";
 import { useFoodSearch } from "./hooks/useFoodSearch";
@@ -16,6 +16,10 @@ import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 type FoodModalMode = 'search' | 'create' | 'edit';
 type PreferenceObject = { id?: number; name?: string; PreferenceID?: number };
 type RestrictionObject = { id?: number; name?: string; RestrictionID?: number };
+
+interface KorvenProduct {
+  name: string;
+}
 
 type Props = {
   apiBase: string;
@@ -26,11 +30,15 @@ type Props = {
   onConfirm: (payload: FoodItem) => void;
   onSwitchToCreate?: (initialName?: string) => void;
   initialName?: string; // Add prop to pass initial name for create mode
+  forMeal?: boolean; // Flag to determine if selecting for meal (with connectors) or food (without connectors)
+  allowDelete?: boolean; // Flag to show delete button in edit mode
+  onDelete?: () => void; // Callback for delete action
 };
 
 export default function FoodModal(props: Props) {
   const {
-    apiBase, open, onClose, mode, editingItem, onConfirm, onSwitchToCreate, initialName,
+    apiBase, open, onClose, mode, editingItem, onConfirm, onSwitchToCreate, initialName, forMeal = false,
+    allowDelete = false, onDelete,
   } = props;
 
   const { showError } = useGlobalNotification();
@@ -42,6 +50,12 @@ export default function FoodModal(props: Props) {
   const [showAllEditPreferences, setShowAllEditPreferences] = useState(false);
   const [showAllEditRestrictions, setShowAllEditRestrictions] = useState(false);
 
+  // Korven API states
+  const [korvenProducts, setKorvenProducts] = useState<KorvenProduct[]>([]);
+  const [isLoadingKorven, setIsLoadingKorven] = useState(false);
+  const [showKorvenOptions, setShowKorvenOptions] = useState(false);
+  const [selectedKorvenProduct, setSelectedKorvenProduct] = useState<string | null>(null);
+
   // Internal state for form fields
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState<number | "">("");
@@ -51,6 +65,7 @@ export default function FoodModal(props: Props) {
   const [createRestrictions, setCreateRestrictions] = useState<number[]>([]);
   const [createHasRestrictions, setCreateHasRestrictions] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isKorvenInspired, setIsKorvenInspired] = useState(false);
 
   // Search functionality (only used in search mode)
   const {
@@ -67,6 +82,52 @@ export default function FoodModal(props: Props) {
 
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Function to check if a name contains connectors (for meal names)
+  const hasConnectors = (name: string): boolean => {
+    const connectors = ['con', 'y', 'de', 'al', 'en', 'para', 'sin', 'a', 'el', 'la', 'los', 'las'];
+    const words = name.toLowerCase().split(/\s+/);
+    return words.some(word => connectors.includes(word));
+  };
+
+  // Fetch Korven products
+  useEffect(() => {
+    if (!open || mode !== 'create') return;
+    
+    const fetchKorvenProducts = async () => {
+      setIsLoadingKorven(true);
+      try {
+        const response = await fetch('/api/korven-products', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const products = await response.json() as KorvenProduct[];
+          // Filter based on forMeal flag
+          const filtered = products.filter(product => {
+            if (forMeal) {
+              // For meals: only products WITH connectors
+              return hasConnectors(product.name);
+            } else {
+              // For foods: only products WITHOUT connectors
+              return !hasConnectors(product.name);
+            }
+          });
+          setKorvenProducts(filtered);
+        } else {
+          console.error('Korven API returned status:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching Korven products:', error);
+      } finally {
+        setIsLoadingKorven(false);
+      }
+    };
+
+    fetchKorvenProducts();
+  }, [open, mode, forMeal]);
+
   // Reset form when modal opens/closes or mode changes
   useEffect(() => {
     if (!open) {
@@ -82,6 +143,9 @@ export default function FoodModal(props: Props) {
       setQuery("");
       setActiveIndex(-1);
       setIsSubmitting(false);
+      setShowKorvenOptions(false);
+      setSelectedKorvenProduct(null);
+      setIsKorvenInspired(false);
       return;
     }
 
@@ -307,8 +371,60 @@ export default function FoodModal(props: Props) {
           svgLink: createIcon || "",
           preferences: createPreferences,
           dietaryRestrictions: createRestrictions,
-          hasNoRestrictions: createHasRestrictions ?? false
+          hasNoRestrictions: createHasRestrictions ?? false,
+          isKorvenInspired: isKorvenInspired
         });
+        onClose();
+        return;
+      }
+
+      if (mode === 'edit') {
+        // Edit mode: validate based on context (forMeal or standalone)
+        if (forMeal) {
+          // In meal context: only validate quantity
+          if (!quantity || typeof quantity !== "number" || quantity <= 0) {
+            showError("Invalid Quantity", "Please enter a valid quantity.");
+            return;
+          }
+          
+          const existingKcalPerUnit = editingItem?.kcalPerUnit || (editingItem ? editingItem.kCal / editingItem.quantity : 0);
+          
+          onConfirm({
+            ...(editingItem || {}),
+            quantity: quantity,
+            kCal: Math.round(existingKcalPerUnit * quantity),
+            kcalPerUnit: existingKcalPerUnit,
+          } as FoodItem);
+        } else {
+          // Standalone edit: validate all fields like create mode
+          if (!name.trim() || !kcalPerUnit) {
+            showError("Incomplete Information", "Please complete the food name and calories per unit.");
+            return;
+          }
+          
+          if (typeof kcalPerUnit !== "number" || kcalPerUnit < 0) {
+            showError("Invalid Calories", "Please enter valid calories per unit.");
+            return;
+          }
+          
+          // Check for duplicate names when name changed
+          if (editingItem && editingItem.name !== name.trim() && checkFoodNameExists(name)) {
+            showError("Duplicate Food Name", `A food named "${name.trim()}" already exists. Please choose a different name.`);
+            return;
+          }
+          
+          onConfirm({
+            ...(editingItem?.id ? { id: editingItem.id } : {}),
+            name: name.trim(),
+            quantity: quantity || 1,
+            kCal: Math.round(kcalPerUnit * (quantity || 1)),
+            kcalPerUnit: kcalPerUnit,
+            svgLink: createIcon || "",
+            preferences: createPreferences,
+            dietaryRestrictions: createRestrictions,
+            hasNoRestrictions: createHasRestrictions ?? false,
+          });
+        }
         onClose();
         return;
       }
@@ -599,140 +715,379 @@ export default function FoodModal(props: Props) {
               )}
             </div>
           ) : mode === 'edit' ? (
-            // EDIT MODE - Only allow quantity changes
+            // EDIT MODE - Full editing capabilities when outside meal creation, quantity-only when in meal
             <div className="space-y-4">
-              {/* Food Information - Read Only */}
-              <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4">
-                <Label className="text-amber-200 text-sm mb-3 block">Food Information (Read-only)</Label>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 flex items-center justify-center bg-amber-800/30 rounded-full border border-amber-700/50 flex-shrink-0">
-                    {editingItem?.svgLink ? (
-                      <Image 
-                        src={editingItem.svgLink} 
-                        alt={editingItem.name} 
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 object-contain" 
-                      />
-                    ) : (
-                      <Utensils className="w-5 h-5 text-amber-400" />
+              {forMeal ? (
+                // When editing in meal context - only allow quantity changes
+                <>
+                  {/* Food Information - Read Only */}
+                  <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4">
+                    <Label className="text-amber-200 text-sm mb-3 block">Food Information (Read-only)</Label>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 flex items-center justify-center bg-amber-800/30 rounded-full border border-amber-700/50 flex-shrink-0">
+                        {editingItem?.svgLink ? (
+                          <Image 
+                            src={editingItem.svgLink} 
+                            alt={editingItem.name} 
+                            width={24}
+                            height={24}
+                            className="w-6 h-6 object-contain" 
+                          />
+                        ) : (
+                          <Utensils className="w-5 h-5 text-amber-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-amber-100">{editingItem?.name}</h4>
+                        <p className="text-sm text-amber-300">{editingItem?.kcalPerUnit || (editingItem ? editingItem.kCal / editingItem.quantity : 0)} kcal per unit</p>
+                      </div>
+                    </div>
+                    
+                    {/* Show preferences and restrictions if available */}
+                    {editingItem?.preferences && editingItem.preferences.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs text-amber-200 mb-1">Preferences:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(showAllEditPreferences ? editingItem.preferences : editingItem.preferences.slice(0, 2)).map((pref, index) => {
+                            let displayName = '';
+                            if (typeof pref === 'string') {
+                              displayName = pref;
+                            } else if (typeof pref === 'object' && pref) {
+                              const prefObj = pref as PreferenceObject;
+                              displayName = prefObj.name || `ID: ${prefObj.PreferenceID || prefObj.id || pref}`;
+                            } else if (typeof pref === 'number') {
+                              displayName = `ID: ${pref}`;
+                            } else {
+                              displayName = String(pref);
+                            }
+                            return (
+                              <span key={index} className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded">
+                                {displayName}
+                              </span>
+                            );
+                          })}
+                          {editingItem.preferences.length > 2 && (
+                            <button
+                              onClick={() => setShowAllEditPreferences(prev => !prev)}
+                              className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded hover:underline"
+                            >
+                              {showAllEditPreferences ? 'Show less' : `+${editingItem.preferences.length - 2} more`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {editingItem?.dietaryRestrictions && editingItem.dietaryRestrictions.length > 0 && (
+                      <div>
+                        <p className="text-xs text-amber-200 mb-1">Dietary Restrictions:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {(showAllEditRestrictions ? editingItem.dietaryRestrictions : editingItem.dietaryRestrictions.slice(0, 2)).map((restriction, index) => {
+                            let displayName = '';
+                            if (typeof restriction === 'string') {
+                              displayName = restriction;
+                            } else if (typeof restriction === 'object' && restriction) {
+                              const restrictionObj = restriction as RestrictionObject;
+                              displayName = restrictionObj.name || `ID: ${restrictionObj.RestrictionID || restrictionObj.id || restriction}`;
+                            } else if (typeof restriction === 'number') {
+                              displayName = `ID: ${restriction}`;
+                            } else {
+                              displayName = String(restriction);
+                            }
+                            return (
+                              <span key={index} className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded">
+                                {displayName}
+                              </span>
+                            );
+                          })}
+                          {editingItem.dietaryRestrictions.length > 2 && (
+                            <button
+                              onClick={() => setShowAllEditRestrictions(prev => !prev)}
+                              className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded hover:underline"
+                            >
+                              {showAllEditRestrictions ? 'Show less' : `+${editingItem.dietaryRestrictions.length - 2} more`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
+
+                  {/* Quantity Section - Editable */}
                   <div>
-                    <h4 className="font-semibold text-amber-100">{editingItem?.name}</h4>
-                    <p className="text-sm text-amber-300">{editingItem?.kcalPerUnit || (editingItem ? editingItem.kCal / editingItem.quantity : 0)} kcal per unit</p>
-                  </div>
-                </div>
-                
-                {/* Show preferences and restrictions if available */}
-                {editingItem?.preferences && editingItem.preferences.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs text-amber-200 mb-1">Preferences:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {(showAllEditPreferences ? editingItem.preferences : editingItem.preferences.slice(0, 2)).map((pref, index) => {
-                        let displayName = '';
-                        if (typeof pref === 'string') {
-                          displayName = pref;
-                        } else if (typeof pref === 'object' && pref) {
-                          const prefObj = pref as PreferenceObject;
-                          displayName = prefObj.name || `ID: ${prefObj.PreferenceID || prefObj.id || pref}`;
-                        } else if (typeof pref === 'number') {
-                          displayName = `ID: ${pref}`;
+                    <Label className="text-amber-200 text-sm mb-2 block">Quantity (Editable)</Label>
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Enter quantity"
+                      value={quantity === "" ? "" : quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setQuantity('');
                         } else {
-                          displayName = String(pref);
+                          const num = Number(val);
+                          if (!isNaN(num) && num > 0) {
+                            setQuantity(num);
+                          }
                         }
-                        return (
-                          <span key={index} className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded">
-                            {displayName}
+                      }}
+                      disabled={isSubmitting}
+                      className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    />
+                    {liveKcal !== undefined && (
+                      <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                // When editing outside meal context - allow full editing (same as create mode)
+                <>
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
+                        Food Name
+                        {isKorvenInspired && (
+                          <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                            Korven
                           </span>
-                        );
-                      })}
-                      {editingItem.preferences.length > 2 && (
-                        <button
-                          onClick={() => setShowAllEditPreferences(prev => !prev)}
-                          className="bg-amber-800/40 text-amber-200 text-xs px-2 py-1 rounded hover:underline"
-                        >
-                          {showAllEditPreferences ? 'Show less' : `+${editingItem.preferences.length - 2} more`}
-                        </button>
-                      )}
+                        )}
+                      </Label>
+                      <input
+                        type="text"
+                        placeholder="Enter food name"
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          // Clear Korven inspired flag if user manually changes the name
+                          if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
+                            setIsKorvenInspired(false);
+                            setSelectedKorvenProduct(null);
+                          }
+                        }}
+                        disabled={isSubmitting}
+                        className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${
+                          name.trim() && checkFoodNameExists(name) 
+                            ? 'border-red-500 focus:ring-red-500' 
+                            : ''
+                        }`}
+                      />
+                      {/* Show validation messages */}
+                      {editingItem && editingItem.name !== name.trim() && name.trim() && checkFoodNameExists(name) ? (
+                        <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          A food with this name already exists. Please choose a different name.
+                        </p>
+                      ) : editingItem && editingItem.name !== name.trim() && name.trim() && !checkFoodNameExists(name) && name.trim().length > 0 ? (
+                        <p className="mt-1 text-xs text-green-400 flex items-center gap-1">
+                          ✓ Food name is available
+                        </p>
+                      ) : null}
+                    </div>
+                    <div>
+                      <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="Enter quantity"
+                        value={quantity === "" ? "" : quantity}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            setQuantity('');
+                          } else {
+                            const num = Number(val);
+                            if (!isNaN(num) && num > 0) {
+                              setQuantity(num);
+                            }
+                          }
+                        }}
+                        disabled={isSubmitting}
+                        className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
                     </div>
                   </div>
-                )}
 
-                {editingItem?.dietaryRestrictions && editingItem.dietaryRestrictions.length > 0 && (
-                  <div>
-                    <p className="text-xs text-amber-200 mb-1">Dietary Restrictions:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {(showAllEditRestrictions ? editingItem.dietaryRestrictions : editingItem.dietaryRestrictions.slice(0, 2)).map((restriction, index) => {
-                        let displayName = '';
-                        if (typeof restriction === 'string') {
-                          displayName = restriction;
-                        } else if (typeof restriction === 'object' && restriction) {
-                          const restrictionObj = restriction as RestrictionObject;
-                          displayName = restrictionObj.name || `ID: ${restrictionObj.RestrictionID || restrictionObj.id || restriction}`;
-                        } else if (typeof restriction === 'number') {
-                          displayName = `ID: ${restriction}`;
-                        } else {
-                          displayName = String(restriction);
-                        }
-                        return (
-                          <span key={index} className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded">
-                            {displayName}
-                          </span>
-                        );
-                      })}
-                      {editingItem.dietaryRestrictions.length > 2 && (
-                        <button
-                          onClick={() => setShowAllEditRestrictions(prev => !prev)}
-                          className="bg-green-800/40 text-green-200 text-xs px-2 py-1 rounded hover:underline"
-                        >
-                          {showAllEditRestrictions ? 'Show less' : `+${editingItem.dietaryRestrictions.length - 2} more`}
-                        </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-amber-200 text-sm mb-2 block">Calories per unit</Label>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="Enter calories per unit"
+                        value={kcalPerUnit === "" ? "" : kcalPerUnit}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            setKcalPerUnit('');
+                          } else {
+                            const num = Number(val);
+                            if (!isNaN(num) && num >= 0) {
+                              setKcalPerUnit(num);
+                            }
+                          }
+                        }}
+                        disabled={isSubmitting}
+                        className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                      {liveKcal !== undefined && (
+                        <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
                       )}
                     </div>
+                    <div>
+                      <Label className="text-amber-200 text-sm mb-2 block">Icon</Label>
+                      <IconSelect onSelectionChange={setCreateIcon} />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Quantity Section - Editable */}
-              <div>
-                <Label className="text-amber-200 text-sm mb-2 block">Quantity (Editable)</Label>
-                <input
-                  type="number"
-                  min={1}
-                  placeholder="Enter quantity"
-                  value={quantity === "" ? "" : quantity}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      setQuantity('');
-                    } else {
-                      const num = Number(val);
-                      if (!isNaN(num) && num > 0) {
-                        setQuantity(num);
-                      }
-                    }
-                  }}
-                  disabled={isSubmitting}
-                  className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                />
-                {liveKcal !== undefined && (
-                  <p className="mt-1 text-xs text-amber-300">Total: <b>{liveKcal}</b> kcal</p>
-                )}
-              </div>
+                  {/* Advanced Options */}
+                  <div className="border-t border-amber-800/30 pt-4">
+                    <Label className="text-amber-200 text-sm mb-3 block">Dietary Information</Label>
+                    <div className="space-y-3">
+                      <DropdownWrapper label="Preferences">
+                        <CustomCheckbox
+                          initialOptions={createPreferences}
+                          endpoint="preferences"
+                          onSelectionChange={setCreatePreferences}
+                        />
+                      </DropdownWrapper>
+                      
+                      <div>
+                        <Label className="text-amber-200 mb-3 block">Does this food have dietary restrictions?</Label>
+                        <div className="flex gap-4 mb-4">
+                          <button
+                            type="button"
+                            onClick={() => setCreateHasRestrictions(true)}
+                            className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                              createHasRestrictions === true
+                                ? 'bg-amber-700 border-amber-600 text-white'
+                                : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                            }`}
+                          >
+                            No restrictions (For Everyone)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCreateHasRestrictions(false)}
+                            className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
+                              createHasRestrictions === false
+                                ? 'bg-amber-700 border-amber-600 text-white'
+                                : 'bg-neutral-700 border-amber-800/30 text-amber-200 hover:border-amber-700/50'
+                            }`}
+                          >
+                            Has restrictions
+                          </button>
+                        </div>
+                        
+                        {createHasRestrictions === false && (
+                          <DropdownWrapper label="Select Dietary Restrictions">
+                            <CustomCheckbox
+                              initialOptions={createRestrictions}
+                              endpoint="dietary-restrictions/excluding-for-everyone"
+                              onSelectionChange={setCreateRestrictions}
+                            />
+                          </DropdownWrapper>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             // CREATE MODE - Full form
             <div className="space-y-4">
+              {/* Korven Inspiration Section */}
+              {!editingItem && (
+                <div className="bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border border-amber-600/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Hexagon className="w-5 h-5 text-amber-400 fill-amber-400/20" />
+                      <Label className="text-amber-100 text-sm font-semibold">
+                        Get Korven Inspired
+                      </Label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowKorvenOptions(!showKorvenOptions)}
+                      className="text-xs text-amber-300 hover:text-amber-100 underline"
+                    >
+                      {showKorvenOptions ? 'Hide' : 'Show'} options
+                    </button>
+                  </div>
+                  
+                  {showKorvenOptions && (
+                    <div className="space-y-2">
+                      {isLoadingKorven ? (
+                        <div className="flex items-center justify-center gap-2 text-amber-300 py-4">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Loading Korven products...</span>
+                        </div>
+                      ) : korvenProducts.length > 0 ? (
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {korvenProducts.map((product, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                setName(product.name);
+                                setSelectedKorvenProduct(product.name);
+                                setIsKorvenInspired(true);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                                selectedKorvenProduct === product.name
+                                  ? 'bg-amber-600 text-white border border-amber-500'
+                                  : 'bg-amber-900/20 text-amber-200 hover:bg-amber-800/40 border border-amber-700/30'
+                              }`}
+                            >
+                              {product.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-amber-300 text-center py-3">
+                          {forMeal 
+                            ? 'No Korven products with connectors available for meals.'
+                            : 'No Korven products without connectors available for foods.'}
+                        </p>
+                      )}
+                      {selectedKorvenProduct && (
+                        <div className="text-xs text-amber-300 bg-amber-900/30 border border-amber-700 rounded p-2 flex items-center gap-2">
+                          <Hexagon className="w-3 h-3 fill-amber-400/20" />
+                          <span>Using Korven inspired name: <strong>{selectedKorvenProduct}</strong></span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-amber-200 text-sm mb-2 block">Food Name</Label>
+                  <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
+                    Food Name
+                    {isKorvenInspired && (
+                      <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                        Korven
+                      </span>
+                    )}
+                  </Label>
                   <input
                     type="text"
                     placeholder="Enter food name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      // Clear Korven inspired flag if user manually changes the name
+                      if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
+                        setIsKorvenInspired(false);
+                        setSelectedKorvenProduct(null);
+                      }
+                    }}
                     disabled={isSubmitting}
                     className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''} ${
                       name.trim() && checkFoodNameExists(name) 
@@ -877,26 +1232,53 @@ export default function FoodModal(props: Props) {
             </div>
           )}
 
-          {/* Submit Button */}
+          {/* Submit and Delete Buttons */}
           <div className="pt-4 border-t border-amber-800/30">
-            <Button 
-              type="button" 
-              onClick={handleConfirm} 
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={Boolean((mode === 'search' && !selected) || isSubmitting || isLoadingDetails || 
-                        (mode === 'create' && (!name.trim() || !quantity || !kcalPerUnit || 
-                          (!editingItem && checkFoodNameExists(name)) || 
-                          (editingItem && editingItem.name !== name.trim() && checkFoodNameExists(name)))))}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  {(mode === 'edit' || (mode === 'create' && editingItem)) ? "Updating..." : "Adding food..."}
-                </>
-              ) : (
-                (mode === 'edit' || (mode === 'create' && editingItem)) ? "Update food" : "Confirm and add food"
+            <div className="flex gap-3">
+              {/* Delete Button - Only show in edit mode when outside meal context */}
+              {mode === 'edit' && !forMeal && allowDelete && onDelete && (
+                <Button 
+                  type="button" 
+                  onClick={onDelete}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+              
+              {/* Submit Button */}
+              <Button 
+                type="button" 
+                onClick={handleConfirm} 
+                className={`${mode === 'edit' && !forMeal && allowDelete ? 'flex-1' : 'w-full'} bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                disabled={Boolean((mode === 'search' && !selected) || isSubmitting || isLoadingDetails || 
+                          (mode === 'create' && (!name.trim() || !quantity || !kcalPerUnit || 
+                            (!editingItem && checkFoodNameExists(name)) || 
+                            (editingItem && editingItem.name !== name.trim() && checkFoodNameExists(name)))) ||
+                          (mode === 'edit' && !forMeal && (!name.trim() || !kcalPerUnit || 
+                            (editingItem && editingItem.name !== name.trim() && checkFoodNameExists(name)))))}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    {(mode === 'edit' || (mode === 'create' && editingItem)) ? "Updating..." : "Adding food..."}
+                  </>
+                ) : (
+                  (mode === 'edit' || (mode === 'create' && editingItem)) ? "Update food" : "Confirm and add food"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

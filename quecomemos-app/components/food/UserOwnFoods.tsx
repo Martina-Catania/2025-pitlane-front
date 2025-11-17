@@ -1,12 +1,18 @@
 "use client";
 import { FoodModal } from "@/components/modals";
-import { EditFoodForm } from "@/components/admin";
+import { FoodFormModal } from "./forms/FoodFormModal";
+import { EditFoodForm } from "@/components/admin/EditForm";
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
 import { API_BASE_URL } from "@/lib/config/api";
-import { AddFoodForm } from "./forms";
 import {FoodCarousel } from "./carousels";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UserOwnFoodsProps {
   refreshTrigger?: number;
@@ -77,8 +83,6 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedFood(null);
-    // No need to refetch - EditFoodForm updates the global context
-    // and we'll update local state based on context changes
   };
 
   const openAddModal = () => {
@@ -87,8 +91,6 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    // No need to refetch - AddFoodForm updates the global context
-    // and we'll update local state based on context changes
   };
 
   // Effects
@@ -157,78 +159,29 @@ export function UserOwnFoods({ refreshTrigger = 0 }: UserOwnFoodsProps) {
         onClose={closeViewModal}
       />
 
-      {/* Edit Modal */}
-      {isEditModalOpen && selectedFood && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={closeEditModal}
-          />
+      {/* Edit Modal - Using original EditForm with Korven integration */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-neutral-900/95 border-amber-800/30 backdrop-blur-sm">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-amber-100">
+              Edit Food
+            </DialogTitle>
+          </DialogHeader>
+          {selectedFood && (
+            <EditFoodForm
+              food={selectedFood}
+              onSuccess={closeEditModal}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
-          {/* Modal */}
-          <div className="relative bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-amber-800/30">
-            {/* Header */}
-            <div className="sticky top-0 bg-neutral-900 rounded-t-2xl border-b border-amber-800/30 p-6 pb-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-amber-100">Edit Food</h2>
-                <button
-                  onClick={closeEditModal}
-                  className="p-2 hover:bg-amber-800/20 rounded-full transition-colors"
-                  aria-label="Close modal"
-                >
-                  <svg className="w-5 h-5 text-amber-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 pt-4">
-              <EditFoodForm
-                food={selectedFood}
-                onSuccess={closeEditModal}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={closeAddModal}
-          />
-
-          {/* Modal */}
-          <div className="relative bg-neutral-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-amber-800/30">
-            {/* Header */}
-            <div className="sticky top-0 bg-neutral-900 rounded-t-2xl border-b border-amber-800/30 p-6 pb-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-amber-100">Add New Food</h2>
-                <button
-                  onClick={closeAddModal}
-                  className="p-2 hover:bg-amber-800/20 rounded-full transition-colors"
-                  aria-label="Close modal"
-                >
-                  <svg className="w-5 h-5 text-amber-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 pt-4">
-              <AddFoodForm onSuccess={closeAddModal} />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add Modal - Using new FoodFormModal */}
+      <FoodFormModal
+        isOpen={isAddModalOpen}
+        onClose={closeAddModal}
+        mode="create"
+      />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Utensils, Heart, Eye, SquarePen } from 'lucide-react';
+import { Utensils, Heart, Eye, SquarePen, Hexagon } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
+import { useKorvenCheck } from '@/components/meal/hooks/useKorvenCheck';
 
 interface Food {
   FoodID: number;
@@ -41,6 +42,8 @@ export function FoodCard({
 }: FoodCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const { isKorvenInspiredFood } = useKorvenCheck();
+  const isKorven = isKorvenInspiredFood(food.name);
 
   // Get preference and restriction names for display
   const getPreferenceNames = () => {
@@ -98,9 +101,17 @@ export function FoodCard({
           {/* Content Section */}
           <div className="p-3 space-y-2 flex-1 flex flex-col">
             {/* Title */}
-            <h3 className="text-sm font-semibold text-amber-200 transition-colors line-clamp-2 leading-tight">
-              {food.name}
-            </h3>
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-amber-200 transition-colors line-clamp-2 leading-tight">
+                {food.name}
+              </h3>
+              {isKorven && (
+                <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                  Korven
+                </span>
+              )}
+            </div>
 
             {/* Calories */}
             <div className="flex items-center gap-1">
@@ -207,9 +218,17 @@ export function FoodCard({
           {/* Content Section */}
           <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
             {/* Title */}
-            <h3 className="text-lg font-semibold text-amber-200 transition-colors line-clamp-2">
-              {food.name}
-            </h3>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-amber-200 transition-colors line-clamp-2">
+                {food.name}
+              </h3>
+              {isKorven && (
+                <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                  Korven
+                </span>
+              )}
+            </div>
 
             {/* Calories */}
             <div className="flex items-center gap-2">
@@ -332,9 +351,17 @@ export function FoodCard({
           {/* Content Section */}
           <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
             {/* Title */}
-            <h3 className="text-lg font-semibold text-amber-200 transition-colors line-clamp-2">
-              {food.name}
-            </h3>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-amber-200 transition-colors line-clamp-2">
+                {food.name}
+              </h3>
+              {isKorven && (
+                <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                  Korven
+                </span>
+              )}
+            </div>
 
             {/* Calories */}
             <div className="flex items-center gap-2">

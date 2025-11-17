@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, ChefHat, Clock, Users, User, Utensils, Edit } from "lucide-react";
+import { X, ChefHat, Clock, Users, User, Utensils, Edit, Hexagon } from "lucide-react";
 import Image from "next/image";
 import { useUser } from "@/lib/contexts/UserContext";
+import { useKorvenCheck } from "@/components/meal/hooks/useKorvenCheck";
 
 interface Meal {
   MealID: number;
@@ -44,6 +45,7 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
   const [isOwner, setIsOwner] = useState(false);
   const [expandedPrefs, setExpandedPrefs] = useState<Record<number, boolean>>({});
   const [expandedRestrs, setExpandedRestrs] = useState<Record<number, boolean>>({});
+  const { isKorvenInspiredMeal, isKorvenInspiredFood } = useKorvenCheck();
 
   // Check if current user is the owner of the meal
   useEffect(() => {
@@ -120,7 +122,15 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
           {/* Meal Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-2xl font-bold text-amber-100">{meal.name}</h3>
+              <div className="flex items-center gap-2 flex-1">
+                <h3 className="text-2xl font-bold text-amber-100">{meal.name}</h3>
+                {isKorvenInspiredMeal(meal.name) && (
+                  <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Hexagon className="w-3 h-3 fill-amber-400/30" />
+                    Korven
+                  </span>
+                )}
+              </div>
               <div className="text-sm text-amber-300 bg-amber-800/30 px-3 py-1 rounded-full">
                 {totalCalories} kCal total
               </div>
@@ -192,7 +202,15 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
                     
                     <div className="flex-grow">
                       <div className="flex items-center justify-between mb-1">
-                        <h5 className="font-semibold text-amber-200">{mealFood.food.name}</h5>
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-semibold text-amber-200">{mealFood.food.name}</h5>
+                          {isKorvenInspiredFood(mealFood.food.name) && (
+                            <span className="text-xs bg-amber-600/50 text-amber-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                              <Hexagon className="w-2.5 h-2.5 fill-amber-400/30" />
+                              Korven
+                            </span>
+                          )}
+                        </div>
                         <div className="text-sm text-amber-300">
                           {mealFood.food.kCal * mealFood.quantity} kCal
                         </div>
