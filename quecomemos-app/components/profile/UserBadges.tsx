@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Calendar } from 'lucide-react';
@@ -90,6 +91,21 @@ export function UserBadges({ badges, loading = false }: UserBadgesProps) {
     }
   };
 
+  const getDefaultBadgeEmoji = (badgeType: string) => {
+    switch (badgeType) {
+      case 'group_creation':
+        return '👥';
+      case 'voting_participation':
+        return '🗳️';
+      case 'voting_winner':
+        return '🏆';
+      case 'meal_creation':
+        return '👨‍🍳';
+      default:
+        return '🏅';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -106,7 +122,29 @@ export function UserBadges({ badges, loading = false }: UserBadgesProps) {
               className={`p-4 rounded-lg border-2 ${getBadgeColor(badge.badgeType)}`}
             >
               <div className="flex items-start gap-3">
-                <div className="text-2xl">{badge.iconUrl || '🏆'}</div>
+                <div className="w-8 h-8 flex-shrink-0">
+                  {badge.iconUrl && badge.iconUrl.trim() !== '' ? (
+                    <Image
+                      src={badge.iconUrl}
+                      alt={badge.name}
+                      width={32}
+                      height={32}
+                      className="w-full h-full rounded-full border border-gray-200 bg-white p-0.5"
+                      onError={(e) => {
+                        // Fallback to emoji if image fails
+                        const target = e.target as HTMLImageElement;
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="text-2xl flex items-center justify-center">${getDefaultBadgeEmoji(badge.badgeType)}</div>`;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="text-2xl flex items-center justify-center">
+                      {getDefaultBadgeEmoji(badge.badgeType)}
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm mb-1 truncate">
                     {badge.name}
