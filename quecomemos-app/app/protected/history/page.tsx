@@ -18,6 +18,8 @@ import { useCalorieProgressContext } from '@/lib/contexts/CalorieProgressContext
 import { MealService, type RegisterMealData } from '@/lib/services/MealService';
 import { UserBadges } from '@/components/profile/UserBadges';
 import { useUserBadges } from '@/lib/hooks/useUserBadges';
+import { PrimaryBadgeDisplay } from '@/components/profile/PrimaryBadgeDisplay';
+import { BadgeSelectionModal } from '@/components/profile/BadgeSelectionModal';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -111,13 +113,14 @@ export default function UserHistoryPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [activeTab, setActiveTab] = useState('history');
   const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
 
   // Context hooks
   const { userData } = useUser();
   const profile = userData.profile;
   const { progress, loading: loadingProgress, updateCalorieGoal: updateCalorieGoalFromHook } = useCalorieProgress();
   const { allMeals, fetchAllMeals } = useMeals();
-  const { showNotification } = useGlobalNotification();
+  const { showNotification, showSuccess } = useGlobalNotification();
   const { triggerRefresh } = useCalorieProgressContext();
   const { badges, stats, loading: loadingBadges } = useUserBadges(profile?.id);
 
@@ -313,7 +316,27 @@ export default function UserHistoryPage() {
         </Button>
 
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">My Personal Consumption History</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">My Personal Consumption History</h1>
+            {profile?.id && (
+              <div className="flex items-center gap-2">
+                <PrimaryBadgeDisplay 
+                  profileId={profile.id} 
+                  size="lg"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBadgeModalOpen(true)}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-950/30"
+                  title="Customize your primary badge"
+                >
+                  <Trophy className="w-4 h-4" />
+                  Customize Badge
+                </Button>
+              </div>
+            )}
+          </div>
           <p className="text-muted-foreground mt-1">
             Record of your individual meal consumption activity
           </p>
@@ -658,6 +681,22 @@ export default function UserHistoryPage() {
         onClose={closeRegisterMealModal}
         onSubmit={handleRegisterMeal}
       />
+
+      {/* Badge Selection Modal */}
+      {profile?.id && (
+        <BadgeSelectionModal
+          profileId={profile.id}
+          isOpen={isBadgeModalOpen}
+          onClose={() => setIsBadgeModalOpen(false)}
+          onSuccess={() => {
+            showSuccess(
+              'Badge Updated!',
+              'Your primary badge has been successfully updated and will now appear on your profile.',
+              <Trophy className="w-8 h-8" />
+            );
+          }}
+        />
+      )}
     </div>
   );
 }
