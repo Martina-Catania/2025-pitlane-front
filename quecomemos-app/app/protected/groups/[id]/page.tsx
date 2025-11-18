@@ -144,6 +144,13 @@ export default function GroupDetailPage() {
           <Button variant="outline" onClick={goInfo} className="w-full sm:w-auto">
             <Info className="w-4 h-4 mr-2" /> Group information
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/protected/groups/${groupId}/voting`)} 
+            className="w-full sm:w-auto border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white"
+          >
+            <ChefHat className="w-4 h-4 mr-2" /> Group voting
+          </Button>
         </div>
       </div>
 
