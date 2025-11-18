@@ -47,17 +47,17 @@ export class VotingService {
   }
 
   /**
-   * Get active voting sessions for a group
+   * Get active voting sessions for a group (initial load only)
+   * After this, use Socket.IO for real-time updates
    */
-  static async getActiveVotingSessions(groupId: number): Promise<VotingSession[]> {
+  static async getInitialActiveSession(groupId: number): Promise<VotingSession[]> {
     try {
-      // Add timeout and retry logic for production environment
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
-      console.debug('[VotingService] getActiveVotingSessions: calling', `${VOTING_BASE_URL}/groups/${groupId}/active`);
+      console.debug('[VotingService] getInitialActiveSession: calling', `${VOTING_BASE_URL}/groups/${groupId}/initial`);
       
-      const response = await fetch(`${VOTING_BASE_URL}/groups/${groupId}/active`, {
+      const response = await fetch(`${VOTING_BASE_URL}/groups/${groupId}/initial`, {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
@@ -75,21 +75,21 @@ export class VotingService {
           errorData = { error: errorText || `HTTP ${response.status}` };
         }
         
-        console.error('[VotingService] getActiveVotingSessions: API error', { 
+        console.error('[VotingService] getInitialActiveSession: API error', { 
           status: response.status, 
           statusText: response.statusText,
           error: errorData.error,
-          url: `${VOTING_BASE_URL}/groups/${groupId}/active`
+          url: `${VOTING_BASE_URL}/groups/${groupId}/initial`
         });
         
-        throw new Error(errorData.error || `Failed to get active voting sessions (${response.status})`);
+        throw new Error(errorData.error || `Failed to get initial session (${response.status})`);
       }
 
       const result = await response.json();
-      console.debug('[VotingService] getActiveVotingSessions: success', { count: result?.length, result });
+      console.debug('[VotingService] getInitialActiveSession: success', { count: result?.length, result });
       return result;
     } catch (error) {
-      console.error('[VotingService] getActiveVotingSessions: catch block', error);
+      console.error('[VotingService] getInitialActiveSession: catch block', error);
       
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -98,8 +98,15 @@ export class VotingService {
         throw error;
       }
       
-      throw new Error('Unknown error occurred while fetching voting sessions');
+      throw new Error('Unknown error occurred while fetching initial session');
     }
+  }
+
+  /**
+   * @deprecated Use getInitialActiveSession instead. This method is kept for backwards compatibility.
+   */
+  static async getActiveVotingSessions(groupId: number): Promise<VotingSession[]> {
+    return this.getInitialActiveSession(groupId);
   }
 
   /**

@@ -9,7 +9,6 @@ import { Clock, Users, Trophy, Vote, Plus, CheckCircle } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useVoting } from '@/lib/contexts/VotingContext';
-import { useVotingSession } from '@/lib/hooks/useVotingSession';
 import { VotingService } from './VotingService';
 import { MealProposalCard } from './MealProposalCard';
 import { VotingTimer } from './VotingTimer';
@@ -26,7 +25,7 @@ interface VotingSessionCardProps {
 export function VotingSessionCard({ session: initialSession, onVotingComplete, className = '' }: VotingSessionCardProps) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
-  const { setShowResultsModal, refreshSession, notifyVotingCompleted, updateSessionOptimistically, isOffline } = useVoting();
+  const { activeSession, setShowResultsModal, notifyVotingCompleted, isOffline } = useVoting();
   
   const [loading, setLoading] = useState(false);
   const [showProposeMeal, setShowProposeMeal] = useState(false);
@@ -34,60 +33,8 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
   const userId = userData?.profile?.id;
 
-  // Use the session polling hook for fine-grained updates
-  // NOTE: We disable automatic polling here and rely on VotingContext for background sync (10s interval)
-  // This component only refreshes after user actions to reduce API calls
-  const { 
-    session: polledSession
-  } = useVotingSession({
-    sessionId: initialSession.VotingSessionID,
-    enabled: true,
-    enablePolling: false, // Disable automatic polling - rely on VotingContext for background sync
-    onComplete: (completedSession) => {
-      // Handle voting completion
-      const winnerName = completedSession.winnerMeal?.name || 'Unknown meal';
-      const voteCount = completedSession.totalVotes || 0;
-      
-      showSuccess(
-        '🎉 Voting Complete!', 
-        `The winning meal is "${winnerName}" with ${voteCount} votes! Creating consumption record...`
-      );
-
-      // Auto-create group consumption
-      if (userId && completedSession.winnerMealId) {
-        VotingService.createConsumptionFromVote(completedSession.VotingSessionID, {
-          profileId: userId,
-          name: winnerName,
-          description: `Group meal from voting session: ${completedSession.title || 'Meal Vote'}`,
-          quantity: 1
-        })
-          .then(() => {
-            showSuccess(
-              '✅ Consumption Registered!',
-              `"${winnerName}" has been added to your group's consumption history.`
-            );
-            // Trigger parent refresh for Recent Activity
-            onVotingComplete?.();
-            // Notify listeners via VotingContext
-            notifyVotingCompleted(completedSession.VotingSessionID);
-          })
-          .catch(error => {
-            console.error('Error creating consumption:', error);
-            // Don't show error if consumption already exists or was created by another user
-          });
-      } else {
-        // Still trigger parent refresh even if no consumption created
-        onVotingComplete?.();
-        notifyVotingCompleted(completedSession.VotingSessionID);
-      }
-
-      // Refresh the context to detect session completion
-      refreshSession();
-    }
-  });
-
-  // Use the polled session, fallback to initial prop
-  const updatedSession = polledSession || initialSession;
+  // Use active session from context (updated via Socket.IO) or fallback to initial prop
+  const updatedSession = activeSession || initialSession;
   
   // Debug logging for membership checks
   console.log('=== VotingSessionCard Debug ===');
@@ -168,6 +115,49 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
     }
   }, [updatedSession.status, updatedSession.proposals, shouldShowEarlyCompletion, showEarlyCompletion]);
 
+  // Handle voting completion (triggered by Socket.IO updates via VotingContext)
+  useEffect(() => {
+    if (updatedSession.status === 'completed' && updatedSession.winnerMealId) {
+      const winnerName = updatedSession.winnerMeal?.name || 'Unknown meal';
+      const voteCount = updatedSession.totalVotes || 0;
+      
+      showSuccess(
+        '🎉 Voting Complete!', 
+        `The winning meal is "${winnerName}" with ${voteCount} votes!`
+      );
+
+      // Auto-create group consumption (only once per user)
+      if (userId && !sessionStorage.getItem(`consumption-created-${updatedSession.VotingSessionID}`)) {
+        sessionStorage.setItem(`consumption-created-${updatedSession.VotingSessionID}`, 'true');
+        
+        VotingService.createConsumptionFromVote(updatedSession.VotingSessionID, {
+          profileId: userId,
+          name: winnerName,
+          description: `Group meal from voting session: ${updatedSession.title || 'Meal Vote'}`,
+          quantity: 1
+        })
+          .then(() => {
+            showSuccess(
+              '✅ Consumption Registered!',
+              `"${winnerName}" has been added to your group's consumption history.`
+            );
+            // Trigger parent refresh for Recent Activity
+            onVotingComplete?.();
+            // Notify listeners via VotingContext
+            notifyVotingCompleted(updatedSession.VotingSessionID);
+          })
+          .catch(error => {
+            console.error('Error creating consumption:', error);
+            // Don't show error if consumption already exists
+          });
+      } else if (!userId) {
+        // Still trigger parent refresh even if no consumption created
+        onVotingComplete?.();
+        notifyVotingCompleted(updatedSession.VotingSessionID);
+      }
+    }
+  }, [updatedSession.status, updatedSession.VotingSessionID, updatedSession.winnerMealId, userId, onVotingComplete, notifyVotingCompleted, showSuccess]);
+
   const handleStartVoting = async () => {
     if (!canParticipate || !(isGroupOwner || isGroupAdmin)) {
       showError('Access Denied', 'Only group owners and admins can start voting.');
@@ -176,24 +166,11 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
     setLoading(true);
     try {
-      // Optimistic update - immediately show the voting phase
-      updateSessionOptimistically({
-        status: 'voting_phase'
-      });
-      
       await VotingService.startVotingPhase(updatedSession.VotingSessionID);
       showSuccess('Voting Started!', 'The voting phase has begun. Members can now vote on proposed meals.');
-      
-      // Only refresh if we're online and the optimistic update might be wrong
-      if (!isOffline) {
-        setTimeout(() => refreshSession(), 2000);
-      }
+      // Socket.IO will handle real-time updates automatically
     } catch (error) {
       showError('Error Starting Voting', error instanceof Error ? error.message : 'Failed to start voting phase');
-      // Revert optimistic update on error
-      updateSessionOptimistically({
-        status: 'proposal_phase'
-      });
     } finally {
       setLoading(false);
     }
@@ -235,7 +212,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }
       }
       
-      await refreshSession();
       setShowResultsModal(true);
       // Ensure history and activity update
       onVotingComplete?.();
@@ -280,7 +256,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       }
       
       setShowResultsModal(true);
-      await refreshSession();
       // Ensure history and activity update
       onVotingComplete?.();
       notifyVotingCompleted(updatedSession.VotingSessionID);
@@ -330,26 +305,15 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         return proposal;
       });
 
-      updateSessionOptimistically({
-        proposals: updatedProposals,
-        totalVotes: updatedSession.totalVotes + 1
-      });
-
       await VotingService.castVote(updatedSession.VotingSessionID, {
         mealProposalId: proposalId,
         voterId: userId,
         voteType: 'up'
       });
       showSuccess('Vote Cast!', 'Your vote has been recorded.');
-      
-      // Refresh after a short delay to get accurate server state
-      if (!isOffline) {
-        setTimeout(() => refreshSession(), 1500);
-      }
+      // Socket.IO will handle real-time vote updates automatically
     } catch (error) {
       showError('Error Casting Vote', error instanceof Error ? error.message : 'Failed to cast vote');
-      // Revert optimistic update on error - just refresh to get correct state
-      refreshSession();
     } finally {
       setLoading(false);
     }
@@ -368,7 +332,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       });
       showSuccess('Meal Proposed!', 'Your meal has been added to the voting pool.');
       setShowProposeMeal(false);
-      await refreshSession();
     } catch (error) {
       showError('Error Proposing Meal', error instanceof Error ? error.message : 'Failed to propose meal');
     }
@@ -392,7 +355,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }, 1000);
       }
       
-      await refreshSession();
     } catch (error) {
       showError('Error Confirming Readiness', error instanceof Error ? error.message : 'Failed to confirm readiness');
     } finally {
@@ -413,11 +375,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       console.debug('[VotingSessionCard] handleConfirmVotes: response', result);
       
       showSuccess('Votes Confirmed!', 'You have confirmed your votes are final.');
-      
-      // Immediately refresh to get latest session state after action
-      console.debug('[VotingSessionCard] handleConfirmVotes: calling refreshSession');
-      await refreshSession();
-      console.debug('[VotingSessionCard] handleConfirmVotes: refreshSession complete');
       
       // Check if voting completed automatically
       if (result.votingCompleted && result.completionResult) {
@@ -466,7 +423,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }, 3200);
       }
       
-      await refreshSession();
     } catch (error) {
       console.error('[VotingSessionCard] handleConfirmVotes: error', error);
       showError('Error Confirming Votes', error instanceof Error ? error.message : 'Failed to confirm votes');
