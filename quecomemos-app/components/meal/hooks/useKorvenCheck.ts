@@ -79,6 +79,8 @@ export const useKorvenCheck = () => {
   };
 
   return {
+    korvenProducts: products,
+    isLoadingKorven: loading,
     isKorvenInspiredFood,
     isKorvenInspiredMeal,
     loading
