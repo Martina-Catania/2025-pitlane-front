@@ -121,10 +121,16 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       const winnerName = updatedSession.winnerMeal?.name || 'Unknown meal';
       const voteCount = updatedSession.totalVotes || 0;
       
-      showSuccess(
-        '🎉 Voting Complete!', 
-        `The winning meal is "${winnerName}" with ${voteCount} votes!`
-      );
+      // Only show notification once per session (prevent duplicate notifications on re-renders)
+      const notificationKey = `notification-shown-${updatedSession.VotingSessionID}`;
+      if (!sessionStorage.getItem(notificationKey)) {
+        sessionStorage.setItem(notificationKey, 'true');
+        
+        showSuccess(
+          '🎉 Voting Complete!', 
+          `The winning meal is "${winnerName}" with ${voteCount} votes!`
+        );
+      }
 
       // Auto-create group consumption (only once per user)
       if (userId && !sessionStorage.getItem(`consumption-created-${updatedSession.VotingSessionID}`)) {
