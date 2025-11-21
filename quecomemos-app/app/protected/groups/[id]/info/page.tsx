@@ -35,6 +35,7 @@ import { useConfirmation } from '@/lib/hooks/useConfirmation';
 import { ConfirmationModal } from '@/components/modals';
 import { API_BASE_URL } from '@/lib/config/api';
 import { GroupMostConsumedResponse } from '@/components/types/group-consumption';
+import { UserBadgeDisplay } from '@/components/common/UserBadgeDisplay';
 
 interface GroupMember {
   GroupMemberID: number;
@@ -726,8 +727,15 @@ export default function GroupInfoPage() {
                       {(member.profile.username || 'Anonymous').charAt(0).toUpperCase()}
                     </div>
 
-                    <div>
-                      <p className="font-medium">{member.profile.username || 'Anonymous'}</p>
+                    <div className="flex-1">
+                      <UserBadgeDisplay 
+                        username={member.profile.username || 'Anonymous'}
+                        profileId={member.profile.id}
+                        maxBadges={2}
+                        size="sm"
+                        showTooltip={true}
+                        className="mb-1"
+                      />
                       <div className="flex items-center space-x-2">
                         <Badge variant={member.role === 'admin' ? 'default' : 'outline'} className={member.role === 'admin' ? 'text-xs bg-amber-700 hover:bg-amber-600' : 'text-xs'}>
                           {member.role === 'admin' ? (

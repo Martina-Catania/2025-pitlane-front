@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, History, Target, Flame, Plus } from 'lucide-react';
+import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, History, Target, Flame, Plus, Trophy } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
@@ -16,6 +16,10 @@ import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useMeals } from '@/lib/contexts/MealsContext';
 import { useCalorieProgressContext } from '@/lib/contexts/CalorieProgressContext';
 import { MealService, type RegisterMealData } from '@/lib/services/MealService';
+import { UserBadges } from '@/components/profile/UserBadges';
+import { useUserBadges } from '@/lib/hooks/useUserBadges';
+import { PrimaryBadgeDisplay } from '@/components/profile/PrimaryBadgeDisplay';
+import { BadgeSelectionModal } from '@/components/profile/BadgeSelectionModal';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -109,14 +113,16 @@ export default function UserHistoryPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [activeTab, setActiveTab] = useState('history');
   const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
 
   // Context hooks
   const { userData } = useUser();
   const profile = userData.profile;
   const { progress, loading: loadingProgress, updateCalorieGoal: updateCalorieGoalFromHook } = useCalorieProgress();
   const { allMeals, fetchAllMeals } = useMeals();
-  const { showNotification } = useGlobalNotification();
+  const { showNotification, showSuccess } = useGlobalNotification();
   const { triggerRefresh } = useCalorieProgressContext();
+  const { badges, stats, loading: loadingBadges } = useUserBadges(profile?.id);
 
   const fetchUserHistory = useCallback(async () => {
     if (!profile?.id) return;
@@ -310,7 +316,27 @@ export default function UserHistoryPage() {
         </Button>
 
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">My Personal Consumption History</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">My Personal Consumption History</h1>
+            {profile?.id && (
+              <div className="flex items-center gap-2">
+                <PrimaryBadgeDisplay 
+                  profileId={profile.id} 
+                  size="lg"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBadgeModalOpen(true)}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-950/30"
+                  title="Customize your primary badge"
+                >
+                  <Trophy className="w-4 h-4" />
+                  Customize Badge
+                </Button>
+              </div>
+            )}
+          </div>
           <p className="text-muted-foreground mt-1">
             Record of your individual meal consumption activity
           </p>
@@ -351,7 +377,7 @@ export default function UserHistoryPage() {
 
       {/* Tabs for Profile Sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="w-4 h-4" />
             Consumption History
@@ -359,6 +385,10 @@ export default function UserHistoryPage() {
           <TabsTrigger value="goals" className="flex items-center gap-2">
             <Target className="w-4 h-4" />
             Calorie Goals
+          </TabsTrigger>
+          <TabsTrigger value="badges" className="flex items-center gap-2">
+            <Trophy className="w-4 h-4" />
+            Badges {stats && `(${stats.earnedBadges}/${stats.totalBadges})`}
           </TabsTrigger>
         </TabsList>
 
@@ -583,6 +613,66 @@ export default function UserHistoryPage() {
             />
           </div>
         </TabsContent>
+
+        {/* Tab: Badges */}
+        <TabsContent value="badges" className="space-y-6 mt-6">
+          {/* Badge Statistics */}
+          {stats && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-500" />
+                  Achievement Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-yellow-500/5 rounded-lg">
+                    <div className="text-3xl font-bold text-yellow-600">
+                      {stats.earnedBadges}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Badges earned
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-blue-500/5 rounded-lg">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {stats.totalBadges}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Total available
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-green-500/5 rounded-lg">
+                    <div className="text-3xl font-bold text-green-600">
+                      {stats.completionPercentage}%
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Completion rate
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="mt-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">{stats.earnedBadges} of {stats.totalBadges} badges</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-2 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${stats.completionPercentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* User Badges */}
+          <UserBadges badges={badges} loading={loadingBadges} />
+        </TabsContent>
       </Tabs>
 
       {/* Register Meal Modal */}
@@ -591,6 +681,22 @@ export default function UserHistoryPage() {
         onClose={closeRegisterMealModal}
         onSubmit={handleRegisterMeal}
       />
+
+      {/* Badge Selection Modal */}
+      {profile?.id && (
+        <BadgeSelectionModal
+          profileId={profile.id}
+          isOpen={isBadgeModalOpen}
+          onClose={() => setIsBadgeModalOpen(false)}
+          onSuccess={() => {
+            showSuccess(
+              'Badge Updated!',
+              'Your primary badge has been successfully updated and will now appear on your profile.',
+              <Trophy className="w-8 h-8" />
+            );
+          }}
+        />
+      )}
     </div>
   );
 }
