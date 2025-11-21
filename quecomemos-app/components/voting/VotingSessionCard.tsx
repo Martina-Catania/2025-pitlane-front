@@ -25,11 +25,12 @@ interface VotingSessionCardProps {
 export function VotingSessionCard({ session: initialSession, onVotingComplete, className = '' }: VotingSessionCardProps) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
-  const { activeSession, setShowResultsModal, notifyVotingCompleted, isOffline } = useVoting();
+  const { activeSession, notifyVotingCompleted } = useVoting();
   
   const [loading, setLoading] = useState(false);
   const [showProposeMeal, setShowProposeMeal] = useState(false);
   const [showEarlyCompletion, setShowEarlyCompletion] = useState(false);
+  const [earlyCompletionDismissed, setEarlyCompletionDismissed] = useState(false);
 
   const userId = userData?.profile?.id;
 
@@ -106,14 +107,14 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
   // Check if we should show early completion notification
   useEffect(() => {
-    if (shouldShowEarlyCompletion() && !showEarlyCompletion) {
+    if (shouldShowEarlyCompletion() && !showEarlyCompletion && !earlyCompletionDismissed) {
       // Show early completion modal automatically after a short delay
       const timer = setTimeout(() => {
         setShowEarlyCompletion(true);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [updatedSession.status, updatedSession.proposals, shouldShowEarlyCompletion, showEarlyCompletion]);
+  }, [updatedSession.status, updatedSession.proposals, shouldShowEarlyCompletion, showEarlyCompletion, earlyCompletionDismissed]);
 
   // Handle voting completion (triggered by Socket.IO updates via VotingContext)
   useEffect(() => {
@@ -162,7 +163,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         notifyVotingCompleted(updatedSession.VotingSessionID);
       }
     }
-  }, [updatedSession.status, updatedSession.VotingSessionID, updatedSession.winnerMealId, userId, onVotingComplete, notifyVotingCompleted, showSuccess]);
+  }, [updatedSession.status, updatedSession.VotingSessionID, updatedSession.winnerMealId, updatedSession.winnerMeal?.name, updatedSession.totalVotes, updatedSession.title, userId, onVotingComplete, notifyVotingCompleted, showSuccess]);
 
   const handleStartVoting = async () => {
     if (!canParticipate || !(isGroupOwner || isGroupAdmin)) {
@@ -218,7 +219,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }
       }
       
-      setShowResultsModal(true);
       // Ensure history and activity update
       onVotingComplete?.();
       notifyVotingCompleted(updatedSession.VotingSessionID);
@@ -261,7 +261,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         }
       }
       
-      setShowResultsModal(true);
       // Ensure history and activity update
       onVotingComplete?.();
       notifyVotingCompleted(updatedSession.VotingSessionID);
@@ -272,10 +271,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
     }
   };
 
-  const handleShowResults = () => {
-    setShowResultsModal(true);
-  };
-
   const handleVote = async (proposalId: number) => {
     if (!userId || !canParticipate) {
       showError('Access Denied', 'You must be a member of this group to vote.');
@@ -284,33 +279,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
     setLoading(true);
     try {
-      // Optimistic update - immediately update the vote count and user's vote
-      const updatedProposals = updatedSession.proposals.map(proposal => {
-        if (proposal.MealProposalID === proposalId) {
-          return {
-            ...proposal,
-            voteCount: proposal.voteCount + 1,
-            votes: [
-              ...proposal.votes,
-              {
-                VoteID: Date.now(), // Temporary ID
-                votingSessionId: updatedSession.VotingSessionID,
-                mealProposalId: proposalId,
-                voterId: userId,
-                voteType: 'up' as const,
-                votedAt: new Date().toISOString(),
-                isActive: true,
-                voter: {
-                  id: userId,
-                  username: userData?.profile?.username || 'You'
-                }
-              }
-            ]
-          };
-        }
-        return proposal;
-      });
-
       await VotingService.castVote(updatedSession.VotingSessionID, {
         mealProposalId: proposalId,
         voterId: userId,
@@ -417,12 +385,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
           }
         }, 2000);
 
-        // Show results modal
-        setTimeout(() => {
-          console.debug('[VotingSessionCard] handleConfirmVotes: showing results modal');
-          setShowResultsModal(true);
-        }, 3000);
-        // Also notify history/activity after a short delay so they can refresh
+        // Notify history/activity after a short delay so they can refresh
         setTimeout(() => {
           onVotingComplete?.();
           notifyVotingCompleted(updatedSession.VotingSessionID);
@@ -644,19 +607,9 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         {/* Winner Display */}
         {updatedSession.status === 'completed' && updatedSession.winnerMeal && (
           <div className="p-4 bg-green-900/30 border border-green-700/50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-500" />
-                <span className="font-medium text-green-200">Winning Meal</span>
-              </div>
-              <Button
-                onClick={handleShowResults}
-                size="sm"
-                variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-              >
-                View Full Results
-              </Button>
+            <div className="flex items-center gap-2 mb-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              <span className="font-medium text-green-200">Winning Meal</span>
             </div>
             <h4 className="font-semibold text-white">{updatedSession.winnerMeal.name}</h4>
             {updatedSession.winnerMeal.description && (
@@ -711,7 +664,10 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         isOpen={showEarlyCompletion}
         onClose={() => setShowEarlyCompletion(false)}
         onConfirm={handleEarlyCompleteVoting}
-        onContinue={() => setShowEarlyCompletion(false)}
+        onContinue={() => {
+          setShowEarlyCompletion(false);
+          setEarlyCompletionDismissed(true);
+        }}
         session={updatedSession}
         loading={loading}
       />

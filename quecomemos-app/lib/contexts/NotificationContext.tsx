@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { NotificationType } from '@/components/modals/StackedNotifications';
 import { StackedNotifications } from '@/components/modals/StackedNotifications';
+import { votingSocket } from '@/lib/services/votingSocket';
 
 interface NotificationItem {
   id: string;
@@ -26,6 +27,9 @@ interface NotificationContextType {
       autoClose?: boolean;
       autoCloseTime?: number;
       customIcon?: React.ReactNode;
+      broadcast?: boolean;
+      groupId?: number;
+      notificationId?: string;
     }
   ) => void;
   showSuccess: (title: string, message: string, customIcon?: React.ReactNode) => void;
@@ -41,6 +45,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const shownNotificationIds = useRef<Set<string>>(new Set());
 
   const generateId = () => `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const EXIT_ANIMATION_MS = 300; // duration for exit animation
@@ -53,12 +58,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       autoClose?: boolean;
       autoCloseTime?: number;
       customIcon?: React.ReactNode;
+      broadcast?: boolean;
+      groupId?: number;
+      notificationId?: string;
     }
   ) => {
-    console.log('Global notification triggered:', { type, title, message });
+    const notificationId = options?.notificationId || generateId();
+    
+    // Prevent duplicate notifications using ID deduplication
+    if (shownNotificationIds.current.has(notificationId)) {
+      console.log('[NotificationContext] Skipping duplicate notification:', notificationId);
+      return;
+    }
+    
+    console.log('[NotificationContext] Showing notification:', { type, title, message, notificationId });
+    shownNotificationIds.current.add(notificationId);
     
     const newNotification: NotificationItem = {
-      id: generateId(),
+      id: notificationId,
       type,
       title,
       message,
@@ -70,17 +87,40 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     setNotifications(prev => [...prev, newNotification]);
 
+    // Broadcast to group if requested
+    if (options?.broadcast && options?.groupId) {
+      const socket = votingSocket.getSocket();
+      if (socket?.connected) {
+        console.log('[NotificationContext] Broadcasting notification to group:', options.groupId);
+        socket.emit('broadcast:notification', {
+          groupId: options.groupId,
+          notification: {
+            id: notificationId,
+            type,
+            title,
+            message,
+            autoClose: newNotification.autoClose,
+            autoCloseTime: newNotification.autoCloseTime
+          }
+        });
+      }
+    }
+
     // Auto-remove notification if autoClose is enabled.
     if (newNotification.autoClose) {
       const startClosingAt = Math.max(0, (newNotification.autoCloseTime ?? 4000) - EXIT_ANIMATION_MS);
       // start closing (trigger exit animation)
       setTimeout(() => {
-        setNotifications(prev => prev.map(n => n.id === newNotification.id ? { ...n, closing: true } : n));
+        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, closing: true } : n));
       }, startClosingAt);
 
       // remove after full duration
       setTimeout(() => {
-        removeNotification(newNotification.id);
+        removeNotification(notificationId);
+        // Clean up deduplication set after notification is fully removed
+        setTimeout(() => {
+          shownNotificationIds.current.delete(notificationId);
+        }, 1000);
       }, newNotification.autoCloseTime);
     }
   };
@@ -114,6 +154,35 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const clearAllNotifications = () => {
     setNotifications([]);
   };
+
+  // Listen for broadcast notifications via Socket.IO
+  useEffect(() => {
+    const socket = votingSocket.connect();
+    
+    const handleBroadcastNotification = (data: {
+      id: string;
+      type: NotificationType;
+      title: string;
+      message: string;
+      autoClose?: boolean;
+      autoCloseTime?: number;
+    }) => {
+      console.log('[NotificationContext] Received broadcast notification:', data);
+      
+      // Show notification with the same ID to ensure deduplication
+      showNotification(data.type, data.title, data.message, {
+        autoClose: data.autoClose,
+        autoCloseTime: data.autoCloseTime,
+        notificationId: data.id
+      });
+    };
+    
+    socket.on('notification:broadcast', handleBroadcastNotification);
+    
+    return () => {
+      socket.off('notification:broadcast', handleBroadcastNotification);
+    };
+  }, []);
 
   return (
     <NotificationContext.Provider

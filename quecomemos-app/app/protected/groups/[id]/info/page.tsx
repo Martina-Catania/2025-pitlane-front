@@ -297,7 +297,7 @@ export default function GroupInfoPage() {
         const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members/${memberId}`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invitedById: currentUserId })
+          body: JSON.stringify({ requesterId: currentUserId })
         });
 
         if (!response.ok) {

@@ -165,20 +165,10 @@ export default function GroupVotingPage() {
           </Card>
 
           {/* Voting History at bottom */}
-          <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 border-gray-700/50">
-            <CardHeader>
-              <CardTitle className="flex items-center text-gray-200">
-                <History className="w-5 h-5 mr-2" />
-                Voting History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VotingHistorySection 
-                groupId={group.GroupID}
-                className="w-full"
-              />
-            </CardContent>
-          </Card>
+          <VotingHistorySection 
+            groupId={group.GroupID}
+            className="w-full"
+          />
         </VotingProvider>
       )}
     </div>

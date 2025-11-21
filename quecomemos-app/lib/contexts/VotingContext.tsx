@@ -16,10 +16,6 @@ interface VotingContextType {
   startSession: () => Promise<void>;
   clearSession: () => void;
   
-  // Results modal state (persists across re-renders)
-  showResultsModal: boolean;
-  setShowResultsModal: (show: boolean) => void;
-  
   // Notify when a voting session completes
   notifyVotingCompleted: (sessionId: number) => void;
   onVotingCompleted: (callback: (sessionId: number) => void) => () => void;
@@ -43,7 +39,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   const [activeSession, setActiveSession] = useState<VotingSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showResultsModal, setShowResultsModal] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
@@ -113,13 +108,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       setLastSyncTime(new Date());
       setIsOffline(false);
       
-      // Only update status ref and show results modal on initial load
-      const previousSession = activeSession;
-      if (session && previousSession && session.status === 'completed' && previousSession.status !== 'completed') {
-        console.debug('[VotingContext] fetchActiveSession: session completed, showing results modal');
-        setShowResultsModal(true);
-      }
-
       previousStatusRef.current = session?.status || null;
       console.debug('[VotingContext] fetchActiveSession: success, setting session state', { session });
       setActiveSession(session);
@@ -208,7 +196,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   const clearSession = useCallback(() => {
     console.debug('[VotingContext] clearSession called');
     setActiveSession(null);
-    setShowResultsModal(false);
+
     setError(null);
     console.debug('[VotingContext] clearSession: state cleared');
   }, []);
@@ -282,7 +270,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       
       if (wasVoting && nowCompleted) {
         console.log('[VotingContext] Socket: Session completed, showing results');
-        setShowResultsModal(true);
+
         // Notify completion listeners
         completionListenersRef.current.forEach(callback => {
           try {
@@ -315,7 +303,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       console.log('[VotingContext] Socket event: voting:completed', result);
       setActiveSession(result);
       previousStatusRef.current = result.status;
-      setShowResultsModal(true);
       setLastSyncTime(new Date());
       
       // Notify completion listeners
@@ -393,8 +380,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     refreshSession,
     startSession,
     clearSession,
-    showResultsModal,
-    setShowResultsModal,
     notifyVotingCompleted,
     onVotingCompleted,
     isOffline,
