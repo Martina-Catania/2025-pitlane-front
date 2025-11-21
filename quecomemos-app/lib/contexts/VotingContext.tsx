@@ -254,7 +254,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     console.debug('[VotingContext] Socket setup: initializing for group', groupId);
     
     // Connect to Socket.IO (will reuse existing connection if already connected)
-    const socket = votingSocket.connect();
+    votingSocket.connect();
 
     // Subscribe to group events
     votingSocket.subscribeToGroup(groupId);

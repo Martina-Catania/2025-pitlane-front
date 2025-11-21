@@ -3,7 +3,7 @@ export { VotingSessionCard } from './VotingSessionCard';
 export { MealProposalCard } from './MealProposalCard';
 export { VotingTimer } from './VotingTimer';
 export { ProposeMealModal } from './ProposeMealModal';
-export { StartVotingButton, VotingInfoCard } from './StartVotingButton';
+export { StartVotingButton } from './StartVotingButton';
 export { GroupVotingSystem } from './GroupVotingSystem';
 export { VoteConfirmationModal } from './VoteConfirmationModal';
 export { EarlyCompletionModal } from './EarlyCompletionModal';

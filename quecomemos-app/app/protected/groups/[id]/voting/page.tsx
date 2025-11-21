@@ -128,66 +128,59 @@ export default function GroupVotingPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {group && (
-          <VotingProvider groupId={group.GroupID}>
-            {/* Voting System - Takes up 2 columns on large screens */}
-            <div className="lg:col-span-2 space-y-6">
-              <GroupVotingSystem 
-                group={group} 
-                onVotingComplete={handleVotingComplete}
+      {group && (
+        <VotingProvider groupId={group.GroupID}>
+          {/* Voting System at top */}
+          <GroupVotingSystem 
+            group={group} 
+            onVotingComplete={handleVotingComplete}
+            className="w-full"
+          />
+
+          {/* Instructions Card in middle */}
+          <Card className="bg-gradient-to-br from-blue-800/20 to-blue-900/20 border-blue-700/30">
+            <CardHeader>
+              <CardTitle className="text-blue-200">How to Use Group Voting</CardTitle>
+            </CardHeader>
+            <CardContent className="text-blue-100">
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">1</div>
+                  <p>Any group member can start a voting session by clicking "Start Voting Session"</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">2</div>
+                  <p>During the proposal phase, members can suggest meals they'd like to eat</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">3</div>
+                  <p>Once voting begins, all members vote on their preferred meal options</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">4</div>
+                  <p>The meal with the most votes wins and gets automatically registered!</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Voting History at bottom */}
+          <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 border-gray-700/50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-gray-200">
+                <History className="w-5 h-5 mr-2" />
+                Voting History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <VotingHistorySection 
+                groupId={group.GroupID}
                 className="w-full"
               />
-            </div>
-
-            {/* Voting History - Takes up 1 column on large screens */}
-            <div className="space-y-6">
-              <Card className="bg-gradient-to-br from-gray-800/30 to-gray-900/30 border-gray-700/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-gray-200">
-                    <History className="w-5 h-5 mr-2" />
-                    Voting History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <VotingHistorySection 
-                    groupId={group.GroupID}
-                    className="w-full"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </VotingProvider>
-        )}
-      </div>
-
-      {/* Instructions Card */}
-      <Card className="bg-gradient-to-br from-blue-800/20 to-blue-900/20 border-blue-700/30">
-        <CardHeader>
-          <CardTitle className="text-blue-200">How to Use Group Voting</CardTitle>
-        </CardHeader>
-        <CardContent className="text-blue-100">
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">1</div>
-              <p>Any group member can start a voting session by clicking "Start Voting Session"</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">2</div>
-              <p>During the proposal phase, members can suggest meals they'd like to eat</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">3</div>
-              <p>Once voting begins, all members vote on their preferred meal options</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">4</div>
-              <p>The meal with the most votes wins and gets automatically registered!</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </VotingProvider>
+      )}
     </div>
   );
 }

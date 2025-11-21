@@ -7,8 +7,7 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { useVoting } from '@/lib/contexts/VotingContext';
 import { 
   VotingSessionCard, 
-  StartVotingButton, 
-  VotingInfoCard,
+  StartVotingButton,
   VotingResultsModal,
 } from '@/components/voting';
 import type { Group } from '@/components/groups/index';
@@ -213,9 +212,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
           </div>
         </CardContent>
       </Card>
-
-      {/* Information card for new users */}
-      <VotingInfoCard />
     </div>
   );
 }
