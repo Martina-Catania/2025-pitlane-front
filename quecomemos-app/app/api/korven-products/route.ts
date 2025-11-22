@@ -6,6 +6,7 @@ export async function GET() {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.KORVEN_API_TOKEN}`,
       }
     });
 
