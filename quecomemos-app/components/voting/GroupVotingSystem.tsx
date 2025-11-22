@@ -30,15 +30,11 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   const userId = userData?.profile?.id;
   const isGroupMember = group.members?.some(member => member.profile.id === userId) || false;
 
-  console.debug('[GroupVotingSystem] render: group=', group.GroupID, 'loading=', loading, 'activeSession=', activeSession?.VotingSessionID, 'status=', activeSession?.status, 'isOffline=', isOffline);
-
   const handleVotingStarted = () => {
-    console.debug('[GroupVotingSystem] handleVotingStarted called - Socket.IO will handle session updates');
     // No manual refresh needed - Socket.IO will automatically update the session
   };
 
   if (loading) {
-    console.debug('[GroupVotingSystem] rendering: LOADING STATE');
     return (
       <Card className={`bg-gradient-to-br from-blue-800/30 to-blue-900/30 border-blue-700/50 ${className}`}>
         <CardContent className="p-6">
@@ -87,13 +83,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   // If there's an active voting session that's NOT completed, show the voting interface
   // Allow starting a new session if current session is completed or null
   if (activeSession && activeSession.status !== 'completed') {
-    console.debug('[GroupVotingSystem] rendering: ACTIVE SESSION', { 
-      status: activeSession.status,
-      hasGroupMembers: !!activeSession.group?.members,
-      groupMembersCount: activeSession.group?.members?.length,
-      propGroupMembersCount: group.members?.length
-    });
-    
     // IMPORTANT: Merge the full group data into the session to ensure membership checks work
     // The session from Socket.IO might not include complete group.members array
     const sessionWithGroupData: VotingSession = {
@@ -106,11 +95,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
         members: group.members || []
       }
     };
-    
-    console.debug('[GroupVotingSystem] merged session data', {
-      mergedMembersCount: sessionWithGroupData.group.members.length,
-      members: sessionWithGroupData.group.members
-    });
     
     return (
       <div className={`space-y-4 ${className}`}>
@@ -127,7 +111,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   }
 
   // No active session OR session is completed - show the start voting interface
-  console.debug('[GroupVotingSystem] rendering: NO ACTIVE SESSION', { hasSession: !!activeSession, sessionStatus: activeSession?.status });
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Connection status indicator */}

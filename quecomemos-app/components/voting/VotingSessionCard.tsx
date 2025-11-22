@@ -34,16 +34,18 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
 
   const userId = userData?.profile?.id;
 
-  // Use active session from context (updated via Socket.IO) or fallback to initial prop
-  const updatedSession = activeSession || initialSession;
-  
-  // Debug logging for membership checks
-  console.log('=== VotingSessionCard Debug ===');
-  console.log('Current User ID:', userId);
-  console.log('User Data:', userData);
-  console.log('Session Group:', updatedSession.group);
-  console.log('Group CreatedBy:', updatedSession.group?.createdBy);
-  console.log('Group Members:', updatedSession.group?.members);
+  // IMPORTANT: Use the prop session (which has merged group data with members)
+  // but update the status and proposals from activeSession if available
+  const updatedSession: VotingSession = activeSession ? {
+    ...initialSession,
+    status: activeSession.status,
+    proposalEndsAt: activeSession.proposalEndsAt,
+    votingEndsAt: activeSession.votingEndsAt,
+    proposals: activeSession.proposals,
+    votes: activeSession.votes,
+    // Keep the group from initialSession as it has the full members array
+    group: initialSession.group
+  } : initialSession;
   
   // Proper ownership and membership checks (same as GroupInfoPage)
   const isGroupOwner = updatedSession.group?.createdBy === userId;
@@ -54,13 +56,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
     member.profile.id === userId
   ) || false;
   const canParticipate = isGroupOwner || isGroupAdmin || isGroupMember;
-  
-  console.log('Membership Checks Results:');
-  console.log('- Is Group Owner:', isGroupOwner);
-  console.log('- Is Group Admin:', isGroupAdmin);
-  console.log('- Is Group Member:', isGroupMember);
-  console.log('- Can Participate:', canParticipate);
-  console.log('================================');
   
   // Check if session is expired
   const isExpired = () => {

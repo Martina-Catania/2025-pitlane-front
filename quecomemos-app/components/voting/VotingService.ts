@@ -55,8 +55,6 @@ export class VotingService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
-      console.debug('[VotingService] getInitialActiveSession: calling', `${VOTING_BASE_URL}/groups/${groupId}/initial`);
-      
       const response = await fetch(`${VOTING_BASE_URL}/groups/${groupId}/initial`, {
         signal: controller.signal,
         headers: {
@@ -86,7 +84,6 @@ export class VotingService {
       }
 
       const result = await response.json();
-      console.debug('[VotingService] getInitialActiveSession: success', { count: result?.length, result });
       return result;
     } catch (error) {
       console.error('[VotingService] getInitialActiveSession: catch block', error);
@@ -366,7 +363,6 @@ export class VotingService {
       }
 
       const data = await response.json();
-      console.log('[VotingService] Voting history response:', data);
       return data;
     } catch (error) {
       console.error('[VotingService] Error fetching voting history:', error);
@@ -393,7 +389,6 @@ export class VotingService {
       }
 
       const data = await response.json();
-      console.log('[VotingService] Session details response:', data);
       return data;
     } catch (error) {
       console.error('[VotingService] Error fetching session details:', error);

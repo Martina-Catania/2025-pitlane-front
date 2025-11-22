@@ -33,7 +33,6 @@ export default function GroupVotingPage() {
         throw new Error(`HTTP ${res.status}`);
       }
       const data = await res.json();
-      console.debug('Group data loaded for voting', data);
       setGroup(data);
     } catch (err) {
       console.debug('Error fetching group for voting', err);
