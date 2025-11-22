@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
 import { createClient } from '@/lib/supabase/client';
 
@@ -23,7 +23,7 @@ export function useUserDisplayBadges(profileId?: string): UseUserBadgesResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBadges = async () => {
+  const fetchBadges = useCallback(async () => {
     if (!profileId) {
       setBadges([]);
       setLoading(false);
@@ -62,11 +62,11 @@ export function useUserDisplayBadges(profileId?: string): UseUserBadgesResult {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profileId]);
 
   useEffect(() => {
     fetchBadges();
-  }, [profileId]);
+  }, [profileId, fetchBadges]);
 
   return {
     badges,

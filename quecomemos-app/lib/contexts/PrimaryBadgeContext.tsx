@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
 import { createClient } from '@/lib/supabase/client';
 
@@ -32,7 +32,7 @@ export function PrimaryBadgeProvider({ children, profileId }: PrimaryBadgeProvid
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPrimaryBadge = async () => {
+  const fetchPrimaryBadge = useCallback(async () => {
     if (!profileId) {
       setPrimaryBadgeState(null);
       setLoading(false);
@@ -74,7 +74,7 @@ export function PrimaryBadgeProvider({ children, profileId }: PrimaryBadgeProvid
     } finally {
       setLoading(false);
     }
-  };
+  }, [profileId]);
 
   const setPrimaryBadge = async (badgeId: number | null): Promise<boolean> => {
     if (!profileId) return false;
@@ -115,7 +115,7 @@ export function PrimaryBadgeProvider({ children, profileId }: PrimaryBadgeProvid
 
   useEffect(() => {
     fetchPrimaryBadge();
-  }, [profileId]);
+  }, [profileId, fetchPrimaryBadge]);
 
   const contextValue: PrimaryBadgeContextType = {
     primaryBadge,

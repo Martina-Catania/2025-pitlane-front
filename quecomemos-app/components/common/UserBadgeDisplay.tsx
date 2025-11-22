@@ -21,7 +21,7 @@ interface UserBadgeDisplayProps {
   className?: string;
 }
 
-const getDefaultBadgeIcon = (badgeType: string, badgeName: string): string => {
+const getDefaultBadgeIcon = (badgeType: string): string => {
   // Fallback icons using emojis or simple text representations
   const typeIconMap: Record<string, string> = {
     'group_creation': '👥',
@@ -49,7 +49,7 @@ export function UserBadgeDisplay({
   className = '' 
 }: UserBadgeDisplayProps) {
   // Fetch badges automatically if profileId is provided and badges are not provided
-  const { badges: fetchedBadges, loading } = useUserDisplayBadges(
+  const { badges: fetchedBadges } = useUserDisplayBadges(
     providedBadges ? undefined : profileId
   );
   
@@ -94,13 +94,13 @@ export function UserBadgeDisplay({
                     const target = e.target as HTMLImageElement;
                     const parent = target.parentElement;
                     if (parent) {
-                      parent.innerHTML = `<div class="flex items-center justify-center ${sizeClasses[size]} text-center">${getDefaultBadgeIcon(badge.badgeType, badge.name)}</div>`;
+                      parent.innerHTML = `<div class="flex items-center justify-center ${sizeClasses[size]} text-center">${getDefaultBadgeIcon(badge.badgeType)}</div>`;
                     }
                   }}
                 />
               ) : (
                 <div className={`flex items-center justify-center ${sizeClasses[size]} text-center bg-gray-100 rounded-full border border-gray-200`}>
-                  {getDefaultBadgeIcon(badge.badgeType, badge.name)}
+                  {getDefaultBadgeIcon(badge.badgeType)}
                 </div>
               )}
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,12 +29,10 @@ const getDefaultBadgeIcon = (badgeType: string): string => {
 export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: BadgeSelectionModalProps) {
   const { badges, loading: badgesLoading } = useUserBadges(profileId);
   const { primaryBadge, setPrimaryBadge, loading: primaryLoading } = usePrimaryBadge(profileId);
-  const [updating, setUpdating] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSelectBadge = async (badgeId: number | null) => {
-    setUpdating(true);
     try {
       const success = await setPrimaryBadge(badgeId);
       if (success) {
@@ -43,8 +41,6 @@ export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: B
       }
     } catch (error) {
       console.error('Error selecting badge:', error);
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -94,7 +90,7 @@ export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: B
                       </div>
                       <div>
                         <h3 className="font-medium text-white">No Badge</h3>
-                        <p className="text-sm text-gray-400">Don't display any badge next to your name</p>
+                        <p className="text-sm text-gray-400">Don&apos;t display any badge next to your name</p>
                       </div>
                     </div>
                     
@@ -119,7 +115,7 @@ export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: B
                   <Card className="bg-neutral-800/50 border-neutral-700">
                     <CardContent className="p-6 text-center">
                       <p className="text-gray-400">
-                        You don't have any badges yet. Create groups, upload meals, and participate in voting to earn badges!
+                        You don&apos;t have any badges yet. Create groups, upload meals, and participate in voting to earn badges!
                       </p>
                     </CardContent>
                   </Card>

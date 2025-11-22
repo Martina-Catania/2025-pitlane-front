@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { NotificationType } from '@/components/modals/StackedNotifications';
 import { StackedNotifications } from '@/components/modals/StackedNotifications';
 import { votingSocket } from '@/lib/services/votingSocket';
@@ -50,7 +50,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const generateId = () => `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const EXIT_ANIMATION_MS = 300; // duration for exit animation
 
-  const showNotification = (
+  const showNotification = useCallback((
     type: NotificationType,
     title: string,
     message: string,
@@ -123,7 +123,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }, 1000);
       }, newNotification.autoCloseTime);
     }
-  };
+  }, []);
 
   // Start close (manual or programmatic): mark as closing then remove after exit animation
   const startCloseNotification = (id: string) => {
@@ -182,7 +182,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       socket.off('notification:broadcast', handleBroadcastNotification);
     };
-  }, []);
+  }, [showNotification]);
 
   return (
     <NotificationContext.Provider
