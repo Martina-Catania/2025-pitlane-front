@@ -1,15 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { usePrimaryBadge } from '@/lib/hooks/usePrimaryBadge';
+import { BadgeDetailsModal } from './BadgeDetailsModal';
 
 interface PrimaryBadgeDisplayProps {
   profileId: string;
   showName?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  clickable?: boolean;
 }
 
 const getDefaultBadgeIcon = (badgeType: string): string => {
@@ -32,20 +34,35 @@ export function PrimaryBadgeDisplay({
   profileId, 
   showName = false, 
   size = 'md',
-  className = '' 
+  className = '',
+  clickable = true
 }: PrimaryBadgeDisplayProps) {
   const { primaryBadge, loading } = usePrimaryBadge(profileId);
+  const [showModal, setShowModal] = useState(false);
 
   if (loading || !primaryBadge) {
     return null;
   }
 
+  const handleClick = () => {
+    if (clickable) {
+      setShowModal(true);
+    }
+  };
+
   const config = sizeConfig[size];
   const hasCustomIcon = primaryBadge.iconUrl && primaryBadge.iconUrl.trim() !== '';
 
   return (
-    <div className={`flex items-center ${config.spacing} ${className}`}>
-      <div className={`relative ${config.container}`}>
+    <>
+      <div 
+        className={`flex items-center ${config.spacing} ${className} ${clickable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+        onClick={handleClick}
+        role={clickable ? 'button' : undefined}
+        tabIndex={clickable ? 0 : undefined}
+        onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); } : undefined}
+      >
+        <div className={`relative ${config.container}`}>
         {hasCustomIcon ? (
           <Image
             src={primaryBadge.iconUrl!}
@@ -69,11 +86,18 @@ export function PrimaryBadgeDisplay({
         )}
       </div>
       
-      {showName && (
-        <Badge variant="secondary" className={`${config.text} bg-amber-100 text-amber-800 border-amber-300`}>
-          {primaryBadge.name}
-        </Badge>
-      )}
-    </div>
+        {showName && (
+          <Badge variant="secondary" className={`${config.text} bg-amber-100 text-amber-800 border-amber-300`}>
+            {primaryBadge.name}
+          </Badge>
+        )}
+      </div>
+
+      <BadgeDetailsModal 
+        badge={primaryBadge}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+      />
+    </>
   );
 }

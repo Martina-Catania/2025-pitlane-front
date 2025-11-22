@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { PrimaryBadgeDisplay } from '@/components/profile';
 import type { VotingSession } from './types';
 
 interface EarlyCompletionModalProps {
@@ -101,8 +102,15 @@ export function EarlyCompletionModal({
                   </Badge>
                 </div>
                 
-                <p className="text-xs text-gray-300">
-                  Proposed by {leadingProposal.proposedBy?.username || 'Unknown User'}
+                <p className="text-xs text-gray-300 flex items-center gap-1">
+                  <span>Proposed by {leadingProposal.proposedBy?.username || 'Unknown User'}</span>
+                  {leadingProposal.proposedById && (
+                    <PrimaryBadgeDisplay 
+                      profileId={leadingProposal.proposedById} 
+                      size="sm"
+                      showName={false}
+                    />
+                  )}
                 </p>
               </div>
             </div>

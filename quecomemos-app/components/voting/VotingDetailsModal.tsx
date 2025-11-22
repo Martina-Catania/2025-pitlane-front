@@ -10,6 +10,7 @@ import { MealModal } from '@/components/modals/meal-modal';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { PortionSelectionModal } from './PortionSelectionModal';
+import { UserNameWithBadge } from '@/components/common';
 
 interface Participant {
   userId: string;
@@ -178,7 +179,15 @@ export function VotingDetailsModal({ isOpen, onClose, sessionId }: VotingDetails
                     {winner.mealName}
                   </p>
                   <p className="text-sm text-neutral-400 mt-1">
-                    Proposed by {winner.proposedBy}
+                    <span>Proposed by {winner.proposedBy}</span>
+                    {winner.proposedById && (
+                      <PrimaryBadgeDisplay 
+                        profileId={winner.proposedById} 
+                        size="sm"
+                        showName={false}
+                        className="ml-1 inline-flex"
+                      />
+                    )}
                   </p>
                   {sessionDetails.winnerMeal.description && (
                     <p className="text-sm text-neutral-400 mt-2 line-clamp-2">
@@ -261,8 +270,15 @@ export function VotingDetailsModal({ isOpen, onClose, sessionId }: VotingDetails
                         </Badge>
                         <p className="text-sm font-medium text-neutral-100">{proposal.mealName}</p>
                       </div>
-                      <p className="text-xs text-neutral-400 mt-1">
-                        by {proposal.proposedBy}
+                      <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1">
+                        <span>by {proposal.proposedBy}</span>
+                        {proposal.proposedById && (
+                          <PrimaryBadgeDisplay 
+                            profileId={proposal.proposedById} 
+                            size="sm"
+                            showName={false}
+                          />
+                        )}
                       </p>
                     </div>
                     <div className="text-right">
@@ -313,7 +329,12 @@ export function VotingDetailsModal({ isOpen, onClose, sessionId }: VotingDetails
               key={participant.userId}
               className="flex items-center justify-between p-2 rounded-lg bg-neutral-800/50 border border-neutral-700"
             >
-              <span className="text-sm font-medium text-neutral-100">{participant.userName}</span>
+              <UserNameWithBadge 
+                username={participant.userName}
+                profileId={participant.userId}
+                badgeSize="sm"
+                usernameClassName="text-sm font-medium text-neutral-100"
+              />
               <div className="flex items-center gap-2">
                 {participant.hasSelectedPortion ? (
                   <>

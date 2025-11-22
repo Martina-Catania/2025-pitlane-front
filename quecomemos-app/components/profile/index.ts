@@ -7,3 +7,4 @@ export { UserMeals } from './user-meals';
 export { UserBadges } from './UserBadges';
 export { BadgeSelectionModal } from './BadgeSelectionModal';
 export { PrimaryBadgeDisplay } from './PrimaryBadgeDisplay';
+export { BadgeDetailsModal } from './BadgeDetailsModal';

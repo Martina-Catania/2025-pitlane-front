@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
 import type { VotingSession, MealProposal } from './types';
 
 interface VotingResultsModalProps {
@@ -87,7 +88,14 @@ export function VotingResultsModal({
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-1 text-gray-300">
                   <Users className="w-3 h-3" />
-                  Proposed by {winnerProposal.proposedBy?.username || 'Unknown User'}
+                  <span>Proposed by {winnerProposal.proposedBy?.username || 'Unknown User'}</span>
+                  {winnerProposal.proposedById && (
+                    <PrimaryBadgeDisplay 
+                      profileId={winnerProposal.proposedById} 
+                      size="sm"
+                      showName={false}
+                    />
+                  )}
                 </span>
                 <span className="flex items-center gap-1 text-gray-300">
                   <Clock className="w-3 h-3" />
@@ -166,8 +174,15 @@ export function VotingResultsModal({
                     }`}
                   />
                   
-                  <div className="text-xs text-gray-400">
-                    Proposed by {proposal.proposedBy?.username || 'Unknown User'}
+                  <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <span>Proposed by {proposal.proposedBy?.username || 'Unknown User'}</span>
+                    {proposal.proposedById && (
+                      <PrimaryBadgeDisplay 
+                        profileId={proposal.proposedById} 
+                        size="sm"
+                        showName={false}
+                      />
+                    )}
                   </div>
                 </div>
               );

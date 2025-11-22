@@ -10,6 +10,7 @@ import {
   StartVotingButton,
 } from '@/components/voting';
 import type { Group } from '@/components/groups/index';
+import type { VotingSession } from '@/components/voting/types';
 
 interface GroupVotingSystemProps {
   group: Group;
@@ -86,14 +87,38 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   // If there's an active voting session that's NOT completed, show the voting interface
   // Allow starting a new session if current session is completed or null
   if (activeSession && activeSession.status !== 'completed') {
-    console.debug('[GroupVotingSystem] rendering: ACTIVE SESSION', { status: activeSession.status });
+    console.debug('[GroupVotingSystem] rendering: ACTIVE SESSION', { 
+      status: activeSession.status,
+      hasGroupMembers: !!activeSession.group?.members,
+      groupMembersCount: activeSession.group?.members?.length,
+      propGroupMembersCount: group.members?.length
+    });
+    
+    // IMPORTANT: Merge the full group data into the session to ensure membership checks work
+    // The session from Socket.IO might not include complete group.members array
+    const sessionWithGroupData: VotingSession = {
+      ...activeSession,
+      group: {
+        GroupID: group.GroupID,
+        name: group.name,
+        description: group.description,
+        createdBy: group.createdBy || activeSession.group?.createdBy,
+        members: group.members || []
+      }
+    };
+    
+    console.debug('[GroupVotingSystem] merged session data', {
+      mergedMembersCount: sessionWithGroupData.group.members.length,
+      members: sessionWithGroupData.group.members
+    });
+    
     return (
       <div className={`space-y-4 ${className}`}>
         {/* Connection status indicator */}
         <ConnectionStatusIndicator />
         
         <VotingSessionCard
-          session={activeSession}
+          session={sessionWithGroupData}
           onVotingComplete={onVotingComplete}
           className="border-blue-700/50"
         />

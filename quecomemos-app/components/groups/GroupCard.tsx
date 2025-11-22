@@ -31,10 +31,12 @@ interface GroupCardProps {
   group: Group;
   showActivity?: boolean;
   onRegisterMeal?: (group: Group) => void;
+  currentUserId?: string;
 }
 
-export function GroupCard({ group, showActivity = true, onRegisterMeal }: GroupCardProps) {
+export function GroupCard({ group, showActivity = true, onRegisterMeal, currentUserId }: GroupCardProps) {
   const router = useRouter();
+  const isGroupMember = currentUserId && group.members?.some(member => member.profile.id === currentUserId);
 
 const handleClick = () => {
     router.push(`/protected/groups/${group.GroupID}`);
@@ -119,7 +121,7 @@ const handleClick = () => {
       </div>
       
       {/* Register Meal Button */}
-      {onRegisterMeal && (
+      {onRegisterMeal && isGroupMember && (
         <CardContent className="pt-0 pb-4">
           <Button
             variant="outline"

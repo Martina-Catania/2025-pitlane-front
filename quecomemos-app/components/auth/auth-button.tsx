@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UserSidebar } from "@/components/profile";
-import { ThemeSwitcher } from "@/components/common";
+import { ThemeSwitcher, UserNameWithBadge } from "@/components/common";
 import { useUserProfile } from "@/lib/hooks/useUserProfile";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -48,7 +48,19 @@ export function AuthButton() {
       {loading ? (
         <div className="text-gray-500">Loading...</div>
       ) : (
-        <span className="text-sm inline-block">Hey, {profile?.username || profile?.email || 'User'}!</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Hey,</span>
+          {profile?.id ? (
+            <UserNameWithBadge 
+              username={profile.username || profile.email || 'User'}
+              profileId={profile.id}
+              badgeSize="sm"
+              usernameClassName="text-sm"
+            />
+          ) : (
+            <span className="text-sm">{profile?.username || profile?.email || 'User'}!</span>
+          )}
+        </div>
       )}
       <ThemeSwitcher />
       <UserSidebar />

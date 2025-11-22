@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { User, Settings, LogOut, X, Home, Utensils, ChefHat, Users, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/lib/contexts/UserContext';
+import { PrimaryBadgeDisplay } from './PrimaryBadgeDisplay';
 
 export function UserSidebar() {
   const [isOpen, setIsOpen] = useState(false);

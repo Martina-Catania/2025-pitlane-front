@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChefHat, ThumbsUp, Clock, User } from 'lucide-react';
 import { MealComposition } from '../meal/MealComposition';
 import { VoteConfirmationModal } from './VoteConfirmationModal';
+import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
 import type { MealProposal } from './types';
 
 interface MealProposalCardProps {
@@ -71,7 +72,14 @@ export function MealProposalCard({
             <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
               <span className="flex items-center gap-1">
                 <User className="w-3 h-3" />
-                Proposed by {proposal.proposedBy?.username || 'Unknown User'}
+                <span>Proposed by {proposal.proposedBy?.username || 'Unknown User'}</span>
+                {proposal.proposedById && (
+                  <PrimaryBadgeDisplay 
+                    profileId={proposal.proposedById} 
+                    size="sm"
+                    showName={false}
+                  />
+                )}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -119,13 +127,21 @@ export function MealProposalCard({
               {(proposal.votes || [])
                 .filter(vote => vote.isActive && vote.voteType === 'up')
                 .map(vote => (
-                  <Badge
-                    key={vote.VoteID}
-                    variant="outline"
-                    className="text-xs border-amber-600/50 text-amber-400"
-                  >
-                    {vote.voter?.username || 'Unknown User'}
-                  </Badge>
+                  <div key={vote.VoteID} className="flex items-center gap-1">
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-amber-600/50 text-amber-400"
+                    >
+                      {vote.voter?.username || 'Unknown User'}
+                    </Badge>
+                    {vote.voterId && (
+                      <PrimaryBadgeDisplay 
+                        profileId={vote.voterId} 
+                        size="sm"
+                        showName={false}
+                      />
+                    )}
+                  </div>
                 ))}
             </div>
           </div>

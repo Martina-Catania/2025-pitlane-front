@@ -1,6 +1,9 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { useUserDisplayBadges } from '@/lib/hooks/useUserDisplayBadges';
+import { BadgeDetailsModal } from '@/components/profile/BadgeDetailsModal';
 
 interface Badge {
   BadgeID: number;
@@ -48,6 +51,8 @@ export function UserBadgeDisplay({
   showTooltip = true,
   className = '' 
 }: UserBadgeDisplayProps) {
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  
   // Fetch badges automatically if profileId is provided and badges are not provided
   const { badges: fetchedBadges } = useUserDisplayBadges(
     providedBadges ? undefined : profileId
@@ -67,21 +72,31 @@ export function UserBadgeDisplay({
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <span className="font-medium">{username}</span>
-      
-      {/* Badge icons */}
-      <div className="flex items-center gap-1">
-        {displayBadges.map((badge) => {
-          // Use iconUrl from database if available, otherwise show default emoji
-          const hasCustomIcon = badge.iconUrl && badge.iconUrl.trim() !== '';
-          
-          return (
-            <div
-              key={badge.BadgeID}
-              className={`relative ${sizeClasses[size]} flex-shrink-0`}
-              title={showTooltip ? `${badge.name}: ${badge.description}` : undefined}
-            >
+    <>
+      <div className={`flex items-center gap-2 ${className}`}>
+        <span className="font-medium">{username}</span>
+        
+        {/* Badge icons */}
+        <div className="flex items-center gap-1">
+          {displayBadges.map((badge) => {
+            // Use iconUrl from database if available, otherwise show default emoji
+            const hasCustomIcon = badge.iconUrl && badge.iconUrl.trim() !== '';
+            
+            return (
+              <div
+                key={badge.BadgeID}
+                className={`relative ${sizeClasses[size]} flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
+                title={showTooltip ? `${badge.name}: ${badge.description}` : undefined}
+                onClick={() => setSelectedBadge(badge)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedBadge(badge);
+                  }
+                }}
+              >
               {hasCustomIcon ? (
                 <Image
                   src={badge.iconUrl!}
@@ -118,6 +133,13 @@ export function UserBadgeDisplay({
         )}
       </div>
     </div>
+
+    <BadgeDetailsModal 
+      badge={selectedBadge}
+      isOpen={selectedBadge !== null}
+      onClose={() => setSelectedBadge(null)}
+    />
+  </>
   );
 }
 

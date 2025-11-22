@@ -5,6 +5,7 @@ import { Vote, Users, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PrimaryBadgeDisplay } from '@/components/profile';
 import type { MealProposal } from './types';
 
 interface VoteConfirmationModalProps {
@@ -66,7 +67,14 @@ export function VoteConfirmationModal({
             <div className="flex items-center justify-between text-sm text-gray-400">
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                Proposed by {proposal.proposedBy?.username || 'Unknown User'}
+                <span>Proposed by {proposal.proposedBy?.username || 'Unknown User'}</span>
+                {proposal.proposedById && (
+                  <PrimaryBadgeDisplay 
+                    profileId={proposal.proposedById} 
+                    size="sm"
+                    showName={false}
+                  />
+                )}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />

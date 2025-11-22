@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, UserPlus, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/config/api';
+import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
 
 interface User {
   id: string;
@@ -144,7 +145,14 @@ export function UserSearch({ currentUserId, existingMemberIds, onInvite }: UserS
                     </div>
                     
                     <div>
-                      <p className="font-medium">{user.username}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{user.username}</p>
+                        <PrimaryBadgeDisplay 
+                          profileId={user.id} 
+                          size="sm"
+                          showName={false}
+                        />
+                      </div>
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
                           {user.role === 'admin' ? 'Admin' : 'User'}

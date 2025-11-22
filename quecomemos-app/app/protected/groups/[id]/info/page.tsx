@@ -35,7 +35,7 @@ import { useConfirmation } from '@/lib/hooks/useConfirmation';
 import { ConfirmationModal } from '@/components/modals';
 import { API_BASE_URL } from '@/lib/config/api';
 import { GroupMostConsumedResponse } from '@/components/types/group-consumption';
-import { UserBadgeDisplay } from '@/components/common/UserBadgeDisplay';
+import { UserNameWithBadge } from '@/components/common';
 
 interface GroupMember {
   GroupMemberID: number;
@@ -677,7 +677,11 @@ export default function GroupInfoPage() {
                   <p className="text-sm text-muted-foreground">Creator</p>
                   <div className="flex items-center space-x-2">
                     <Crown className="w-4 h-4 text-yellow-500" />
-                    <p className="font-medium">{group.creator.username || 'Anonymous'}</p>
+                    <UserNameWithBadge 
+                      username={group.creator.username || 'Anonymous'}
+                      profileId={group.creator.id}
+                      badgeSize="sm"
+                    />
                   </div>
                 </div>
                 <div>
@@ -728,12 +732,10 @@ export default function GroupInfoPage() {
                     </div>
 
                     <div className="flex-1">
-                      <UserBadgeDisplay 
+                      <UserNameWithBadge 
                         username={member.profile.username || 'Anonymous'}
                         profileId={member.profile.id}
-                        maxBadges={2}
-                        size="sm"
-                        showTooltip={true}
+                        badgeSize="sm"
                         className="mb-1"
                       />
                       <div className="flex items-center space-x-2">
@@ -822,11 +824,19 @@ export default function GroupInfoPage() {
                           </div>
 
                           <div>
-                            <p className="font-medium">{invitation.invitedUser.username || 'Anonymous'}</p>
+                            <UserNameWithBadge 
+                              username={invitation.invitedUser.username || 'Anonymous'}
+                              profileId={invitation.invitedUser.id}
+                              badgeSize="sm"
+                            />
                             <div className="flex items-center space-x-2">
-                              <span className="text-xs text-muted-foreground">
-                                Invited by {invitation.invitedBy.username || 'Anonymous'}
-                              </span>
+                              <span className="text-xs text-muted-foreground">Invited by</span>
+                              <UserNameWithBadge 
+                                username={invitation.invitedBy.username || 'Anonymous'}
+                                profileId={invitation.invitedBy.id}
+                                badgeSize="sm"
+                                usernameClassName="text-xs"
+                              />
                               <span className="text-xs text-muted-foreground">•</span>
                               <span className="text-xs text-muted-foreground">
                                 {formatDate(invitation.createdAt)}

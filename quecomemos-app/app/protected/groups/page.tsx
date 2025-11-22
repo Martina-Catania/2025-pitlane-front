@@ -120,6 +120,12 @@ export default function GroupsPage() {
   };
 
   const openRegisterMealModal = (group: Group) => {
+    // Check if user is a member of the group
+    const isMember = group.members?.some(member => member.profile.id === userData?.profile?.id);
+    if (!isMember) {
+      showError('Access Denied', 'You must be a member of this group to register a meal.');
+      return;
+    }
     setSelectedGroupForMeal(group);
     setIsRegisterMealModalOpen(true);
   };
@@ -405,11 +411,12 @@ function GroupsPageSkeleton() {
               ) : (
                 <div className="space-y-4">
                   {filteredGroups.map((group) => (
-                    <GroupCard 
-                      key={group.GroupID} 
-                      group={group} 
-                      showActivity={false}
+                    <GroupCard
+                      key={group.GroupID}
+                      group={group}
+                      showActivity={true}
                       onRegisterMeal={openRegisterMealModal}
+                      currentUserId={userData?.profile?.id}
                     />
                   ))}
                 </div>

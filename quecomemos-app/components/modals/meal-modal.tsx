@@ -5,6 +5,7 @@ import { X, ChefHat, Clock, Users, User, Utensils, Edit, Hexagon } from "lucide-
 import Image from "next/image";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useKorvenCheck } from "@/components/meal/hooks/useKorvenCheck";
+import { UserNameWithBadge } from "@/components/common";
 
 interface Meal {
   MealID: number;
@@ -165,7 +166,13 @@ export function MealModal({ meal, isOpen, onClose, onEdit }: MealModalProps) {
             {/* Creator Info */}
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <User className="w-4 h-4" />
-              <span>Created by: {meal.profile.username || 'Anonymous'}</span>
+              <span>Created by:</span>
+              <UserNameWithBadge 
+                username={meal.profile.username || 'Anonymous'}
+                profileId={meal.profileId}
+                badgeSize="sm"
+                usernameClassName="text-sm"
+              />
               <span className="capitalize bg-amber-800/20 px-2 py-1 rounded text-xs">
                 {meal.profile.role}
               </span>

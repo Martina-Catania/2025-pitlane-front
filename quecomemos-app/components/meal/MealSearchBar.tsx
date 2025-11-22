@@ -6,6 +6,7 @@ import { Meal } from '@/lib/contexts/MealsContext';
 import { CalorieRangeSlider } from '@/components/common/sliders';
 import { MultiSelect } from '@/components/common/MultiSelect';
 import { fetchAllPreferences, fetchAllDietaryRestrictions, Preference, DietaryRestriction } from '@/lib/utils/preferencesService';
+import { UserNameWithBadge } from '@/components/common';
 
 interface MealSearchBarProps {
   allMeals: Meal[];
@@ -380,7 +381,13 @@ export function MealSearchBar({
                     </div>
                   )}
                   <div className="text-xs text-amber-400 mt-1 flex items-center gap-2">
-                    <span>by {meal.profile?.username || 'Unknown'}</span>
+                    <span>by</span>
+                    <UserNameWithBadge 
+                      username={meal.profile?.username || 'Unknown'}
+                      profileId={meal.profileId}
+                      badgeSize="sm"
+                      usernameClassName="text-xs"
+                    />
                     <span>•</span>
                     <span>{meal.mealFoods?.length || 0} ingredients</span>
                     <span>•</span>
@@ -415,8 +422,18 @@ export function MealSearchBar({
               {selectedMeal.description && (
                 <div className="text-sm text-gray-400">{selectedMeal.description}</div>
               )}
-              <div className="text-xs text-amber-400 mt-1">
-                by {selectedMeal.profile?.username || 'Unknown'} • {selectedMeal.mealFoods?.length || 0} ingredients • {calculateTotalCalories(selectedMeal)} kcal
+              <div className="text-xs text-amber-400 mt-1 flex items-center gap-2">
+                <span>by</span>
+                <UserNameWithBadge 
+                  username={selectedMeal.profile?.username || 'Unknown'}
+                  profileId={selectedMeal.profileId}
+                  badgeSize="sm"
+                  usernameClassName="text-xs"
+                />
+                <span>•</span>
+                <span>{selectedMeal.mealFoods?.length || 0} ingredients</span>
+                <span>•</span>
+                <span>{calculateTotalCalories(selectedMeal)} kcal</span>
               </div>
             </div>
             <button
