@@ -40,6 +40,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [isUsingPolling, setIsUsingPolling] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
   const mountedRef = useRef(true);
@@ -63,8 +64,12 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       const connected = votingSocket.isConnected();
       const socketId = votingSocket.getSocket()?.id;
       
-      // If socket ID is mock, we're using REST polling (Vercel) - not offline
-      if (socketId === 'mock-socket-vercel') {
+      // If socket ID is mock, we're using REST polling (Vercel)
+      const usingPolling = socketId === 'mock-socket-vercel';
+      setIsUsingPolling(usingPolling);
+      
+      if (usingPolling) {
+        // On Vercel with REST polling - not offline, just using different transport
         setIsOffline(false);
       } else {
         // For real Socket.IO, check actual connection status
@@ -85,9 +90,8 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   useEffect(() => {
     const checkTransitions = async () => {
       try {
-        // Only trigger in production or when Socket.IO is offline
-        const isProduction = process.env.NODE_ENV === 'production';
-        if (isProduction || isOffline) {
+        // Only trigger when using polling mode or when offline
+        if (isUsingPolling || isOffline) {
           const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
           await fetch(`${API_BASE_URL}/voting/sessions/check-transitions`, {
             method: 'POST',
@@ -102,8 +106,8 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     };
 
     // Check more frequently when offline (every 15 seconds)
-    // Less frequently when online (every 45 seconds)
-    const interval = setInterval(checkTransitions, isOffline ? 15000 : 45000);
+    // Less frequently when using polling (every 45 seconds)
+    const interval = setInterval(checkTransitions, (isUsingPolling || isOffline) ? 15000 : 45000);
     
     // Initial check after 3 seconds
     const timeout = setTimeout(checkTransitions, 3000);
@@ -112,14 +116,19 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [isOffline]);
+  }, [isUsingPolling, isOffline]);
 
   // REST API polling fallback when Socket.IO is not available
   // This provides updates when Socket.IO is disabled (Vercel) or offline
   useEffect(() => {
-    if (!isOffline || !groupId) return;
+    // Run polling if: using polling mode (Vercel) OR actually offline
+    if ((!isUsingPolling && !isOffline) || !groupId) return;
 
-    console.log('[VotingContext] Socket.IO offline - starting REST API polling');
+    if (isUsingPolling) {
+      console.log('[VotingContext] Using REST API polling (Vercel mode)');
+    } else {
+      console.log('[VotingContext] Socket.IO offline - starting REST API polling');
+    }
 
     const pollSession = async () => {
       try {
@@ -134,11 +143,11 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       }
     };
 
-    // Poll every 10 seconds when Socket.IO is offline
+    // Poll every 10 seconds
     const pollInterval = setInterval(pollSession, 10000);
 
     return () => clearInterval(pollInterval);
-  }, [isOffline, groupId]);
+  }, [isUsingPolling, isOffline, groupId]);
 
   // Initial load of active session
   useEffect(() => {
