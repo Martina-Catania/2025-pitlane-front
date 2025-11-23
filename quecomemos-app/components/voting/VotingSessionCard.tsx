@@ -111,7 +111,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
     }
   }, [updatedSession.status, updatedSession.proposals, shouldShowEarlyCompletion, showEarlyCompletion, earlyCompletionDismissed]);
 
-  // Handle voting completion (triggered by Socket.IO updates via VotingContext)
+  // Handle voting completion (triggered by polling updates via VotingContext)
   useEffect(() => {
     if (updatedSession.status === 'completed' && updatedSession.winnerMealId) {
       const winnerName = updatedSession.winnerMeal?.name || 'Unknown meal';
@@ -170,7 +170,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
     try {
       await VotingService.startVotingPhase(updatedSession.VotingSessionID);
       showSuccess('Voting Started!', 'The voting phase has begun. Members can now vote on proposed meals.');
-      // Socket.IO will handle real-time updates automatically
     } catch (error) {
       showError('Error Starting Voting', error instanceof Error ? error.message : 'Failed to start voting phase');
     } finally {
@@ -292,7 +291,6 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         });
         showSuccess('Vote Cast!', 'Your vote has been recorded.');
       }
-      // Socket.IO or REST polling will handle updates automatically
     } catch (error) {
       showError('Error Voting', error instanceof Error ? error.message : 'Failed to process vote');
     } finally {

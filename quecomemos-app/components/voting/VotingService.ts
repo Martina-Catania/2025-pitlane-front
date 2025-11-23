@@ -48,7 +48,7 @@ export class VotingService {
 
   /**
    * Get active voting sessions for a group (initial load only)
-   * After this, use Socket.IO for real-time updates
+   * After this, use REST polling for updates
    */
   static async getInitialActiveSession(groupId: number): Promise<VotingSession[]> {
     try {

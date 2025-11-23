@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { VotingService } from '@/components/voting/VotingService';
-import { votingSocket } from '@/lib/services/votingSocket';
 import type { VotingSession } from '@/components/voting/types';
 
 interface VotingContextType {
@@ -20,9 +19,6 @@ interface VotingContextType {
   notifyVotingCompleted: (sessionId: number) => void;
   onVotingCompleted: (callback: (sessionId: number) => void) => () => void;
   
-  // Connection status
-  isOffline: boolean;
-  
   // Manual sync control
   forceSyncNow: () => Promise<void>;
   lastSyncTime: Date | null;
@@ -39,8 +35,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
   const [activeSession, setActiveSession] = useState<VotingSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isOffline, setIsOffline] = useState(false);
-  const [isUsingPolling, setIsUsingPolling] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
   const mountedRef = useRef(true);
@@ -57,57 +51,24 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     };
   }, []);
 
-  // Socket.IO connection status monitoring
-  useEffect(() => {
-    // Check if socket is connected
-    const checkConnection = () => {
-      const connected = votingSocket.isConnected();
-      const socketId = votingSocket.getSocket()?.id;
-      
-      // If socket ID is mock, we're using REST polling (Vercel)
-      const usingPolling = socketId === 'mock-socket-vercel';
-      setIsUsingPolling(usingPolling);
-      
-      if (usingPolling) {
-        // On Vercel with REST polling - not offline, just using different transport
-        setIsOffline(false);
-      } else {
-        // For real Socket.IO, check actual connection status
-        setIsOffline(!connected);
-      }
-    };
-
-    // Initial check
-    checkConnection();
-
-    // Set up interval to check connection periodically
-    const intervalId = setInterval(checkConnection, 5000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // Periodically trigger session transitions check for serverless environments
+  // Periodically trigger session transitions check
   useEffect(() => {
     const checkTransitions = async () => {
       try {
-        // Only trigger when using polling mode or when offline
-        if (isUsingPolling || isOffline) {
-          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
-          await fetch(`${API_BASE_URL}/voting/sessions/check-transitions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          console.debug('[VotingContext] Triggered session transitions check');
-        }
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+        await fetch(`${API_BASE_URL}/voting/sessions/check-transitions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.debug('[VotingContext] Triggered session transitions check');
       } catch (error) {
         // Silent fail - this is a background operation
         console.debug('[VotingContext] Session transitions check failed:', error);
       }
     };
 
-    // Check more frequently when offline (every 15 seconds)
-    // Less frequently when using polling (every 45 seconds)
-    const interval = setInterval(checkTransitions, (isUsingPolling || isOffline) ? 15000 : 45000);
+    // Check every 15 seconds
+    const interval = setInterval(checkTransitions, 15000);
     
     // Initial check after 3 seconds
     const timeout = setTimeout(checkTransitions, 3000);
@@ -116,19 +77,13 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [isUsingPolling, isOffline]);
+  }, []);
 
-  // REST API polling fallback when Socket.IO is not available
-  // This provides updates when Socket.IO is disabled (Vercel) or offline
+  // REST API polling for voting session updates
   useEffect(() => {
-    // Run polling if: using polling mode (Vercel) OR actually offline
-    if ((!isUsingPolling && !isOffline) || !groupId) return;
+    if (!groupId) return;
 
-    if (isUsingPolling) {
-      console.log('[VotingContext] Using REST API polling (Vercel mode)');
-    } else {
-      console.log('[VotingContext] Socket.IO offline - starting REST API polling');
-    }
+    console.log('[VotingContext] Starting REST API polling');
 
     const pollSession = async () => {
       try {
@@ -147,7 +102,7 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     const pollInterval = setInterval(pollSession, 10000);
 
     return () => clearInterval(pollInterval);
-  }, [isUsingPolling, isOffline, groupId]);
+  }, [groupId]);
 
   // Initial load of active session
   useEffect(() => {
@@ -181,7 +136,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
         }
         
         setLastSyncTime(new Date());
-        setIsOffline(false);
         
         previousStatusRef.current = session?.status || null;
         console.debug('[VotingContext] fetchActiveSession: success, setting session state', { session });
@@ -201,21 +155,13 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
             console.debug('[VotingContext] fetchActiveSession: 404 error (no active session), clearing session');
             setActiveSession(null);
             setError(null);
-            setIsOffline(false);
-          } else if (err.message.includes('timeout') || err.name === 'AbortError' || 
-                     err.message.includes('fetch') || err.message.includes('network')) {
-            console.debug('[VotingContext] fetchActiveSession: network/timeout error, marking offline');
-            setIsOffline(true);
-            setError(`Connection issue: ${err.message}`);
           } else {
-            console.error('[VotingContext] fetchActiveSession: other error, setting error state');
+            console.error('[VotingContext] fetchActiveSession: error, setting error state');
             setError(err.message);
-            setIsOffline(false);
           }
         } else {
           console.error('[VotingContext] fetchActiveSession: unknown error type', err);
           setError('Unknown error occurred');
-          setIsOffline(true);
         }
       } finally {
         if (mountedRef.current) {
@@ -241,7 +187,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       if (mountedRef.current) {
         setActiveSession(session);
         setLastSyncTime(new Date());
-        setIsOffline(false);
         setError(null);
       }
     } catch (err) {
@@ -250,7 +195,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
           setActiveSession(null);
           setError(null);
         } else {
-          setIsOffline(true);
           setError(err instanceof Error ? err.message : 'Unknown error');
         }
       }
@@ -342,145 +286,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchActiveSession]);
 
-  // Socket.IO setup and real-time event listeners
-  useEffect(() => {
-    if (!groupId || typeof groupId !== 'number' || Number.isNaN(groupId)) {
-      console.debug('[VotingContext] Socket setup: invalid groupId', groupId);
-      return;
-    }
-
-    console.debug('[VotingContext] Socket setup: initializing for group', groupId);
-    
-    // Connect to Socket.IO (will reuse existing connection if already connected)
-    votingSocket.connect();
-
-    // Subscribe to group events
-    votingSocket.subscribeToGroup(groupId);
-    console.debug('[VotingContext] Socket setup: subscribed to group', groupId);
-
-    // Listen for session created
-    const unsubscribeCreated = votingSocket.onSessionCreated((session) => {
-      if (!mountedRef.current || session.groupId !== groupId) return;
-      
-      console.log('[VotingContext] Socket event: voting:session:created', session);
-      setActiveSession(session);
-      previousStatusRef.current = session.status;
-      setLastSyncTime(new Date());
-    });
-
-    // Listen for session updated
-    const unsubscribeUpdated = votingSocket.onSessionUpdated((session) => {
-      if (!mountedRef.current || session.groupId !== groupId) return;
-      
-      console.log('[VotingContext] Socket event: voting:session:updated', session);
-      
-      // Check if session completed
-      const wasVoting = previousStatusRef.current === 'voting_phase';
-      const nowCompleted = session.status === 'completed';
-      
-      if (wasVoting && nowCompleted) {
-        console.log('[VotingContext] Socket: Session completed, showing results');
-
-        // Notify completion listeners
-        completionListenersRef.current.forEach(callback => {
-          try {
-            callback(session.VotingSessionID);
-          } catch (err) {
-            console.error('[VotingContext] Error in completion listener:', err);
-          }
-        });
-      }
-      
-      setActiveSession(session);
-      previousStatusRef.current = session.status;
-      setLastSyncTime(new Date());
-    });
-
-    // Listen for voting phase started
-    const unsubscribePhaseStarted = votingSocket.onVotingPhaseStarted((session) => {
-      if (!mountedRef.current || session.groupId !== groupId) return;
-      
-      console.log('[VotingContext] Socket event: voting:phase:started', session);
-      setActiveSession(session);
-      previousStatusRef.current = session.status;
-      setLastSyncTime(new Date());
-    });
-
-    // Listen for voting completed
-    const unsubscribeCompleted = votingSocket.onVotingCompleted((result) => {
-      if (!mountedRef.current || result.groupId !== groupId) return;
-      
-      console.log('[VotingContext] Socket event: voting:completed', result);
-      setActiveSession(result);
-      previousStatusRef.current = result.status;
-      setLastSyncTime(new Date());
-      
-      // Notify completion listeners
-      completionListenersRef.current.forEach(callback => {
-        try {
-          callback(result.VotingSessionID);
-        } catch (err) {
-          console.error('[VotingContext] Error in completion listener:', err);
-        }
-      });
-    });
-
-    // Listen for meal proposed
-    const unsubscribeMealProposed = votingSocket.onMealProposed(async (proposal) => {
-      if (!mountedRef.current) return;
-      
-      console.log('[VotingContext] Socket event: voting:meal:proposed', proposal);
-      // Refresh session to get updated proposals list
-      await fetchActiveSession(false);
-      setLastSyncTime(new Date());
-    });
-
-    // Listen for vote cast
-    const unsubscribeVoteCast = votingSocket.onVoteCast(async (data) => {
-      if (!mountedRef.current) return;
-      
-      console.log('[VotingContext] Socket event: voting:vote:cast', data);
-      // Refresh session to get updated vote counts
-      await fetchActiveSession(false);
-      setLastSyncTime(new Date());
-    });
-
-    // Listen for user confirmations
-    const unsubscribeConfirmedReady = votingSocket.onUserConfirmedReady(async (confirmation) => {
-      if (!mountedRef.current) return;
-      console.log('[VotingContext] Socket event: voting:user:confirmed-ready', confirmation);
-      // Refresh session to get updated confirmation counts
-      await fetchActiveSession(false);
-      setLastSyncTime(new Date());
-    });
-
-    const unsubscribeConfirmedVotes = votingSocket.onUserConfirmedVotes(async (confirmation) => {
-      if (!mountedRef.current) return;
-      console.log('[VotingContext] Socket event: voting:user:confirmed-votes', confirmation);
-      // Refresh session to get updated confirmation counts
-      await fetchActiveSession(false);
-      setLastSyncTime(new Date());
-    });
-
-    // Cleanup on unmount
-    return () => {
-      console.debug('[VotingContext] Socket cleanup: unsubscribing from group', groupId);
-      
-      // Unsubscribe from all events
-      unsubscribeCreated();
-      unsubscribeUpdated();
-      unsubscribePhaseStarted();
-      unsubscribeCompleted();
-      unsubscribeMealProposed();
-      unsubscribeVoteCast();
-      unsubscribeConfirmedReady();
-      unsubscribeConfirmedVotes();
-      
-      // Unsubscribe from group
-      votingSocket.unsubscribeFromGroup(groupId);
-    };
-  }, [groupId, fetchActiveSession]);
-
   console.debug('[VotingContext] Provider rendering, state=', { groupId, activeSession: activeSession?.VotingSessionID, loading, error: error?.substring(0, 50) });
 
   const value: VotingContextType = {
@@ -492,7 +297,6 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     clearSession,
     notifyVotingCompleted,
     onVotingCompleted,
-    isOffline,
     forceSyncNow,
     lastSyncTime,
   };

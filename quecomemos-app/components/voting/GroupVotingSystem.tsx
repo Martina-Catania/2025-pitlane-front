@@ -2,15 +2,13 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Vote, ChefHat, Users, Clock, RefreshCw } from 'lucide-react';
+import { Vote, ChefHat, Users, Clock } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useVoting } from '@/lib/contexts/VotingContext';
 import { 
   VotingSessionCard, 
   StartVotingButton,
 } from '@/components/voting';
-import { votingSocket } from '@/lib/services/votingSocket';
 import type { Group } from '@/components/groups/index';
 import type { VotingSession } from '@/components/voting/types';
 
@@ -24,30 +22,11 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   const { userData } = useUser();
   const { 
     activeSession, 
-    loading, 
-    isOffline, 
-    lastSyncTime,
-    refreshSession
+    loading
   } = useVoting();
 
   const userId = userData?.profile?.id;
   const isGroupMember = group.members?.some(member => member.profile.id === userId) || false;
-
-  const handleVotingStarted = () => {
-    // No manual refresh needed - Socket.IO will automatically update the session
-  };
-
-  const handleForceRefresh = async () => {
-    console.log('[GroupVotingSystem] Force refresh triggered');
-    
-    // Force reconnect socket
-    votingSocket.forceReconnect();
-    
-    // Refresh session data
-    if (refreshSession) {
-      await refreshSession();
-    }
-  };
 
   if (loading) {
     return (
@@ -62,65 +41,10 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
     );
   }
 
-  // Connection status indicator
-  const ConnectionStatusIndicator = () => {
-    const formatTime = (date: Date | null) => {
-      if (!date) return 'Never';
-      return date.toLocaleTimeString();
-    };
-
-    if (isOffline) {
-      return (
-        <div className="mb-4 p-4 bg-yellow-900/50 border border-yellow-700/50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-yellow-200">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3 animate-pulse"></div>
-              <div>
-                <div className="text-sm font-medium">Connection Issues Detected</div>
-                <div className="text-xs text-yellow-300 mt-1">
-                  Showing last known state. Last sync: {formatTime(lastSyncTime)}
-                </div>
-              </div>
-            </div>
-            <Button 
-              onClick={handleForceRefresh}
-              size="sm"
-              variant="outline"
-              className="bg-yellow-900/50 border-yellow-700 hover:bg-yellow-800/50 text-yellow-200"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Reconnect
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mb-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center text-green-200">
-            <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-            <span className="text-sm">Connected • Last sync: {formatTime(lastSyncTime)}</span>
-          </div>
-          <Button 
-            onClick={handleForceRefresh}
-            size="sm"
-            variant="ghost"
-            className="text-green-200 hover:bg-green-900/30 h-8"
-          >
-            <RefreshCw className="w-3 h-3" />
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   // If there's an active voting session that's NOT completed, show the voting interface
   // Allow starting a new session if current session is completed or null
   if (activeSession && activeSession.status !== 'completed') {
     // IMPORTANT: Merge the full group data into the session to ensure membership checks work
-    // The session from Socket.IO might not include complete group.members array
     const sessionWithGroupData: VotingSession = {
       ...activeSession,
       group: {
@@ -134,9 +58,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
     
     return (
       <div className={`space-y-4 ${className}`}>
-        {/* Connection status indicator */}
-        <ConnectionStatusIndicator />
-        
         <VotingSessionCard
           session={sessionWithGroupData}
           onVotingComplete={onVotingComplete}
@@ -149,9 +70,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
   // No active session OR session is completed - show the start voting interface
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Connection status indicator */}
-      <ConnectionStatusIndicator />
-      
       <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
         <CardHeader>
           <CardTitle className="flex items-center text-amber-200">
@@ -180,7 +98,6 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
               {isGroupMember ? (
                 <StartVotingButton
                   group={group}
-                  onVotingStarted={handleVotingStarted}
                   className="px-8 py-3 text-lg"
                 />
               ) : (

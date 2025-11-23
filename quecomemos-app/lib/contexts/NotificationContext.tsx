@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { NotificationType } from '@/components/modals/StackedNotifications';
 import { StackedNotifications } from '@/components/modals/StackedNotifications';
-import { votingSocket } from '@/lib/services/votingSocket';
 
 interface NotificationItem {
   id: string;
@@ -87,25 +86,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     setNotifications(prev => [...prev, newNotification]);
 
-    // Broadcast to group if requested
-    if (options?.broadcast && options?.groupId) {
-      const socket = votingSocket.getSocket();
-      if (socket?.connected) {
-        console.log('[NotificationContext] Broadcasting notification to group:', options.groupId);
-        socket.emit('broadcast:notification', {
-          groupId: options.groupId,
-          notification: {
-            id: notificationId,
-            type,
-            title,
-            message,
-            autoClose: newNotification.autoClose,
-            autoCloseTime: newNotification.autoCloseTime
-          }
-        });
-      }
-    }
-
     // Auto-remove notification if autoClose is enabled.
     if (newNotification.autoClose) {
       const startClosingAt = Math.max(0, (newNotification.autoCloseTime ?? 4000) - EXIT_ANIMATION_MS);
@@ -155,34 +135,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications([]);
   };
 
-  // Listen for broadcast notifications via Socket.IO
-  useEffect(() => {
-    const socket = votingSocket.connect();
-    
-    const handleBroadcastNotification = (data: {
-      id: string;
-      type: NotificationType;
-      title: string;
-      message: string;
-      autoClose?: boolean;
-      autoCloseTime?: number;
-    }) => {
-      console.log('[NotificationContext] Received broadcast notification:', data);
-      
-      // Show notification with the same ID to ensure deduplication
-      showNotification(data.type, data.title, data.message, {
-        autoClose: data.autoClose,
-        autoCloseTime: data.autoCloseTime,
-        notificationId: data.id
-      });
-    };
-    
-    socket.on('notification:broadcast', handleBroadcastNotification);
-    
-    return () => {
-      socket.off('notification:broadcast', handleBroadcastNotification);
-    };
-  }, [showNotification]);
+
 
   return (
     <NotificationContext.Provider
