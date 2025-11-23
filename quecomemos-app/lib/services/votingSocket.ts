@@ -31,15 +31,24 @@ class VotingSocketService {
       console.warn('[VotingSocket] Using REST API polling instead');
       
       // Create a mock socket that won't try to connect
+      // Must implement all Socket.IO methods to prevent errors
       this.socket = {
         connected: false,
         id: 'mock-socket-vercel',
-        on: () => {},
-        off: () => {},
-        emit: () => {},
-        connect: () => {},
-        disconnect: () => {},
-        io: { engine: { transport: { name: 'none' } } }
+        on: () => this.socket!,
+        once: () => this.socket!,
+        off: () => this.socket!,
+        emit: () => this.socket!,
+        connect: () => this.socket!,
+        disconnect: () => this.socket!,
+        removeListener: () => this.socket!,
+        removeAllListeners: () => this.socket!,
+        listeners: () => [],
+        io: { 
+          engine: { 
+            transport: { name: 'none' } 
+          } 
+        }
       } as unknown as Socket;
       
       return this.socket;
