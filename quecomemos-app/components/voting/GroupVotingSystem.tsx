@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Vote, ChefHat, Users, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Vote, ChefHat, Users, Clock, RefreshCw } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useVoting } from '@/lib/contexts/VotingContext';
 import { 
   VotingSessionCard, 
   StartVotingButton,
 } from '@/components/voting';
+import { votingSocket } from '@/lib/services/votingSocket';
 import type { Group } from '@/components/groups/index';
 import type { VotingSession } from '@/components/voting/types';
 
@@ -24,7 +26,8 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
     activeSession, 
     loading, 
     isOffline, 
-    lastSyncTime 
+    lastSyncTime,
+    refreshSession
   } = useVoting();
 
   const userId = userData?.profile?.id;
@@ -32,6 +35,18 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
 
   const handleVotingStarted = () => {
     // No manual refresh needed - Socket.IO will automatically update the session
+  };
+
+  const handleForceRefresh = async () => {
+    console.log('[GroupVotingSystem] Force refresh triggered');
+    
+    // Force reconnect socket
+    votingSocket.forceReconnect();
+    
+    // Refresh session data
+    if (refreshSession) {
+      await refreshSession();
+    }
   };
 
   if (loading) {
@@ -57,14 +72,25 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
     if (isOffline) {
       return (
         <div className="mb-4 p-4 bg-yellow-900/50 border border-yellow-700/50 rounded-lg">
-          <div className="flex items-center text-yellow-200">
-            <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3 animate-pulse"></div>
-            <div>
-              <div className="text-sm font-medium">Connection Issues Detected</div>
-              <div className="text-xs text-yellow-300 mt-1">
-                Showing last known state. Last sync: {formatTime(lastSyncTime)}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-yellow-200">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3 animate-pulse"></div>
+              <div>
+                <div className="text-sm font-medium">Connection Issues Detected</div>
+                <div className="text-xs text-yellow-300 mt-1">
+                  Showing last known state. Last sync: {formatTime(lastSyncTime)}
+                </div>
               </div>
             </div>
+            <Button 
+              onClick={handleForceRefresh}
+              size="sm"
+              variant="outline"
+              className="bg-yellow-900/50 border-yellow-700 hover:bg-yellow-800/50 text-yellow-200"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reconnect
+            </Button>
           </div>
         </div>
       );
@@ -72,9 +98,19 @@ export function GroupVotingSystem({ group, onVotingComplete, className = '' }: G
 
     return (
       <div className="mb-4 p-3 bg-green-900/30 border border-green-700/50 rounded-lg">
-        <div className="flex items-center text-green-200">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-          <span className="text-sm">Connected • Last sync: {formatTime(lastSyncTime)}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center text-green-200">
+            <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
+            <span className="text-sm">Connected • Last sync: {formatTime(lastSyncTime)}</span>
+          </div>
+          <Button 
+            onClick={handleForceRefresh}
+            size="sm"
+            variant="ghost"
+            className="text-green-200 hover:bg-green-900/30 h-8"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </Button>
         </div>
       </div>
     );

@@ -23,7 +23,9 @@ class VotingSocketService {
     // Extract base URL without /api if present
     const baseUrl = API_BASE_URL.replace('/api', '');
     
-    console.log('[VotingSocket] Connecting to:', baseUrl);
+    console.log('[VotingSocket] 🔌 Connecting to:', baseUrl);
+    console.log('[VotingSocket] Environment:', process.env.NODE_ENV);
+    console.log('[VotingSocket] API_BASE_URL:', API_BASE_URL);
 
     this.socket = io(baseUrl, {
       transports: ['websocket', 'polling'],
@@ -33,24 +35,32 @@ class VotingSocketService {
       reconnectionDelayMax: 5000,
       timeout: 20000,
       autoConnect: true,
+      withCredentials: true,
+      forceNew: false,
     });
 
     // Connection event handlers
     this.socket.on('connect', () => {
-      console.log('[VotingSocket] Connected successfully:', this.socket?.id);
+      console.log('[VotingSocket] ✅ Connected successfully:', this.socket?.id);
+      console.log('[VotingSocket] Transport:', this.socket?.io.engine.transport.name);
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[VotingSocket] Disconnected:', reason);
+      console.log('[VotingSocket] ❌ Disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        console.log('[VotingSocket] Server disconnected, attempting to reconnect...');
+        this.socket?.connect();
+      }
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('[VotingSocket] Connection error:', error.message);
+      console.error('[VotingSocket] ⚠️ Connection error:', error.message);
+      console.error('[VotingSocket] Full error:', error);
       this.reconnectAttempts++;
       
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('[VotingSocket] Max reconnection attempts reached');
+        console.error('[VotingSocket] 🚨 Max reconnection attempts reached');
       }
     });
 
@@ -288,6 +298,34 @@ class VotingSocketService {
    */
   isConnected(): boolean {
     return this.socket?.connected ?? false;
+  }
+
+  /**
+   * Force reconnect
+   */
+  forceReconnect() {
+    console.log('[VotingSocket] 🔄 Force reconnecting...');
+    if (this.socket) {
+      this.socket.disconnect();
+      this.reconnectAttempts = 0;
+      setTimeout(() => {
+        this.socket?.connect();
+      }, 500);
+    } else {
+      this.connect();
+    }
+  }
+
+  /**
+   * Get connection status details
+   */
+  getConnectionStatus() {
+    return {
+      connected: this.socket?.connected ?? false,
+      socketId: this.socket?.id,
+      reconnectAttempts: this.reconnectAttempts,
+      transport: this.socket?.io?.engine?.transport?.name
+    };
   }
 
   /**
