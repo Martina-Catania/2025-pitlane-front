@@ -10,6 +10,7 @@ import { MealModal } from '@/components/modals/meal-modal';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { PortionSelectionModal } from './PortionSelectionModal';
+import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
 import { UserNameWithBadge } from '@/components/common';
 
 interface Participant {
@@ -50,6 +51,7 @@ interface SessionDetails {
     mealId: number;
     mealName: string;
     proposedBy: string;
+    proposedById?: string;
     voteCount: number;
   }>;
   participants: Participant[];
