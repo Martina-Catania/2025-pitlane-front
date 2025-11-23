@@ -340,6 +340,13 @@ class VotingSocketService {
   }
 
   /**
+   * Get socket instance
+   */
+  getSocket(): Socket | null {
+    return this.socket;
+  }
+
+  /**
    * Force reconnect
    */
   forceReconnect() {
@@ -365,13 +372,6 @@ class VotingSocketService {
       reconnectAttempts: this.reconnectAttempts,
       transport: this.socket?.io?.engine?.transport?.name
     };
-  }
-
-  /**
-   * Get socket instance
-   */
-  getSocket(): Socket | null {
-    return this.socket;
   }
 }
 

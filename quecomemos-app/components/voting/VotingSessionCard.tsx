@@ -272,17 +272,29 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
       return;
     }
 
+    // Check if user already voted for this proposal
+    const existingVote = updatedSession.votes?.find(
+      v => v.voterId === userId && v.mealProposalId === proposalId && v.isActive
+    );
+
     setLoading(true);
     try {
-      await VotingService.castVote(updatedSession.VotingSessionID, {
-        mealProposalId: proposalId,
-        voterId: userId,
-        voteType: 'up'
-      });
-      showSuccess('Vote Cast!', 'Your vote has been recorded.');
-      // Socket.IO will handle real-time vote updates automatically
+      if (existingVote) {
+        // Remove vote if clicking on already voted proposal
+        await VotingService.removeVote(updatedSession.VotingSessionID, existingVote.VoteID);
+        showSuccess('Vote Removed', 'Your vote has been removed.');
+      } else {
+        // Cast new vote
+        await VotingService.castVote(updatedSession.VotingSessionID, {
+          mealProposalId: proposalId,
+          voterId: userId,
+          voteType: 'up'
+        });
+        showSuccess('Vote Cast!', 'Your vote has been recorded.');
+      }
+      // Socket.IO or REST polling will handle updates automatically
     } catch (error) {
-      showError('Error Casting Vote', error instanceof Error ? error.message : 'Failed to cast vote');
+      showError('Error Voting', error instanceof Error ? error.message : 'Failed to process vote');
     } finally {
       setLoading(false);
     }

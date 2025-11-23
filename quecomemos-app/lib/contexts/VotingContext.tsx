@@ -61,7 +61,15 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     // Check if socket is connected
     const checkConnection = () => {
       const connected = votingSocket.isConnected();
-      setIsOffline(!connected);
+      const socketId = votingSocket.getSocket()?.id;
+      
+      // If socket ID is mock, we're using REST polling (Vercel) - not offline
+      if (socketId === 'mock-socket-vercel') {
+        setIsOffline(false);
+      } else {
+        // For real Socket.IO, check actual connection status
+        setIsOffline(!connected);
+      }
     };
 
     // Initial check

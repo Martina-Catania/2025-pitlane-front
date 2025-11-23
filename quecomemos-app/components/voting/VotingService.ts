@@ -166,6 +166,25 @@ export class VotingService {
   }
 
   /**
+   * Remove a vote
+   */
+  static async removeVote(sessionId: number, voteId: number) {
+    const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/vote/${voteId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to remove vote');
+    }
+
+    return response.json();
+  }
+
+  /**
    * Complete voting session and determine winner
    */
   static async completeVotingSession(sessionId: number) {
