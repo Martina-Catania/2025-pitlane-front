@@ -93,11 +93,12 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       }
     };
 
-    // Check every 45 seconds in production
-    const interval = setInterval(checkTransitions, 45000);
+    // Check more frequently when offline (every 15 seconds)
+    // Less frequently when online (every 45 seconds)
+    const interval = setInterval(checkTransitions, isOffline ? 15000 : 45000);
     
-    // Initial check after 5 seconds
-    const timeout = setTimeout(checkTransitions, 5000);
+    // Initial check after 3 seconds
+    const timeout = setTimeout(checkTransitions, 3000);
 
     return () => {
       clearInterval(interval);
@@ -105,8 +106,34 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     };
   }, [isOffline]);
 
-  // Fetch active voting session for this group (initial load only)
-  const fetchActiveSession = useCallback(async (showLoader = true) => {
+  // REST API polling fallback when Socket.IO is not available
+  // This provides updates when Socket.IO is disabled (Vercel) or offline
+  useEffect(() => {
+    if (!isOffline || !groupId) return;
+
+    console.log('[VotingContext] Socket.IO offline - starting REST API polling');
+
+    const pollSession = async () => {
+      try {
+        const sessions = await VotingService.getInitialActiveSession(groupId);
+        const session = sessions && sessions.length > 0 ? sessions[0] : null;
+        if (session) {
+          setActiveSession(session);
+          setLastSyncTime(new Date());
+        }
+      } catch (error) {
+        console.debug('[VotingContext] REST polling error:', error);
+      }
+    };
+
+    // Poll every 10 seconds when Socket.IO is offline
+    const pollInterval = setInterval(pollSession, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [isOffline, groupId]);
+
+  // Initial load of active session
+  useEffect(() => {
     if (!mountedRef.current) {
       console.debug('[VotingContext] fetchActiveSession: component not mounted, returning');
       return;
@@ -119,69 +146,103 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
       return;
     }
     
-    try {
-      console.debug('[VotingContext] fetchActiveSession: start', { groupId, showLoader });
-      if (showLoader) {
+    const fetchSession = async () => {
+      try {
+        console.debug('[VotingContext] fetchActiveSession: start', { groupId });
         setLoading(true);
-      }
-      
-      console.debug('[VotingContext] fetchActiveSession: calling VotingService.getInitialActiveSession');
-      const sessions = await VotingService.getInitialActiveSession(groupId);
-      console.debug('[VotingContext] fetchActiveSession: received sessions', { count: sessions?.length, sessions });
-      
-      const session = sessions && sessions.length > 0 ? sessions[0] : null;
-      console.debug('[VotingContext] fetchActiveSession: extracted first session', { session });
-      
-      if (!mountedRef.current) {
-        console.debug('[VotingContext] fetchActiveSession: component unmounted after fetch, skipping state update');
-        return;
-      }
-      
-      setLastSyncTime(new Date());
-      setIsOffline(false);
-      
-      previousStatusRef.current = session?.status || null;
-      console.debug('[VotingContext] fetchActiveSession: success, setting session state', { session });
-      setActiveSession(session);
-      setError(null);
-    } catch (err) {
-      console.error('[VotingContext] fetchActiveSession: CATCH BLOCK', err);
-      if (!mountedRef.current) {
-        console.debug('[VotingContext] fetchActiveSession: component unmounted during error handling, skipping state update');
-        return;
-      }
-      
-      if (err instanceof Error) {
-        console.error('[VotingContext] fetchActiveSession: error details', { message: err.message });
         
-        if (err.message.includes('404')) {
-          console.debug('[VotingContext] fetchActiveSession: 404 error (no active session), clearing session');
+        console.debug('[VotingContext] fetchActiveSession: calling VotingService.getInitialActiveSession');
+        const sessions = await VotingService.getInitialActiveSession(groupId);
+        console.debug('[VotingContext] fetchActiveSession: received sessions', { count: sessions?.length, sessions });
+        
+        const session = sessions && sessions.length > 0 ? sessions[0] : null;
+        console.debug('[VotingContext] fetchActiveSession: extracted first session', { session });
+        
+        if (!mountedRef.current) {
+          console.debug('[VotingContext] fetchActiveSession: component unmounted after fetch, skipping state update');
+          return;
+        }
+        
+        setLastSyncTime(new Date());
+        setIsOffline(false);
+        
+        previousStatusRef.current = session?.status || null;
+        console.debug('[VotingContext] fetchActiveSession: success, setting session state', { session });
+        setActiveSession(session);
+        setError(null);
+      } catch (err) {
+        console.error('[VotingContext] fetchActiveSession: CATCH BLOCK', err);
+        if (!mountedRef.current) {
+          console.debug('[VotingContext] fetchActiveSession: component unmounted during error handling, skipping state update');
+          return;
+        }
+        
+        if (err instanceof Error) {
+          console.error('[VotingContext] fetchActiveSession: error details', { message: err.message });
+          
+          if (err.message.includes('404')) {
+            console.debug('[VotingContext] fetchActiveSession: 404 error (no active session), clearing session');
+            setActiveSession(null);
+            setError(null);
+            setIsOffline(false);
+          } else if (err.message.includes('timeout') || err.name === 'AbortError' || 
+                     err.message.includes('fetch') || err.message.includes('network')) {
+            console.debug('[VotingContext] fetchActiveSession: network/timeout error, marking offline');
+            setIsOffline(true);
+            setError(`Connection issue: ${err.message}`);
+          } else {
+            console.error('[VotingContext] fetchActiveSession: other error, setting error state');
+            setError(err.message);
+            setIsOffline(false);
+          }
+        } else {
+          console.error('[VotingContext] fetchActiveSession: unknown error type', err);
+          setError('Unknown error occurred');
+          setIsOffline(true);
+        }
+      } finally {
+        if (mountedRef.current) {
+          console.debug('[VotingContext] fetchActiveSession: FINALLY block - setting loading to false');
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch active session - exposed for manual refresh
+  const fetchActiveSession = useCallback(async (showLoader = false) => {
+    if (typeof groupId !== 'number' || Number.isNaN(groupId)) return;
+    
+    if (showLoader) setLoading(true);
+    try {
+      const sessions = await VotingService.getInitialActiveSession(groupId);
+      const session = sessions && sessions.length > 0 ? sessions[0] : null;
+      
+      if (mountedRef.current) {
+        setActiveSession(session);
+        setLastSyncTime(new Date());
+        setIsOffline(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        if (err instanceof Error && err.message.includes('404')) {
           setActiveSession(null);
           setError(null);
-          setIsOffline(false);
-        } else if (err.message.includes('timeout') || err.name === 'AbortError' || 
-                   err.message.includes('fetch') || err.message.includes('network')) {
-          console.debug('[VotingContext] fetchActiveSession: network/timeout error, marking offline');
-          setIsOffline(true);
-          setError(`Connection issue: ${err.message}`);
         } else {
-          console.error('[VotingContext] fetchActiveSession: other error, setting error state');
-          setError(err.message);
-          setIsOffline(false);
+          setIsOffline(true);
+          setError(err instanceof Error ? err.message : 'Unknown error');
         }
-      } else {
-        console.error('[VotingContext] fetchActiveSession: unknown error type', err);
-        setError('Unknown error occurred');
-        setIsOffline(true);
       }
     } finally {
-      if (mountedRef.current) {
-        console.debug('[VotingContext] fetchActiveSession: FINALLY block - setting loading to false');
+      if (mountedRef.current && showLoader) {
         setLoading(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [groupId]);
 
   // Manual refresh function
   const refreshSession = useCallback(async () => {

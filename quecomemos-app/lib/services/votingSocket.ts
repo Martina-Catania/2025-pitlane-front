@@ -23,28 +23,46 @@ class VotingSocketService {
     // Extract base URL without /api if present
     const baseUrl = API_BASE_URL.replace('/api', '');
     
-    // Vercel doesn't support WebSocket for serverless functions
-    // Use polling for production deployments
-    const isProduction = process.env.NODE_ENV === 'production' || baseUrl.includes('vercel.app');
-    const transports = isProduction ? ['polling'] : ['websocket', 'polling'];
+    // Socket.IO doesn't work on Vercel - return a mock that won't try to connect
+    const isVercel = baseUrl.includes('vercel.app');
+    
+    if (isVercel) {
+      console.warn('[VotingSocket] ⚠️  Vercel deployment detected - Socket.IO not supported');
+      console.warn('[VotingSocket] Using REST API polling instead');
+      
+      // Create a mock socket that won't try to connect
+      this.socket = {
+        connected: false,
+        id: 'mock-socket-vercel',
+        on: () => {},
+        off: () => {},
+        emit: () => {},
+        connect: () => {},
+        disconnect: () => {},
+        io: { engine: { transport: { name: 'none' } } }
+      } as unknown as Socket;
+      
+      return this.socket;
+    }
+    
+    // Only use Socket.IO for non-Vercel deployments
+    const transports = ['websocket', 'polling'];
     
     console.log('[VotingSocket] 🔌 Connecting to:', baseUrl);
     console.log('[VotingSocket] Environment:', process.env.NODE_ENV);
-    console.log('[VotingSocket] API_BASE_URL:', API_BASE_URL);
-    console.log('[VotingSocket] Is Production:', isProduction);
     console.log('[VotingSocket] Using transports:', transports);
 
     this.socket = io(baseUrl, {
-      transports: transports,
+      path: '/socket.io',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transports: transports as any,
       reconnection: true,
-      reconnectionAttempts: this.maxReconnectAttempts,
-      reconnectionDelay: this.reconnectDelay,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
       timeout: 20000,
       autoConnect: true,
-      withCredentials: true,
       forceNew: false,
-      upgrade: !isProduction, // Don't try to upgrade transport in production
+      withCredentials: false,
     });
 
     // Connection event handlers
@@ -305,6 +323,10 @@ class VotingSocketService {
    * Check if socket is connected
    */
   isConnected(): boolean {
+    // On Vercel, we use REST polling instead, so always return false
+    if (this.socket?.id === 'mock-socket-vercel') {
+      return false;
+    }
     return this.socket?.connected ?? false;
   }
 
