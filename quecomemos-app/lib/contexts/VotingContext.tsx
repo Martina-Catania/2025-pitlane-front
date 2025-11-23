@@ -73,6 +73,38 @@ export function VotingProvider({ children, groupId }: VotingProviderProps) {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Periodically trigger session transitions check for serverless environments
+  useEffect(() => {
+    const checkTransitions = async () => {
+      try {
+        // Only trigger in production or when Socket.IO is offline
+        const isProduction = process.env.NODE_ENV === 'production';
+        if (isProduction || isOffline) {
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+          await fetch(`${API_BASE_URL}/voting/sessions/check-transitions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          console.debug('[VotingContext] Triggered session transitions check');
+        }
+      } catch (error) {
+        // Silent fail - this is a background operation
+        console.debug('[VotingContext] Session transitions check failed:', error);
+      }
+    };
+
+    // Check every 45 seconds in production
+    const interval = setInterval(checkTransitions, 45000);
+    
+    // Initial check after 5 seconds
+    const timeout = setTimeout(checkTransitions, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isOffline]);
+
   // Fetch active voting session for this group (initial load only)
   const fetchActiveSession = useCallback(async (showLoader = true) => {
     if (!mountedRef.current) {

@@ -23,12 +23,19 @@ class VotingSocketService {
     // Extract base URL without /api if present
     const baseUrl = API_BASE_URL.replace('/api', '');
     
+    // Vercel doesn't support WebSocket for serverless functions
+    // Use polling for production deployments
+    const isProduction = process.env.NODE_ENV === 'production' || baseUrl.includes('vercel.app');
+    const transports = isProduction ? ['polling'] : ['websocket', 'polling'];
+    
     console.log('[VotingSocket] 🔌 Connecting to:', baseUrl);
     console.log('[VotingSocket] Environment:', process.env.NODE_ENV);
     console.log('[VotingSocket] API_BASE_URL:', API_BASE_URL);
+    console.log('[VotingSocket] Is Production:', isProduction);
+    console.log('[VotingSocket] Using transports:', transports);
 
     this.socket = io(baseUrl, {
-      transports: ['websocket', 'polling'],
+      transports: transports,
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: this.reconnectDelay,
@@ -37,6 +44,7 @@ class VotingSocketService {
       autoConnect: true,
       withCredentials: true,
       forceNew: false,
+      upgrade: !isProduction, // Don't try to upgrade transport in production
     });
 
     // Connection event handlers
