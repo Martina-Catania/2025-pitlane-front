@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useMealNameSuggestion } from "./hooks/useMealNameSuggestion";
-import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
+import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { useBadges } from '@/lib/contexts/BadgeContext';
 import { AddMealFormProps, FoodItem } from "./types";
 import { COMMON_STYLES } from "./constants";
 import { processDietaryRestrictions } from "./utils";
@@ -25,6 +26,7 @@ type Props = AddMealFormProps & { onClose?: () => void };
 export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: Props) {
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
+  const { processBadgeNotifications } = useBadges();
   
   // Basic meal info
   const [mealName, setMealName] = useState(initialMealName || "");
@@ -254,44 +256,16 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
       const createdMeal = await mealResponse.json();
       console.log('[AddMealForm] Meal creation result:', JSON.stringify(createdMeal, null, 2));
       console.log('[AddMealForm] badgeNotifications field:', createdMeal.badgeNotifications);
-      console.log('[AddMealForm] Is badgeNotifications an array?', Array.isArray(createdMeal.badgeNotifications));
 
       showSuccess(
         "Meal Created Successfully!",
         `"${mealName}" has been saved with ${foods.length} food${foods.length !== 1 ? 's' : ''}.`
       );
       
-      // Check for badge notifications in the response
-      if (createdMeal.badgeNotifications) {
-        console.log('[AddMealForm] Badge notifications found!', createdMeal.badgeNotifications);
-        
-        if (Array.isArray(createdMeal.badgeNotifications) && createdMeal.badgeNotifications.length > 0) {
-          console.log('[AddMealForm] Processing', createdMeal.badgeNotifications.length, 'badge notifications');
-          
-          // Show notifications for each badge achievement
-          createdMeal.badgeNotifications.forEach((notification: any, index: number) => {
-            console.log(`[AddMealForm] Processing notification ${index + 1}:`, notification);
-            const { badge, level, isNewBadge, isLevelUp } = notification;
-            
-            if (isNewBadge) {
-              console.log(`[AddMealForm] Showing NEW BADGE notification: ${badge.name} (${level})`);
-              showSuccess(
-                `🎉 New Badge Unlocked!`,
-                `You earned ${badge.name} (${level.toUpperCase()})!`
-              );
-            } else if (isLevelUp) {
-              console.log(`[AddMealForm] Showing LEVEL UP notification: ${badge.name} -> ${level}`);
-              showSuccess(
-                `⬆️ Badge Level Up!`,
-                `${badge.name} upgraded to ${level.toUpperCase()}!`
-              );
-            }
-          });
-        } else {
-          console.log('[AddMealForm] badgeNotifications is empty or not an array');
-        }
-      } else {
-        console.log('[AddMealForm] No badgeNotifications field in response');
+      // Process badge notifications through BadgeContext modal
+      if (createdMeal.badgeNotifications && Array.isArray(createdMeal.badgeNotifications) && createdMeal.badgeNotifications.length > 0) {
+        console.log('[AddMealForm] Processing badge notifications through context');
+        await processBadgeNotifications(createdMeal.badgeNotifications);
       }
       
       if (onFoodAdded) onFoodAdded(createdMeal);

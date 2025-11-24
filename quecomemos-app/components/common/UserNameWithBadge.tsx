@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PrimaryBadgeDisplay } from '@/components/profile/PrimaryBadgeDisplay';
+import { PrimaryBadgeDisplay } from '@/components/profile/badges/PrimaryBadgeDisplay';
 import { usePrimaryBadge } from '@/lib/hooks/usePrimaryBadge';
 
 interface UserNameWithBadgeProps {

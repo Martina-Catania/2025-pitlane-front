@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Crown, X } from 'lucide-react';
 import { useUserBadges } from '@/lib/hooks/useUserBadges';
 import { usePrimaryBadge } from '@/lib/hooks/usePrimaryBadge';
+import { getDefaultBadgeIcon } from './badgeHelpers';
 
 interface BadgeSelectionModalProps {
   profileId: string;
@@ -15,16 +16,6 @@ interface BadgeSelectionModalProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
-
-const getDefaultBadgeIcon = (badgeType: string): string => {
-  const typeIconMap: Record<string, string> = {
-    'group_creation': '👥',
-    'voting_participation': '🗳️', 
-    'voting_winner': '🏆',
-    'meal_creation': '👨‍🍳'
-  };
-  return typeIconMap[badgeType] || '🏅';
-};
 
 export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: BadgeSelectionModalProps) {
   const { badges, loading: badgesLoading } = useUserBadges(profileId);

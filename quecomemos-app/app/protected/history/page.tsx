@@ -16,11 +16,10 @@ import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useMeals } from '@/lib/contexts/MealsContext';
 import { useCalorieProgressContext } from '@/lib/contexts/CalorieProgressContext';
 import { MealService, type RegisterMealData } from '@/lib/services/MealService';
-import { UserBadges } from '@/components/profile/UserBadges';
-import { BadgeProgressDisplay } from '@/components/profile/BadgeProgressDisplay';
+import { BadgeProgressDisplay } from '@/components/profile/badges/BadgeProgressDisplay';
 import { useUserBadges } from '@/lib/hooks/useUserBadges';
-import { PrimaryBadgeDisplay } from '@/components/profile/PrimaryBadgeDisplay';
-import { BadgeSelectionModal } from '@/components/profile/BadgeSelectionModal';
+import { PrimaryBadgeDisplay } from '@/components/profile/badges/PrimaryBadgeDisplay';
+import { BadgeSelectionModal } from '@/components/profile/badges/BadgeSelectionModal';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -123,7 +122,7 @@ export default function UserHistoryPage() {
   const { allMeals, fetchAllMeals } = useMeals();
   const { showNotification, showSuccess } = useGlobalNotification();
   const { triggerRefresh } = useCalorieProgressContext();
-  const { badges, stats, loading: loadingBadges } = useUserBadges(profile?.id);
+  const { stats } = useUserBadges(profile?.id);
 
   const fetchUserHistory = useCallback(async () => {
     if (!profile?.id) return;

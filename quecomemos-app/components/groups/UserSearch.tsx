@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, UserPlus, Loader2 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/config/api';
-import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
+import { PrimaryBadgeDisplay } from '../profile/badges/PrimaryBadgeDisplay';
 
 interface User {
   id: string;

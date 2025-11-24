@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { usePrimaryBadge } from '@/lib/hooks/usePrimaryBadge';
 import { BadgeDetailsModal } from './BadgeDetailsModal';
+import { getDefaultBadgeIcon, LEVEL_COLORS } from './badgeHelpers';
 
 interface PrimaryBadgeDisplayProps {
   profileId: string;
@@ -14,28 +15,10 @@ interface PrimaryBadgeDisplayProps {
   clickable?: boolean;
 }
 
-const getDefaultBadgeIcon = (badgeType: string): string => {
-  const typeIconMap: Record<string, string> = {
-    'group_creation': '👥',
-    'voting_participation': '🗳️', 
-    'voting_winner': '🏆',
-    'meal_creation': '👨‍🍳'
-  };
-  return typeIconMap[badgeType] || '🏅';
-};
-
 const sizeConfig = {
   sm: { container: 'w-9 h-9', text: 'text-sm', spacing: 'gap-1.5', imageSize: 36 },
   md: { container: 'w-12 h-12', text: 'text-base', spacing: 'gap-2', imageSize: 48 },
   lg: { container: 'w-16 h-16', text: 'text-xl', spacing: 'gap-3', imageSize: 64 }
-};
-
-// Level-specific border colors (glow removed for performance)
-const LEVEL_COLORS = {
-  bronze: { border: 'border-amber-500' },
-  silver: { border: 'border-gray-400' },
-  gold: { border: 'border-yellow-500' },
-  diamond: { border: 'border-cyan-400' }
 };
 
 export function PrimaryBadgeDisplay({ 

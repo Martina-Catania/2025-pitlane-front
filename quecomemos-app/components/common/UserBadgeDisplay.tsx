@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useUserDisplayBadges } from '@/lib/hooks/useUserDisplayBadges';
-import { BadgeDetailsModal } from '@/components/profile/BadgeDetailsModal';
+import { BadgeDetailsModal } from '@/components/profile/badges/BadgeDetailsModal';
 import { getBadgeIcon, type BadgeType, type BadgeLevel } from '@/lib/config/badgeDefinitions';
 
 interface Badge {

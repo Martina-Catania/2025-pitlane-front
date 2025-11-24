@@ -9,6 +9,7 @@ import { Clock, Users, Trophy, Vote, Plus, CheckCircle } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { useVoting } from '@/lib/contexts/VotingContext';
+import { useBadges } from '@/lib/contexts/BadgeContext';
 import { VotingService } from './VotingService';
 import { MealProposalCard } from './MealProposalCard';
 import { VotingTimer } from './VotingTimer';
@@ -26,6 +27,7 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
   const { userData } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
   const { activeSession, notifyVotingCompleted } = useVoting();
+  const { processBadgeNotifications } = useBadges();
   
   const [loading, setLoading] = useState(false);
   const [showProposeMeal, setShowProposeMeal] = useState(false);
@@ -294,41 +296,13 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         
         console.log('[VotingSessionCard] Vote response received:', JSON.stringify(voteResponse, null, 2));
         console.log('[VotingSessionCard] badgeNotifications field:', voteResponse.badgeNotifications);
-        console.log('[VotingSessionCard] Is badgeNotifications an array?', Array.isArray(voteResponse.badgeNotifications));
         
         showSuccess('Vote Cast!', 'Your vote has been recorded.');
         
-        // Check for badge notifications in the vote response
-        if (voteResponse.badgeNotifications) {
-          console.log('[VotingSessionCard] Badge notifications found!', voteResponse.badgeNotifications);
-          
-          if (Array.isArray(voteResponse.badgeNotifications) && voteResponse.badgeNotifications.length > 0) {
-            console.log('[VotingSessionCard] Processing', voteResponse.badgeNotifications.length, 'badge notifications');
-            
-            // Show notifications for each badge achievement
-            voteResponse.badgeNotifications.forEach((notification: any, index: number) => {
-              console.log(`[VotingSessionCard] Processing notification ${index + 1}:`, notification);
-              const { badge, level, isNewBadge, isLevelUp } = notification;
-              
-              if (isNewBadge) {
-                console.log(`[VotingSessionCard] Showing NEW BADGE notification: ${badge.name} (${level})`);
-                showSuccess(
-                  `🎉 New Badge Unlocked!`,
-                  `You earned ${badge.name} (${level.toUpperCase()})!`
-                );
-              } else if (isLevelUp) {
-                console.log(`[VotingSessionCard] Showing LEVEL UP notification: ${badge.name} -> ${level}`);
-                showSuccess(
-                  `⬆️ Badge Level Up!`,
-                  `${badge.name} upgraded to ${level.toUpperCase()}!`
-                );
-              }
-            });
-          } else {
-            console.log('[VotingSessionCard] badgeNotifications is empty or not an array');
-          }
-        } else {
-          console.log('[VotingSessionCard] No badgeNotifications field in response');
+        // Process badge notifications through BadgeContext modal
+        if (voteResponse.badgeNotifications && Array.isArray(voteResponse.badgeNotifications) && voteResponse.badgeNotifications.length > 0) {
+          console.log('[VotingSessionCard] Processing badge notifications through context');
+          await processBadgeNotifications(voteResponse.badgeNotifications);
         }
       }
     } catch (error) {

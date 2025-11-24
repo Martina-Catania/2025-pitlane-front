@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
+import { PrimaryBadgeDisplay } from '../profile/badges/PrimaryBadgeDisplay';
 import type { VotingSession, MealProposal } from './types';
 
 interface VotingResultsModalProps {

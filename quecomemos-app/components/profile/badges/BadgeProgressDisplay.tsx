@@ -8,86 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Award, Lock, CheckCircle2, TrendingUp, Star } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/config/api';
-
-// Level configuration with badge icons and dark amber/orange theme
-const LEVEL_CONFIG = {
-  bronze: { 
-    name: 'Bronze', 
-    color: 'text-amber-400', 
-    bg: 'bg-amber-950/40', 
-    border: 'border-amber-700/60',
-    glow: 'shadow-amber-900/20',
-    iconColor: 'text-amber-500'
-  },
-  silver: { 
-    name: 'Silver', 
-    color: 'text-gray-300', 
-    bg: 'bg-gray-900/40', 
-    border: 'border-gray-600/60',
-    glow: 'shadow-gray-800/20',
-    iconColor: 'text-gray-400'
-  },
-  gold: { 
-    name: 'Gold', 
-    color: 'text-yellow-400', 
-    bg: 'bg-yellow-950/40', 
-    border: 'border-yellow-600/60',
-    glow: 'shadow-yellow-900/20',
-    iconColor: 'text-yellow-500'
-  },
-  diamond: { 
-    name: 'Diamond', 
-    color: 'text-cyan-400', 
-    bg: 'bg-cyan-950/40', 
-    border: 'border-cyan-600/60',
-    glow: 'shadow-cyan-900/20',
-    iconColor: 'text-cyan-400'
-  }
-};
-
-const BADGE_TYPE_LABELS: Record<string, string> = {
-  'group_creation': 'Group Creator',
-  'voting_participation': 'Voter', 
-  'meal_creation': 'Chef',
-  'voting_winner': 'Winner'
-};
-
-// Tier-specific badge names that evolve with level
-const getTierSpecificBadgeName = (badgeType: string, level: 'bronze' | 'silver' | 'gold' | 'diamond', baseName: string): string => {
-  const tierNames: Record<string, Record<string, string>> = {
-    'meal_creation': {
-      'bronze': 'Apprentice Chef',
-      'silver': 'Skilled Chef',
-      'gold': 'Master Chef',
-      'diamond': 'Culinary Visionary'
-    },
-    'group_creation': {
-      'bronze': 'Community Builder',
-      'silver': 'Group Organizer',
-      'gold': 'Social Architect',
-      'diamond': 'Unity Catalyst'
-    },
-    'voting_participation': {
-      'bronze': 'Civic Participant',
-      'silver': 'Active Voter',
-      'gold': 'Voice of the People ',
-      'diamond': 'Democracy Champion'
-    },
-    'voting_winner': {
-      'bronze': 'Taste Explorer',
-      'silver': 'Flavor Curator',
-      'gold': 'Culinary Influencer',
-      'diamond': 'Legendary Taste Maker'
-    }
-  };
-  
-  return tierNames[badgeType]?.[level] || baseName;
-};
+import { 
+  BadgeLevel, 
+  LEVEL_CONFIG, 
+  BADGE_TYPE_LABELS, 
+  getTierSpecificBadgeName 
+} from './badgeHelpers';
 
 interface BadgeRequirement {
   BadgeRequirementID: number;
   badgeId: number;
-  level: 'bronze' | 'silver' | 'gold' | 'diamond';
+  level: BadgeLevel;
   requiredCount: number;
   description: string;
 }
@@ -104,7 +35,7 @@ interface BadgeData {
 
 interface BadgeProgressData {
   badge: BadgeData;
-  currentLevel: 'bronze' | 'silver' | 'gold' | 'diamond' | null;
+  currentLevel: BadgeLevel | null;
   progress: number;
   isCompleted: boolean;
   earnedAt: string | null;
@@ -245,7 +176,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                         <div className="flex flex-col items-center gap-2 text-center">
                           {/* Badge Icon with Level Color */}
                           <div className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden ${
-                            levelConfig ? `${levelConfig.bg} ${levelConfig.glow}` : 'bg-zinc-800'
+                            levelConfig ? `${levelConfig.bg} ${currentLevel === 'diamond' ? levelConfig.glow : ''}` : 'bg-zinc-800'
                           } border-2 ${levelConfig ? levelConfig.border : 'border-zinc-700'} shadow-lg`}>
                             {badge.iconUrl && badge.iconUrl.trim() !== '' ? (
                               <Image
@@ -362,7 +293,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                     !hasEarned 
                       ? 'bg-zinc-900/60 border-zinc-700/50 opacity-70'
                       : levelConfig 
-                        ? `${levelConfig.bg} ${levelConfig.border} ${levelConfig.glow}`
+                        ? `${levelConfig.bg} ${levelConfig.border} ${currentLevel === 'diamond' ? levelConfig.glow : ''}`
                         : 'bg-zinc-900/60 border-zinc-700/50'
                   }`}
                 >
@@ -371,7 +302,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                     <div className="flex items-center gap-3">
                       {/* Badge Icon */}
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg overflow-hidden ${
-                        hasEarned && levelConfig ? `${levelConfig.bg} ${levelConfig.glow}` : 'bg-zinc-800'
+                        hasEarned && levelConfig ? `${levelConfig.bg} ${currentLevel === 'diamond' ? levelConfig.glow : ''}` : 'bg-zinc-800'
                       } border-2 ${hasEarned && levelConfig ? levelConfig.border : 'border-zinc-700'} relative`}>
                         {!hasEarned && (
                           <div className="absolute inset-0 bg-zinc-950/70 rounded-full flex items-center justify-center backdrop-blur-sm z-10">
@@ -461,7 +392,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                           >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center border overflow-hidden ${
                               isAchieved 
-                                ? `${config.bg} ${config.border} ${config.glow}` 
+                                ? `${config.bg} ${config.border} ${level === 'diamond' ? config.glow : ''}` 
                                 : 'bg-zinc-900/40 border-zinc-700/40'
                             }`}>
                               {badge.iconUrl && badge.iconUrl.trim() !== '' ? (

@@ -3,7 +3,7 @@
 import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
 import { CalorieProgressWithHistory } from '@/components/profile/calorie-progress-with-history';
 import { CalorieGoalSettings } from '@/components/profile/calorie-goal';
-import { BadgeProgressDisplay } from '@/components/profile/BadgeProgressDisplay';
+import { BadgeProgressDisplay } from '@/components/profile/badges/BadgeProgressDisplay';
 
 export default function ProfilePage() {
   const { progress, loading, updateCalorieGoal } = useCalorieProgress();

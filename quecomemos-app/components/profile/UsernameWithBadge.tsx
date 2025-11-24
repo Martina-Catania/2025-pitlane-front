@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { PrimaryBadgeDisplay } from './PrimaryBadgeDisplay';
+import { PrimaryBadgeDisplay } from './badges/PrimaryBadgeDisplay';
 
 interface UsernameWithBadgeProps {
   username: string;

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChefHat, ThumbsUp, Clock, User } from 'lucide-react';
 import { MealComposition } from '../meal/MealComposition';
 import { VoteConfirmationModal } from './VoteConfirmationModal';
-import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
+import { PrimaryBadgeDisplay } from '../profile/badges/PrimaryBadgeDisplay';
 import type { MealProposal } from './types';
 
 interface MealProposalCardProps {
