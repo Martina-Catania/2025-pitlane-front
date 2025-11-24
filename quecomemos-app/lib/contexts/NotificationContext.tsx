@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useRef, useCallback } from 'react';
 import { NotificationType } from '@/components/modals/StackedNotifications';
 import { StackedNotifications } from '@/components/modals/StackedNotifications';
 

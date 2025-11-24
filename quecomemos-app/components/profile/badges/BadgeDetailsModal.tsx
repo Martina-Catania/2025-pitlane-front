@@ -7,6 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { X, Award, Calendar, TrendingUp, Target, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { 
+  BadgeLevel, 
+  getDefaultBadgeIcon, 
+  getBadgeTypeLabel, 
+  getTierSpecificBadgeName 
+} from './badgeHelpers';
 
 interface BadgeDetails {
   BadgeID: number;
@@ -14,7 +20,7 @@ interface BadgeDetails {
   description: string;
   badgeType: string;
   iconUrl?: string | null;
-  currentLevel?: 'bronze' | 'silver' | 'gold' | 'diamond';
+  currentLevel?: BadgeLevel;
   progress?: number;
   earnedAt?: string;
   lastUpgraded?: string;
@@ -25,58 +31,6 @@ interface BadgeDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const getDefaultBadgeIcon = (badgeType: string): string => {
-  const typeIconMap: Record<string, string> = {
-    'group_creation': '👥',
-    'voting_participation': '🗳️', 
-    'voting_winner': '🏆',
-    'meal_creation': '👨‍🍳'
-  };
-  return typeIconMap[badgeType] || '🏅';
-};
-
-const getBadgeTypeLabel = (badgeType: string): string => {
-  const typeLabels: Record<string, string> = {
-    'group_creation': 'Group Creator',
-    'voting_participation': 'Democracy Enthusiast', 
-    'voting_winner': 'Taste Maker',
-    'meal_creation': 'Chef'
-  };
-  return typeLabels[badgeType] || badgeType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-};
-
-// Tier-specific badge names that evolve with level
-const getTierSpecificBadgeName = (badgeType: string, level: 'bronze' | 'silver' | 'gold' | 'diamond', baseName: string): string => {
-  const tierNames: Record<string, Record<string, string>> = {
-    'meal_creation': {
-      'bronze': 'Apprentice Chef',
-      'silver': 'Skilled Chef',
-      'gold': 'Master Chef',
-      'diamond': 'Culinary Visionary'
-    },
-    'group_creation': {
-      'bronze': 'Community Builder',
-      'silver': 'Group Organizer',
-      'gold': 'Social Architect',
-      'diamond': 'Unity Catalyst'
-    },
-    'voting_participation': {
-      'bronze': 'Civic Participant',
-      'silver': 'Active Voter',
-      'gold': 'Democracy Champion',
-      'diamond': 'Voice of the People'
-    },
-    'voting_winner': {
-      'bronze': 'Taste Explorer',
-      'silver': 'Flavor Curator',
-      'gold': 'Culinary Influencer',
-      'diamond': 'Legendary Taste Maker'
-    }
-  };
-  
-  return tierNames[badgeType]?.[level] || baseName;
-};
 
 // Level configuration matching BadgeProgressDisplay
 const LEVEL_CONFIG = {

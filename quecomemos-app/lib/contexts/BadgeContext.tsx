@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { API_BASE_URL } from '@/lib/config/api';
-import { useNotification } from '@/lib/hooks/useNotification';
+import { BadgeAchievementModal } from '@/components/profile/badges/BadgeAchievementModal';
 
 export interface Badge {
   BadgeID: number;
@@ -57,6 +57,7 @@ interface BadgeContextType {
   fetchUserBadges: () => Promise<void>;
   fetchBadgeProgress: () => Promise<void>;
   checkForNewBadges: (action: string, data?: Record<string, unknown>) => Promise<Badge[]>;
+  processBadgeNotifications: (notifications: { badge: Badge; level: string; isNewBadge?: boolean; isLevelUp?: boolean }[]) => Promise<void>;
   
   // Helpers
   getBadgeByType: (badgeType: string) => UserBadge | undefined;
@@ -76,7 +77,15 @@ export function BadgeProvider({ children, profileId }: BadgeProviderProps) {
   const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { showSuccess } = useNotification();
+  
+  // Badge achievement modal state
+  const [achievementModal, setAchievementModal] = useState<{
+    badge: Badge | null;
+    level: 'bronze' | 'silver' | 'gold' | 'diamond';
+    isNewBadge: boolean;
+    isLevelUp: boolean;
+    isOpen: boolean;
+  }>({ badge: null, level: 'bronze', isNewBadge: false, isLevelUp: false, isOpen: false });
 
   /**
    * Fetch badges earned by the user
@@ -176,17 +185,20 @@ export function BadgeProvider({ children, profileId }: BadgeProviderProps) {
       // Show badge achievement notification for each new badge or level up
       if (badgeNotifications.length > 0) {
         console.log('[BadgeContext] Showing notifications for', badgeNotifications.length, 'achievements');
-        for (const notification of badgeNotifications) {
-          const { badge, level, isNewBadge, isLevelUp } = notification;
-          
-          console.log('[BadgeContext] Processing notification:', { badgeName: badge.name, level, isNewBadge, isLevelUp });
-          
-          if (isNewBadge) {
-            showSuccess('🏆 Badge Unlocked!', `You earned: ${badge.name} (${level})`);
-          } else if (isLevelUp) {
-            showSuccess('⬆️ Badge Upgraded!', `${badge.name} upgraded to ${level}!`);
-          }
-        }
+        
+        // Show modal for first achievement (we can queue multiple if needed later)
+        const firstNotification = badgeNotifications[0];
+        const { badge, level, isNewBadge, isLevelUp } = firstNotification;
+        
+        console.log('[BadgeContext] Opening achievement modal:', { badgeName: badge.name, level, isNewBadge, isLevelUp });
+        
+        setAchievementModal({
+          badge,
+          level,
+          isNewBadge,
+          isLevelUp,
+          isOpen: true
+        });
 
         // Refresh badge data after earning new badges
         console.log('[BadgeContext] Refreshing badge data...');
@@ -200,7 +212,38 @@ export function BadgeProvider({ children, profileId }: BadgeProviderProps) {
       console.error('[BadgeContext] Error checking for new badges:', err);
       return [];
     }
-  }, [profileId, showSuccess, fetchUserBadges, fetchBadgeProgress]);
+  }, [profileId, fetchUserBadges, fetchBadgeProgress]);
+
+  /**
+   * Process badge notifications directly from API responses
+   * This is useful when the API response already includes badgeNotifications
+   */
+  const processBadgeNotifications = useCallback(async (notifications: { badge: Badge; level: string; isNewBadge?: boolean; isLevelUp?: boolean }[]): Promise<void> => {
+    if (!notifications || notifications.length === 0) {
+      console.log('[BadgeContext] No badge notifications to process');
+      return;
+    }
+
+    console.log('[BadgeContext] Processing', notifications.length, 'badge notifications');
+    
+    // Show modal for first achievement (queue can be implemented later)
+    const firstNotification = notifications[0];
+    const { badge, level, isNewBadge, isLevelUp } = firstNotification;
+    
+    console.log('[BadgeContext] Opening achievement modal:', { badgeName: badge.name, level, isNewBadge, isLevelUp });
+    
+    setAchievementModal({
+      badge,
+      level: level as 'bronze' | 'silver' | 'gold' | 'diamond',
+      isNewBadge: isNewBadge || false,
+      isLevelUp: isLevelUp || false,
+      isOpen: true
+    });
+
+    // Refresh badge data after earning new badges
+    console.log('[BadgeContext] Refreshing badge data...');
+    await Promise.all([fetchUserBadges(), fetchBadgeProgress()]);
+  }, [fetchUserBadges, fetchBadgeProgress]);
 
   /**
    * Get a specific badge by badge type
@@ -231,7 +274,7 @@ export function BadgeProvider({ children, profileId }: BadgeProviderProps) {
     }
   }, [profileId, fetchUserBadges, fetchBadgeProgress]);
 
-  const value: BadgeContextType = {
+  const contextValue: BadgeContextType = {
     userBadges,
     badgeProgress,
     loading,
@@ -239,14 +282,23 @@ export function BadgeProvider({ children, profileId }: BadgeProviderProps) {
     fetchUserBadges,
     fetchBadgeProgress,
     checkForNewBadges,
+    processBadgeNotifications,
     getBadgeByType,
     hasCompletedBadge,
     getBadgeProgress
   };
 
   return (
-    <BadgeContext.Provider value={value}>
+    <BadgeContext.Provider value={contextValue}>
       {children}
+      <BadgeAchievementModal
+        badge={achievementModal.badge}
+        level={achievementModal.level}
+        isNewBadge={achievementModal.isNewBadge}
+        isLevelUp={achievementModal.isLevelUp}
+        isOpen={achievementModal.isOpen}
+        onClose={() => setAchievementModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </BadgeContext.Provider>
   );
 }

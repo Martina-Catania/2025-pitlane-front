@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Users, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { useBadges } from '@/lib/contexts/BadgeContext';
 import { API_BASE_URL } from '@/lib/config/api';
 
 interface CreateGroupFormProps {
@@ -25,6 +26,7 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { showSuccess, showError } = useGlobalNotification();
+  const { processBadgeNotifications } = useBadges();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +67,6 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
       const newGroup = await response.json();
       console.debug('[CreateGroupForm] Group creation result:', JSON.stringify(newGroup, null, 2));
       console.log('[CreateGroupForm] badgeNotifications field:', newGroup.badgeNotifications);
-      console.log('[CreateGroupForm] Is badgeNotifications an array?', Array.isArray(newGroup.badgeNotifications));
       
       // Show themed success notification then navigate
       showSuccess(
@@ -73,37 +74,10 @@ export function CreateGroupForm({ userId, onSuccess }: CreateGroupFormProps) {
         `Group "${newGroup.name || newGroup.GroupID}" created successfully.`,
       );
       
-      // Check for badge notifications in the response
-      if (newGroup.badgeNotifications) {
-        console.log('[CreateGroupForm] Badge notifications found!', newGroup.badgeNotifications);
-        
-        if (Array.isArray(newGroup.badgeNotifications) && newGroup.badgeNotifications.length > 0) {
-          console.log('[CreateGroupForm] Processing', newGroup.badgeNotifications.length, 'badge notifications');
-          
-          // Show notifications for each badge achievement
-          newGroup.badgeNotifications.forEach((notification: any, index: number) => {
-            console.log(`[CreateGroupForm] Processing notification ${index + 1}:`, notification);
-            const { badge, level, isNewBadge, isLevelUp } = notification;
-            
-            if (isNewBadge) {
-              console.log(`[CreateGroupForm] Showing NEW BADGE notification: ${badge.name} (${level})`);
-              showSuccess(
-                `🎉 New Badge Unlocked!`,
-                `You earned ${badge.name} (${level.toUpperCase()})!`
-              );
-            } else if (isLevelUp) {
-              console.log(`[CreateGroupForm] Showing LEVEL UP notification: ${badge.name} -> ${level}`);
-              showSuccess(
-                `⬆️ Badge Level Up!`,
-                `${badge.name} upgraded to ${level.toUpperCase()}!`
-              );
-            }
-          });
-        } else {
-          console.log('[CreateGroupForm] badgeNotifications is empty or not an array');
-        }
-      } else {
-        console.log('[CreateGroupForm] No badgeNotifications field in response');
+      // Process badge notifications through BadgeContext modal
+      if (newGroup.badgeNotifications && Array.isArray(newGroup.badgeNotifications) && newGroup.badgeNotifications.length > 0) {
+        console.log('[CreateGroupForm] Processing badge notifications through context');
+        await processBadgeNotifications(newGroup.badgeNotifications);
       }
 
       // Delay navigation slightly to allow notification to be seen

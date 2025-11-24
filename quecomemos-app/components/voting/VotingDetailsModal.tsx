@@ -10,7 +10,7 @@ import { MealModal } from '@/components/modals/meal-modal';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { PortionSelectionModal } from './PortionSelectionModal';
-import { PrimaryBadgeDisplay } from '../profile/PrimaryBadgeDisplay';
+import { PrimaryBadgeDisplay } from '../profile/badges/PrimaryBadgeDisplay';
 import { UserNameWithBadge } from '@/components/common';
 
 interface Participant {
