@@ -125,7 +125,7 @@ export function UserBadges({ badges, loading = false }: UserBadgesProps) {
                 <div className="w-8 h-8 flex-shrink-0">
                   {badge.iconUrl && badge.iconUrl.trim() !== '' ? (
                     <Image
-                      src={badge.iconUrl}
+                      src={badge.iconUrl.trim()}
                       alt={badge.name}
                       width={32}
                       height={32}

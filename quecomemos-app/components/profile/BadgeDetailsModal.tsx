@@ -4,8 +4,9 @@ import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { X, Award, Calendar, TrendingUp } from 'lucide-react';
+import { X, Award, Calendar, TrendingUp, Target, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 interface BadgeDetails {
   BadgeID: number;
@@ -13,10 +14,10 @@ interface BadgeDetails {
   description: string;
   badgeType: string;
   iconUrl?: string | null;
-  tierLevel?: number;
-  requirement?: number;
+  currentLevel?: 'bronze' | 'silver' | 'gold' | 'diamond';
+  progress?: number;
   earnedAt?: string;
-  currentProgress?: number;
+  lastUpgraded?: string;
 }
 
 interface BadgeDetailsModalProps {
@@ -37,45 +38,94 @@ const getDefaultBadgeIcon = (badgeType: string): string => {
 
 const getBadgeTypeLabel = (badgeType: string): string => {
   const typeLabels: Record<string, string> = {
-    'group_creation': 'Group Creation',
-    'voting_participation': 'Voting Participation', 
-    'voting_winner': 'Voting Winner',
-    'meal_creation': 'Meal Creation'
+    'group_creation': 'Group Creator',
+    'voting_participation': 'Democracy Enthusiast', 
+    'voting_winner': 'Taste Maker',
+    'meal_creation': 'Chef'
   };
-  return typeLabels[badgeType] || badgeType;
+  return typeLabels[badgeType] || badgeType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
-const getTierColor = (tier: number): string => {
-  switch (tier) {
-    case 1: return 'bg-amber-600 text-white';
-    case 2: return 'bg-gray-400 text-white';
-    case 3: return 'bg-yellow-500 text-white';
-    case 4: return 'bg-purple-600 text-white';
-    default: return 'bg-gray-500 text-white';
-  }
-};
-
-const getTierName = (tier: number): string => {
-  switch (tier) {
-    case 1: return 'Bronze';
-    case 2: return 'Silver';
-    case 3: return 'Gold';
-    case 4: return 'Diamond';
-    default: return 'Tier ' + tier;
+// Level configuration matching BadgeProgressDisplay
+const LEVEL_CONFIG = {
+  bronze: { 
+    name: 'Bronze', 
+    color: 'text-amber-400', 
+    bg: 'bg-amber-950/40', 
+    border: 'border-amber-700/60',
+    solidBg: 'bg-amber-600',
+    requirement: 1
+  },
+  silver: { 
+    name: 'Silver', 
+    color: 'text-gray-300', 
+    bg: 'bg-gray-900/40', 
+    border: 'border-gray-600/60',
+    solidBg: 'bg-gray-500',
+    requirement: 10
+  },
+  gold: { 
+    name: 'Gold', 
+    color: 'text-yellow-400', 
+    bg: 'bg-yellow-950/40', 
+    border: 'border-yellow-600/60',
+    solidBg: 'bg-yellow-600',
+    requirement: 50
+  },
+  diamond: { 
+    name: 'Diamond', 
+    color: 'text-cyan-400', 
+    bg: 'bg-cyan-950/40', 
+    border: 'border-cyan-600/60',
+    solidBg: 'bg-cyan-600',
+    requirement: 100
   }
 };
 
 export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalProps) {
   if (!isOpen || !badge) return null;
 
-  const hasCustomIcon = badge.iconUrl && badge.iconUrl.trim() !== '';
+  const trimmedIconUrl = badge.iconUrl?.trim();
+  const hasCustomIcon = trimmedIconUrl && trimmedIconUrl !== '';
+  const currentLevel = badge.currentLevel || 'bronze';
+  const levelConfig = LEVEL_CONFIG[currentLevel as keyof typeof LEVEL_CONFIG];
+  
+  // Shine animation colors and timings based on level
+  const shineColors = {
+    bronze: 'rgba(251, 191, 36, 0.6)', // amber
+    silver: 'rgba(209, 213, 219, 0.6)', // gray
+    gold: 'rgba(250, 204, 21, 0.6)', // yellow
+    diamond: 'rgba(34, 211, 238, 0.8)' // cyan - more intense for diamond
+  };
+  
+  const shineColor = shineColors[currentLevel as keyof typeof shineColors];
+  
+  // Animation timing based on tier (more frequent for higher tiers)
+  const animationTimings = {
+    bronze: '10s', // slowest
+    silver: '7s',  // medium-slow
+    gold: '5s',    // medium-fast
+    diamond: '3s'  // fastest and most glamorous
+  };
+  
+  const animationDuration = animationTimings[currentLevel as keyof typeof animationTimings];
+  
+  // Diamond gets a double-shine effect for extra glamour
+  const isDiamond = currentLevel === 'diamond';
+  
+  // Calculate next level info
+  const levelOrder: ('bronze' | 'silver' | 'gold' | 'diamond')[] = ['bronze', 'silver', 'gold', 'diamond'];
+  const currentIndex = levelOrder.indexOf(currentLevel as any);
+  const nextLevel = currentIndex < levelOrder.length - 1 ? levelOrder[currentIndex + 1] : null;
+  const nextLevelConfig = nextLevel ? LEVEL_CONFIG[nextLevel] : null;
+  const isMaxLevel = currentLevel === 'diamond';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <Card className="w-full max-w-md bg-card border-border shadow-2xl">
-        <CardHeader className="border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-zinc-900/95 border-amber-900/30 shadow-2xl">
+        <CardHeader className="border-b border-amber-900/30">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-card-foreground">
+            <CardTitle className="flex items-center gap-2 text-amber-100">
               <Award className="w-5 h-5 text-amber-500" />
               Badge Details
             </CardTitle>
@@ -83,7 +133,7 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="w-8 h-8 p-0 text-muted-foreground hover:text-foreground"
+              className="w-8 h-8 p-0 text-amber-400 hover:text-amber-300 hover:bg-amber-950/30"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -94,67 +144,112 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
         <CardContent className="space-y-4 pt-6">
           {/* Badge Icon and Name */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="relative w-24 h-24">
+            <div className={`relative w-24 h-24 rounded-full ${levelConfig.bg} ${levelConfig.border} border-4 shadow-xl flex items-center justify-center overflow-hidden`}>
+              {/* Primary shine animation overlay - tier-specific timing */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `linear-gradient(90deg, transparent 0%, ${shineColor} 50%, transparent 100%)`,
+                  animation: `shine ${animationDuration} ease-in-out infinite`,
+                  transform: 'translateX(-100%)'
+                }}
+              />
+              {/* Secondary shine for diamond (glamorous double-shine effect) */}
+              {isDiamond && (
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)`,
+                    animation: `shine ${animationDuration} ease-in-out infinite 0.3s`,
+                    transform: 'translateX(-100%)'
+                  }}
+                />
+              )}
+              <style jsx>{`
+                @keyframes shine {
+                  0%, 90% {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                  }
+                  92% {
+                    opacity: 1;
+                  }
+                  95% {
+                    transform: translateX(100%);
+                    opacity: 1;
+                  }
+                  95.1%, 100% {
+                    transform: translateX(100%);
+                    opacity: 0;
+                  }
+                }
+              `}</style>
               {hasCustomIcon ? (
                 <Image
-                  src={badge.iconUrl!}
+                  src={trimmedIconUrl!}
                   alt={badge.name}
-                  width={96}
-                  height={96}
-                  className="rounded-full border-4 border-amber-500/30 bg-muted p-1"
+                  width={80}
+                  height={80}
+                  className="w-20 h-20 object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     const parent = target.parentElement;
                     if (parent) {
-                      parent.innerHTML = `<div class="flex items-center justify-center w-24 h-24 text-4xl bg-muted rounded-full border-4 border-amber-500/30">${getDefaultBadgeIcon(badge.badgeType)}</div>`;
+                      parent.innerHTML = `<div class="flex items-center justify-center w-20 h-20 text-4xl">${getDefaultBadgeIcon(badge.badgeType)}</div>`;
                     }
                   }}
                 />
               ) : (
-                <div className="flex items-center justify-center w-24 h-24 text-4xl bg-muted rounded-full border-4 border-amber-500/30">
+                <div className="flex items-center justify-center w-20 h-20 text-4xl">
                   {getDefaultBadgeIcon(badge.badgeType)}
                 </div>
               )}
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-card-foreground">{badge.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{badge.description}</p>
+              <h3 className={`text-xl font-bold ${levelConfig.color}`}>{badge.name}</h3>
+              <Badge className={`mt-2 ${levelConfig.solidBg} text-white border-0`}>
+                {levelConfig.name.toUpperCase()}
+              </Badge>
+              <p className="text-sm text-amber-300/70 mt-2">{badge.description}</p>
             </div>
           </div>
 
           {/* Badge Information */}
-          <div className="space-y-3 pt-4 border-t border-border">
+          <div className="space-y-3 pt-4 border-t border-amber-900/30">
             {/* Badge Type */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground flex items-center gap-2">
-                <Award className="w-4 h-4" />
-                Badge Type
+              <span className="text-sm text-amber-300/70 flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Category
               </span>
-              <Badge variant="outline" className="bg-muted">
+              <Badge variant="outline" className="bg-amber-950/30 border-amber-800/50 text-amber-300">
                 {getBadgeTypeLabel(badge.badgeType)}
               </Badge>
             </div>
 
-            {/* Tier Level */}
-            {badge.tierLevel !== undefined && (
+            {/* Current Progress */}
+            {badge.progress !== undefined && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Tier Level
+                <span className="text-sm text-amber-300/70 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Total Progress
                 </span>
-                <Badge className={getTierColor(badge.tierLevel!)}>
-                  {getTierName(badge.tierLevel!)} (Tier {badge.tierLevel})
-                </Badge>
+                <span className="text-sm font-semibold text-amber-400">
+                  {badge.progress} actions
+                </span>
               </div>
             )}
 
-            {/* Requirement */}
-            {badge.requirement !== undefined && (
+            {/* Current Progress */}
+            {badge.progress !== undefined && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Requirement</span>
-                <span className="text-sm font-medium text-card-foreground">
-                  {badge.requirement} {badge.badgeType.replace('_', ' ')}
+                <span className="text-sm text-amber-300/70 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Total Progress
+                </span>
+                <span className="text-sm font-semibold text-amber-400">
+                  {badge.progress} actions
                 </span>
               </div>
             )}
@@ -162,43 +257,121 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
             {/* Earned Date */}
             {badge.earnedAt && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                <span className="text-sm text-amber-300/70 flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Earned On
                 </span>
-                <span className="text-sm font-medium text-card-foreground">
-                  {new Date(badge.earnedAt!).toLocaleDateString('en-US', {
+                <span className="text-sm font-medium text-amber-400">
+                  {new Date(badge.earnedAt).toLocaleDateString('en-US', {
                     year: 'numeric',
-                    month: 'long',
+                    month: 'short',
                     day: 'numeric'
                   })}
                 </span>
               </div>
             )}
 
-            {/* Current Progress (if available) */}
-            {badge.currentProgress !== undefined && badge.requirement && (
-              <div className="pt-2 border-t border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Current Progress</span>
-                  <span className="text-sm font-medium text-card-foreground">
-                    {badge.currentProgress} / {badge.requirement}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-amber-600 h-2 rounded-full transition-all"
-                    style={{ width: `${Math.min((badge.currentProgress / badge.requirement!) * 100, 100)}%` }}
-                  />
-                </div>
+            {/* Last Upgraded */}
+            {badge.lastUpgraded && badge.lastUpgraded !== badge.earnedAt && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-amber-300/70 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Last Upgraded
+                </span>
+                <span className="text-sm font-medium text-amber-400">
+                  {new Date(badge.lastUpgraded).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
               </div>
             )}
           </div>
 
+          {/* Level Progression */}
+          {!isMaxLevel && nextLevelConfig && badge.progress !== undefined && (
+            <div className="pt-4 border-t border-amber-900/30">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-amber-300 font-medium">Progress to {nextLevelConfig.name}</span>
+                <span className="text-sm font-semibold text-amber-400">
+                  {badge.progress} / {nextLevelConfig.requirement}
+                </span>
+              </div>
+              <Progress 
+                value={Math.min((badge.progress / nextLevelConfig.requirement) * 100, 100)} 
+                className="h-2.5 bg-amber-950/50"
+              />
+              <p className="text-xs text-amber-400/60 mt-1 text-center">
+                {nextLevelConfig.requirement - badge.progress > 0 
+                  ? `${nextLevelConfig.requirement - badge.progress} more to reach ${nextLevelConfig.name}`
+                  : 'Ready to level up!'}
+              </p>
+            </div>
+          )}
+
+          {/* Level Milestones */}
+          <div className="pt-4 border-t border-amber-900/30">
+            <h4 className="text-sm text-amber-300 font-medium mb-3">Level Milestones</h4>
+            <div className="grid grid-cols-4 gap-2">
+              {(['bronze', 'silver', 'gold', 'diamond'] as const).map((level) => {
+                const config = LEVEL_CONFIG[level];
+                const isAchieved = levelOrder.indexOf(currentLevel as any) >= levelOrder.indexOf(level);
+                
+                return (
+                  <div 
+                    key={level}
+                    className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all ${
+                      isAchieved 
+                        ? `${config.bg} ${config.border} shadow-lg` 
+                        : 'bg-zinc-900/40 border-zinc-700/40'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 overflow-hidden ${
+                      isAchieved ? `${config.bg} ${config.border}` : 'bg-zinc-900/40 border-zinc-700/40'
+                    }`}>
+                      {hasCustomIcon ? (
+                        <Image
+                          src={trimmedIconUrl!}
+                          alt={`${badge.name} - ${level}`}
+                          width={28}
+                          height={28}
+                          className={`w-7 h-7 object-contain ${!isAchieved ? 'opacity-40' : ''}`}
+                        />
+                      ) : (
+                        <span className={`text-xl ${!isAchieved ? 'opacity-40' : ''}`}>
+                          {getDefaultBadgeIcon(badge.badgeType)}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-semibold ${
+                      isAchieved ? config.color : 'text-zinc-600'
+                    }`}>
+                      {config.name.toUpperCase()}
+                    </span>
+                    <span className={`text-[9px] ${
+                      isAchieved ? 'text-amber-400/80' : 'text-zinc-600'
+                    }`}>
+                      {config.requirement}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Achievement Message */}
-          <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 mt-4">
-            <p className="text-sm text-amber-200 text-center">
-              🎉 Congratulations on earning this badge!
+          <div className={`rounded-lg p-3 mt-4 ${
+            isMaxLevel 
+              ? 'bg-gradient-to-r from-cyan-950/50 to-blue-950/50 border border-cyan-700/60'
+              : 'bg-amber-900/20 border border-amber-700/30'
+          }`}>
+            <p className={`text-sm text-center font-medium ${
+              isMaxLevel ? 'text-cyan-300' : 'text-amber-200'
+            }`}>
+              {isMaxLevel 
+                ? '🌟 Maximum Level Achieved! You\'re a legend!'
+                : '🎉 Keep going to unlock the next level!'}
             </p>
           </div>
         </CardContent>

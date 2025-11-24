@@ -284,14 +284,55 @@ export function VotingSessionCard({ session: initialSession, onVotingComplete, c
         showSuccess('Vote Removed', 'Your vote has been removed.');
       } else {
         // Cast new vote
-        await VotingService.castVote(updatedSession.VotingSessionID, {
+        console.log('[VotingSessionCard] Casting vote...', { sessionId: updatedSession.VotingSessionID, proposalId, voterId: userId });
+        
+        const voteResponse = await VotingService.castVote(updatedSession.VotingSessionID, {
           mealProposalId: proposalId,
           voterId: userId,
           voteType: 'up'
         });
+        
+        console.log('[VotingSessionCard] Vote response received:', JSON.stringify(voteResponse, null, 2));
+        console.log('[VotingSessionCard] badgeNotifications field:', voteResponse.badgeNotifications);
+        console.log('[VotingSessionCard] Is badgeNotifications an array?', Array.isArray(voteResponse.badgeNotifications));
+        
         showSuccess('Vote Cast!', 'Your vote has been recorded.');
+        
+        // Check for badge notifications in the vote response
+        if (voteResponse.badgeNotifications) {
+          console.log('[VotingSessionCard] Badge notifications found!', voteResponse.badgeNotifications);
+          
+          if (Array.isArray(voteResponse.badgeNotifications) && voteResponse.badgeNotifications.length > 0) {
+            console.log('[VotingSessionCard] Processing', voteResponse.badgeNotifications.length, 'badge notifications');
+            
+            // Show notifications for each badge achievement
+            voteResponse.badgeNotifications.forEach((notification: any, index: number) => {
+              console.log(`[VotingSessionCard] Processing notification ${index + 1}:`, notification);
+              const { badge, level, isNewBadge, isLevelUp } = notification;
+              
+              if (isNewBadge) {
+                console.log(`[VotingSessionCard] Showing NEW BADGE notification: ${badge.name} (${level})`);
+                showSuccess(
+                  `🎉 New Badge Unlocked!`,
+                  `You earned ${badge.name} (${level.toUpperCase()})!`
+                );
+              } else if (isLevelUp) {
+                console.log(`[VotingSessionCard] Showing LEVEL UP notification: ${badge.name} -> ${level}`);
+                showSuccess(
+                  `⬆️ Badge Level Up!`,
+                  `${badge.name} upgraded to ${level.toUpperCase()}!`
+                );
+              }
+            });
+          } else {
+            console.log('[VotingSessionCard] badgeNotifications is empty or not an array');
+          }
+        } else {
+          console.log('[VotingSessionCard] No badgeNotifications field in response');
+        }
       }
     } catch (error) {
+      console.error('[VotingSessionCard] Error in vote handler:', error);
       showError('Error Voting', error instanceof Error ? error.message : 'Failed to process vote');
     } finally {
       setLoading(false);

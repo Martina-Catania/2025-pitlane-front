@@ -8,6 +8,7 @@ interface Badge {
   description: string;
   badgeType: string;
   iconUrl?: string;
+  currentLevel?: 'bronze' | 'silver' | 'gold' | 'diamond';
 }
 
 interface PrimaryBadgeResult {

@@ -10,13 +10,9 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { createClient } from '@/lib/supabase/client';
 import { AddUserDataForm } from '@/components/forms';
 import { validatePasswordWithBreachCheck } from '@/lib/utils/password-validation';
-import { User, Mail, Lock, Shield, Settings, ChevronDown, ChevronUp, Award } from 'lucide-react';
+import { User, Mail, Lock, Shield, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { API_BASE_URL } from '@/lib/config/api';
-import { UserBadges } from './UserBadges';
-import { BadgeSelectionModal } from './BadgeSelectionModal';
-import { PrimaryBadgeDisplay } from './PrimaryBadgeDisplay';
-import { useUserBadges } from '@/lib/hooks/useUserBadges';
 
 
 interface UserProfile {
@@ -33,7 +29,6 @@ interface SettingsFormProps {
 export function SettingsForm({ initialProfile }: SettingsFormProps) {
   const { updateProfile: updateUserProfile } = useUser();
   const { showSuccess, showError } = useGlobalNotification();
-  const { badges, loading: badgesLoading } = useUserBadges(initialProfile?.id);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
@@ -42,7 +37,6 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
   
   // Collapsible sections state (only preferences is collapsible, starts collapsed)
   const [preferencesCollapsed, setPreferencesCollapsed] = useState(true);
-  const [badgeModalOpen, setBadgeModalOpen] = useState(false);
   
   const supabase = createClient();
 
@@ -435,64 +429,6 @@ export function SettingsForm({ initialProfile }: SettingsFormProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Badges Section */}
-      <Card className="transition-all duration-200 hover:shadow-md">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <Award className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Badge Management</CardTitle>
-          </div>
-          <CardDescription>
-            View your achievements and customize which badge appears on your profile.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Current Primary Badge Display */}
-          <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
-            <div>
-              <h4 className="font-medium text-amber-900 dark:text-amber-100">Primary Badge</h4>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                This badge appears alongside your name in your profile
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <PrimaryBadgeDisplay 
-                profileId={initialProfile.id} 
-                size="md"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setBadgeModalOpen(true)}
-                className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-950/30"
-              >
-                Customize
-              </Button>
-            </div>
-          </div>
-
-          {/* All User Badges */}
-          <div>
-            <h4 className="font-medium mb-3">Your Achievement History</h4>
-            <UserBadges badges={badges} loading={badgesLoading} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Badge Selection Modal */}
-      <BadgeSelectionModal
-        profileId={initialProfile.id}
-        isOpen={badgeModalOpen}
-        onClose={() => setBadgeModalOpen(false)}
-        onSuccess={() => {
-          showSuccess(
-            'Badge Updated!',
-            'Your primary badge has been successfully updated and will now appear on your profile.',
-            <Award className="w-8 h-8" />
-          );
-        }}
-      />
 
     </div>
   );

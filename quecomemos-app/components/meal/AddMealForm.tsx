@@ -252,11 +252,48 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
       }
 
       const createdMeal = await mealResponse.json();
+      console.log('[AddMealForm] Meal creation result:', JSON.stringify(createdMeal, null, 2));
+      console.log('[AddMealForm] badgeNotifications field:', createdMeal.badgeNotifications);
+      console.log('[AddMealForm] Is badgeNotifications an array?', Array.isArray(createdMeal.badgeNotifications));
 
       showSuccess(
         "Meal Created Successfully!",
         `"${mealName}" has been saved with ${foods.length} food${foods.length !== 1 ? 's' : ''}.`
       );
+      
+      // Check for badge notifications in the response
+      if (createdMeal.badgeNotifications) {
+        console.log('[AddMealForm] Badge notifications found!', createdMeal.badgeNotifications);
+        
+        if (Array.isArray(createdMeal.badgeNotifications) && createdMeal.badgeNotifications.length > 0) {
+          console.log('[AddMealForm] Processing', createdMeal.badgeNotifications.length, 'badge notifications');
+          
+          // Show notifications for each badge achievement
+          createdMeal.badgeNotifications.forEach((notification: any, index: number) => {
+            console.log(`[AddMealForm] Processing notification ${index + 1}:`, notification);
+            const { badge, level, isNewBadge, isLevelUp } = notification;
+            
+            if (isNewBadge) {
+              console.log(`[AddMealForm] Showing NEW BADGE notification: ${badge.name} (${level})`);
+              showSuccess(
+                `🎉 New Badge Unlocked!`,
+                `You earned ${badge.name} (${level.toUpperCase()})!`
+              );
+            } else if (isLevelUp) {
+              console.log(`[AddMealForm] Showing LEVEL UP notification: ${badge.name} -> ${level}`);
+              showSuccess(
+                `⬆️ Badge Level Up!`,
+                `${badge.name} upgraded to ${level.toUpperCase()}!`
+              );
+            }
+          });
+        } else {
+          console.log('[AddMealForm] badgeNotifications is empty or not an array');
+        }
+      } else {
+        console.log('[AddMealForm] No badgeNotifications field in response');
+      }
+      
       if (onFoodAdded) onFoodAdded(createdMeal);
       if (onClose) onClose();
 

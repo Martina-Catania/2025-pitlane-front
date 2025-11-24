@@ -30,6 +30,14 @@ const sizeConfig = {
   lg: { container: 'w-10 h-10', text: 'text-lg', spacing: 'gap-2' }
 };
 
+// Level-specific border colors (glow removed for performance)
+const LEVEL_COLORS = {
+  bronze: { border: 'border-amber-500' },
+  silver: { border: 'border-gray-400' },
+  gold: { border: 'border-yellow-500' },
+  diamond: { border: 'border-cyan-400' }
+};
+
 export function PrimaryBadgeDisplay({ 
   profileId, 
   showName = false, 
@@ -51,7 +59,13 @@ export function PrimaryBadgeDisplay({
   };
 
   const config = sizeConfig[size];
-  const hasCustomIcon = primaryBadge.iconUrl && primaryBadge.iconUrl.trim() !== '';
+  const trimmedIconUrl = primaryBadge.iconUrl?.trim();
+  const hasCustomIcon = trimmedIconUrl && trimmedIconUrl !== '';
+  
+  // Get level-specific colors
+  const levelColors = primaryBadge.currentLevel 
+    ? LEVEL_COLORS[primaryBadge.currentLevel as keyof typeof LEVEL_COLORS]
+    : { border: 'border-gray-200' };
 
   return (
     <>
@@ -65,22 +79,22 @@ export function PrimaryBadgeDisplay({
         <div className={`relative ${config.container}`}>
         {hasCustomIcon ? (
           <Image
-            src={primaryBadge.iconUrl!}
+            src={trimmedIconUrl!}
             alt={primaryBadge.name}
             width={size === 'sm' ? 24 : size === 'md' ? 32 : 40}
             height={size === 'sm' ? 24 : size === 'md' ? 32 : 40}
-            className="rounded-full border border-gray-200 bg-white p-0.5"
+            className={`rounded-full ${levelColors.border} border-2 bg-white p-0.5`}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               const parent = target.parentElement;
               if (parent) {
                 const iconSize = size === 'sm' ? 'text-sm' : size === 'md' ? 'text-base' : 'text-lg';
-                parent.innerHTML = `<div class="flex items-center justify-center ${config.container} ${iconSize} bg-gray-100 rounded-full border border-gray-200">${getDefaultBadgeIcon(primaryBadge.badgeType)}</div>`;
+                parent.innerHTML = `<div class="flex items-center justify-center ${config.container} ${iconSize} bg-gray-100 rounded-full ${levelColors.border} border-2">${getDefaultBadgeIcon(primaryBadge.badgeType)}</div>`;
               }
             }}
           />
         ) : (
-          <div className={`flex items-center justify-center ${config.container} ${config.text} bg-gray-100 rounded-full border border-gray-200`}>
+          <div className={`flex items-center justify-center ${config.container} ${config.text} bg-gray-100 rounded-full ${levelColors.border} border-2`}>
             {getDefaultBadgeIcon(primaryBadge.badgeType)}
           </div>
         )}

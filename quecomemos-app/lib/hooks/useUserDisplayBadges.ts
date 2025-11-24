@@ -9,6 +9,10 @@ interface Badge {
   badgeType: string;
   iconUrl?: string;
   earnedAt?: string;
+  currentLevel?: 'bronze' | 'silver' | 'gold' | 'diamond';
+  progress?: number;
+  isCompleted?: boolean;
+  lastUpgraded?: string;
 }
 
 interface UseUserBadgesResult {
@@ -54,7 +58,8 @@ export function useUserDisplayBadges(profileId?: string): UseUserBadgesResult {
       }
 
       const data = await response.json();
-      setBadges(data.badges || []);
+      // The API returns an array directly, not wrapped in an object
+      setBadges(Array.isArray(data) ? data : (data.badges || []));
     } catch (err) {
       console.error('Error fetching user badges:', err);
       setError(err instanceof Error ? err.message : String(err));

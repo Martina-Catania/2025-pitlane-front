@@ -17,6 +17,7 @@ import { useMeals } from '@/lib/contexts/MealsContext';
 import { useCalorieProgressContext } from '@/lib/contexts/CalorieProgressContext';
 import { MealService, type RegisterMealData } from '@/lib/services/MealService';
 import { UserBadges } from '@/components/profile/UserBadges';
+import { BadgeProgressDisplay } from '@/components/profile/BadgeProgressDisplay';
 import { useUserBadges } from '@/lib/hooks/useUserBadges';
 import { PrimaryBadgeDisplay } from '@/components/profile/PrimaryBadgeDisplay';
 import { BadgeSelectionModal } from '@/components/profile/BadgeSelectionModal';
@@ -670,8 +671,8 @@ export default function UserHistoryPage() {
             </Card>
           )}
 
-          {/* User Badges */}
-          <UserBadges badges={badges} loading={loadingBadges} />
+          {/* User Badges - Now showing progress tracking */}
+          <BadgeProgressDisplay profileId={profile?.id} />
         </TabsContent>
       </Tabs>
 

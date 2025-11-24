@@ -7,6 +7,7 @@ import { MealsProvider } from "@/lib/contexts/MealsContext";
 import { UserProvider } from "@/lib/contexts/UserContext";
 import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { CalorieProgressProvider } from "@/lib/contexts/CalorieProgressContext";
+import { BadgeProviderWrapper } from "@/components/providers/BadgeProviderWrapper";
 
 
 const defaultUrl = process.env.VERCEL_URL
@@ -34,22 +35,24 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <UserProvider>
-          <FoodsProvider>
-            <MealsProvider>
-              <NotificationProvider>
-                <CalorieProgressProvider>
-                  <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                  >
-                    {children}
-                  </ThemeProvider>
-                </CalorieProgressProvider>
-              </NotificationProvider>
-            </MealsProvider>
-          </FoodsProvider>
+          <BadgeProviderWrapper>
+            <FoodsProvider>
+              <MealsProvider>
+                <NotificationProvider>
+                  <CalorieProgressProvider>
+                    <ThemeProvider
+                      attribute="class"
+                      defaultTheme="system"
+                      enableSystem
+                      disableTransitionOnChange
+                    >
+                      {children}
+                    </ThemeProvider>
+                  </CalorieProgressProvider>
+                </NotificationProvider>
+              </MealsProvider>
+            </FoodsProvider>
+          </BadgeProviderWrapper>
         </UserProvider>
       </body>
     </html>

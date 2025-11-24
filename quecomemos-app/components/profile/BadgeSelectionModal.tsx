@@ -122,7 +122,8 @@ export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: B
                 ) : (
                   badges.map((badge) => {
                     const isSelected = primaryBadge?.BadgeID === badge.BadgeID;
-                    const hasCustomIcon = badge.iconUrl && badge.iconUrl.trim() !== '';
+                    const trimmedIconUrl = badge.iconUrl?.trim();
+                    const hasCustomIcon = trimmedIconUrl && trimmedIconUrl !== '';
 
                     return (
                       <Card 
@@ -142,7 +143,7 @@ export function BadgeSelectionModal({ profileId, isOpen, onClose, onSuccess }: B
                               <div className="w-12 h-12 relative">
                                 {hasCustomIcon ? (
                                   <Image
-                                    src={badge.iconUrl!}
+                                    src={trimmedIconUrl!}
                                     alt={badge.name}
                                     width={48}
                                     height={48}
