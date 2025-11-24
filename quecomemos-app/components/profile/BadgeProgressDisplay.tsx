@@ -52,6 +52,38 @@ const BADGE_TYPE_LABELS: Record<string, string> = {
   'voting_winner': 'Winner'
 };
 
+// Tier-specific badge names that evolve with level
+const getTierSpecificBadgeName = (badgeType: string, level: 'bronze' | 'silver' | 'gold' | 'diamond', baseName: string): string => {
+  const tierNames: Record<string, Record<string, string>> = {
+    'meal_creation': {
+      'bronze': 'Apprentice Chef',
+      'silver': 'Skilled Chef',
+      'gold': 'Master Chef',
+      'diamond': 'Culinary Visionary'
+    },
+    'group_creation': {
+      'bronze': 'Community Builder',
+      'silver': 'Group Organizer',
+      'gold': 'Social Architect',
+      'diamond': 'Unity Catalyst'
+    },
+    'voting_participation': {
+      'bronze': 'Civic Participant',
+      'silver': 'Active Voter',
+      'gold': 'Voice of the People ',
+      'diamond': 'Democracy Champion'
+    },
+    'voting_winner': {
+      'bronze': 'Taste Explorer',
+      'silver': 'Flavor Curator',
+      'gold': 'Culinary Influencer',
+      'diamond': 'Legendary Taste Maker'
+    }
+  };
+  
+  return tierNames[badgeType]?.[level] || baseName;
+};
+
 interface BadgeRequirement {
   BadgeRequirementID: number;
   badgeId: number;
@@ -233,7 +265,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                             <h4 className={`font-semibold text-xs truncate ${
                               levelConfig ? levelConfig.color : 'text-amber-500'
                             }`}>
-                              {badge.name}
+                              {currentLevel ? getTierSpecificBadgeName(badge.badgeType, currentLevel, badge.name) : badge.name}
                             </h4>
                             {levelConfig && (
                               <Badge 
@@ -362,7 +394,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                       {/* Badge Info */}
                       <div>
                         <h3 className={`font-bold text-base ${levelConfig ? levelConfig.color : 'text-amber-500'}`}>
-                          {badge.name}
+                          {currentLevel ? getTierSpecificBadgeName(badge.badgeType, currentLevel, badge.name) : badge.name}
                         </h3>
                         <p className="text-xs text-amber-400/60">
                           {BADGE_TYPE_LABELS[badge.badgeType] || badge.badgeType}

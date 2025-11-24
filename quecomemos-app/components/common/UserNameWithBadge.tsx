@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PrimaryBadgeDisplay } from '@/components/profile/PrimaryBadgeDisplay';
 import { usePrimaryBadge } from '@/lib/hooks/usePrimaryBadge';
 
@@ -24,14 +24,53 @@ export function UserNameWithBadge({
   usernameClassName = ''
 }: UserNameWithBadgeProps) {
   const { primaryBadge, loading } = usePrimaryBadge(profileId);
+  const [isMounted, setIsMounted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
-  // Show loading skeleton while badge is loading to ensure both load together
-  if (loading) {
+  // Preload badge image to ensure it's ready before displaying
+  useEffect(() => {
+    if (!loading && primaryBadge) {
+      const iconUrl = primaryBadge.iconUrl?.trim();
+      
+      if (iconUrl && iconUrl !== '') {
+        // Preload the image
+        const img = new Image();
+        img.onload = () => {
+          // Wait additional time after image loads to ensure borders render
+          setTimeout(() => {
+            setImageLoaded(true);
+            setIsMounted(true);
+          }, 100);
+        };
+        img.onerror = () => {
+          // If image fails, still mount after delay
+          setTimeout(() => {
+            setImageLoaded(true);
+            setIsMounted(true);
+          }, 100);
+        };
+        img.src = iconUrl;
+      } else {
+        // No image to load, mount with delay
+        setTimeout(() => {
+          setImageLoaded(true);
+          setIsMounted(true);
+        }, 100);
+      }
+    } else if (!loading && !primaryBadge) {
+      // If no badge, mount immediately
+      setIsMounted(true);
+      setImageLoaded(true);
+    }
+  }, [loading, primaryBadge]);
+  
+  // Show loading skeleton while badge is loading, image loading, or not yet mounted
+  if (loading || !isMounted || !imageLoaded) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <div className={`h-4 bg-zinc-800/50 rounded animate-pulse ${usernameClassName ? 'w-24' : 'w-20'}`} />
+        <div className={`h-5 bg-zinc-800/50 rounded animate-pulse ${usernameClassName ? 'w-28' : 'w-24'}`} />
         <div className={`${
-          badgeSize === 'sm' ? 'w-6 h-6' : badgeSize === 'md' ? 'w-8 h-8' : 'w-10 h-10'
+          badgeSize === 'sm' ? 'w-9 h-9' : badgeSize === 'md' ? 'w-12 h-12' : 'w-16 h-16'
         } bg-zinc-800/50 rounded-full animate-pulse`} />
       </div>
     );

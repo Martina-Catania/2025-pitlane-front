@@ -2,7 +2,6 @@
 
 import { Card } from "@/components/ui/card";
 import { ChefHat, Clock, User, Users, Hexagon } from "lucide-react";
-import { UserNameWithBadge } from "@/components/common";
 import { DEFAULTS } from "./constants";
 import { useKorvenCheck } from "./hooks/useKorvenCheck";
 
@@ -120,14 +119,9 @@ export function MealCard({
         </div>
 
         {/* Created by */}
-        <div className="text-xs text-gray-400 mb-3 flex items-center gap-1">
-          <span>Created by:</span>
-          <UserNameWithBadge 
-            username={meal.profile.username || 'Anonymous'}
-            profileId={meal.profileId}
-            badgeSize="sm"
-            usernameClassName="text-xs"
-          />
+        <div className="text-xs text-gray-400 mb-3">
+          <span>Created by: </span>
+          <span className="font-medium">{meal.profile.username || 'Anonymous'}</span>
         </div>
 
         {/* Foods in meal */}

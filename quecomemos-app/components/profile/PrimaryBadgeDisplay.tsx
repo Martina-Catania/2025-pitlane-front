@@ -25,9 +25,9 @@ const getDefaultBadgeIcon = (badgeType: string): string => {
 };
 
 const sizeConfig = {
-  sm: { container: 'w-6 h-6', text: 'text-sm', spacing: 'gap-1' },
-  md: { container: 'w-8 h-8', text: 'text-base', spacing: 'gap-2' },
-  lg: { container: 'w-10 h-10', text: 'text-lg', spacing: 'gap-2' }
+  sm: { container: 'w-9 h-9', text: 'text-sm', spacing: 'gap-1.5', imageSize: 36 },
+  md: { container: 'w-12 h-12', text: 'text-base', spacing: 'gap-2', imageSize: 48 },
+  lg: { container: 'w-16 h-16', text: 'text-xl', spacing: 'gap-3', imageSize: 64 }
 };
 
 // Level-specific border colors (glow removed for performance)
@@ -81,8 +81,8 @@ export function PrimaryBadgeDisplay({
           <Image
             src={trimmedIconUrl!}
             alt={primaryBadge.name}
-            width={size === 'sm' ? 24 : size === 'md' ? 32 : 40}
-            height={size === 'sm' ? 24 : size === 'md' ? 32 : 40}
+            width={config.imageSize}
+            height={config.imageSize}
             className={`rounded-full ${levelColors.border} border-2 bg-white p-0.5`}
             onError={(e) => {
               const target = e.target as HTMLImageElement;

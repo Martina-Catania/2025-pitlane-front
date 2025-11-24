@@ -46,6 +46,38 @@ const getBadgeTypeLabel = (badgeType: string): string => {
   return typeLabels[badgeType] || badgeType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
+// Tier-specific badge names that evolve with level
+const getTierSpecificBadgeName = (badgeType: string, level: 'bronze' | 'silver' | 'gold' | 'diamond', baseName: string): string => {
+  const tierNames: Record<string, Record<string, string>> = {
+    'meal_creation': {
+      'bronze': 'Apprentice Chef',
+      'silver': 'Skilled Chef',
+      'gold': 'Master Chef',
+      'diamond': 'Culinary Visionary'
+    },
+    'group_creation': {
+      'bronze': 'Community Builder',
+      'silver': 'Group Organizer',
+      'gold': 'Social Architect',
+      'diamond': 'Unity Catalyst'
+    },
+    'voting_participation': {
+      'bronze': 'Civic Participant',
+      'silver': 'Active Voter',
+      'gold': 'Democracy Champion',
+      'diamond': 'Voice of the People'
+    },
+    'voting_winner': {
+      'bronze': 'Taste Explorer',
+      'silver': 'Flavor Curator',
+      'gold': 'Culinary Influencer',
+      'diamond': 'Legendary Taste Maker'
+    }
+  };
+  
+  return tierNames[badgeType]?.[level] || baseName;
+};
+
 // Level configuration matching BadgeProgressDisplay
 const LEVEL_CONFIG = {
   bronze: { 
@@ -145,25 +177,88 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
           {/* Badge Icon and Name */}
           <div className="flex flex-col items-center text-center space-y-3">
             <div className={`relative w-24 h-24 rounded-full ${levelConfig.bg} ${levelConfig.border} border-4 shadow-xl flex items-center justify-center overflow-hidden`}>
-              {/* Primary shine animation overlay - tier-specific timing */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, ${shineColor} 50%, transparent 100%)`,
-                  animation: `shine ${animationDuration} ease-in-out infinite`,
-                  transform: 'translateX(-100%)'
-                }}
-              />
-              {/* Secondary shine for diamond (glamorous double-shine effect) */}
-              {isDiamond && (
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)`,
-                    animation: `shine ${animationDuration} ease-in-out infinite 0.3s`,
-                    transform: 'translateX(-100%)'
-                  }}
-                />
+              {/* Diamond gets heavenly ascension animation */}
+              {isDiamond ? (
+                <>
+                  {/* Glowing aura base */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, transparent 70%)`,
+                      animation: 'pulse 2s ease-in-out infinite'
+                    }}
+                  />
+                  {/* Rising light particles */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `
+                        radial-gradient(2px 2px at 20% 30%, white, transparent),
+                        radial-gradient(2px 2px at 60% 70%, white, transparent),
+                        radial-gradient(2px 2px at 50% 50%, white, transparent),
+                        radial-gradient(2px 2px at 80% 10%, white, transparent),
+                        radial-gradient(2px 2px at 90% 60%, white, transparent),
+                        radial-gradient(1px 1px at 15% 90%, rgba(34, 211, 238, 0.8), transparent),
+                        radial-gradient(1px 1px at 40% 40%, rgba(34, 211, 238, 0.8), transparent)
+                      `,
+                      backgroundSize: '100% 200%',
+                      animation: 'ascend 3s linear infinite'
+                    }}
+                  />
+                  {/* Heavenly rays */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `
+                        conic-gradient(from 0deg at 50% 50%, 
+                          transparent 0deg, 
+                          rgba(255, 255, 255, 0.1) 45deg, 
+                          transparent 90deg,
+                          transparent 90deg,
+                          rgba(34, 211, 238, 0.2) 135deg,
+                          transparent 180deg,
+                          transparent 180deg,
+                          rgba(255, 255, 255, 0.15) 225deg,
+                          transparent 270deg,
+                          transparent 270deg,
+                          rgba(34, 211, 238, 0.1) 315deg,
+                          transparent 360deg
+                        )
+                      `,
+                      animation: 'rotate 8s linear infinite'
+                    }}
+                  />
+                  {/* Main diamond shine sweep */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)`,
+                      animation: `shine ${animationDuration} ease-in-out infinite`,
+                      transform: 'translateX(-100%)'
+                    }}
+                  />
+                  {/* Secondary cross-shine */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(-45deg, transparent 0%, rgba(34, 211, 238, 0.4) 50%, transparent 100%)`,
+                      animation: `shine ${animationDuration} ease-in-out infinite 0.5s`,
+                      transform: 'translateX(-100%)'
+                    }}
+                  />
+                </>
+              ) : (
+                /* Standard tier shine animation */
+                <>
+                  <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(90deg, transparent 0%, ${shineColor} 50%, transparent 100%)`,
+                      animation: `shine ${animationDuration} ease-in-out infinite`,
+                      transform: 'translateX(-100%)'
+                    }}
+                  />
+                </>
               )}
               <style jsx>{`
                 @keyframes shine {
@@ -181,6 +276,40 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
                   95.1%, 100% {
                     transform: translateX(100%);
                     opacity: 0;
+                  }
+                }
+                @keyframes ascend {
+                  0% {
+                    background-position: 0% 0%;
+                    opacity: 0;
+                  }
+                  10% {
+                    opacity: 1;
+                  }
+                  90% {
+                    opacity: 1;
+                  }
+                  100% {
+                    background-position: 0% -200%;
+                    opacity: 0;
+                  }
+                }
+                @keyframes rotate {
+                  from {
+                    transform: rotate(0deg);
+                  }
+                  to {
+                    transform: rotate(360deg);
+                  }
+                }
+                @keyframes pulse {
+                  0%, 100% {
+                    opacity: 0.5;
+                    transform: scale(1);
+                  }
+                  50% {
+                    opacity: 0.8;
+                    transform: scale(1.05);
                   }
                 }
               `}</style>
@@ -207,7 +336,9 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
             </div>
 
             <div>
-              <h3 className={`text-xl font-bold ${levelConfig.color}`}>{badge.name}</h3>
+              <h3 className={`text-xl font-bold ${levelConfig.color}`}>
+                {getTierSpecificBadgeName(badge.badgeType, currentLevel as 'bronze' | 'silver' | 'gold' | 'diamond', badge.name)}
+              </h3>
               <Badge className={`mt-2 ${levelConfig.solidBg} text-white border-0`}>
                 {levelConfig.name.toUpperCase()}
               </Badge>

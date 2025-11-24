@@ -5,7 +5,6 @@ import { Meal } from '@/lib/contexts/MealsContext';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UtensilsCrossed, Flame } from 'lucide-react';
-import { UserNameWithBadge } from '@/components/common';
 
 interface MealCompositionProps {
   meal: Meal;
@@ -113,14 +112,9 @@ export function MealComposition({ meal, className = "" }: MealCompositionProps) 
         </div>
 
         {/* Creator Info */}
-        <div className="text-center text-xs text-gray-400 pt-2 border-t border-amber-700/30 flex items-center justify-center gap-1">
-          <span>Created by</span>
-          <UserNameWithBadge 
-            username={meal.profile?.username || 'Unknown'}
-            profileId={meal.profileId}
-            badgeSize="sm"
-            usernameClassName="text-xs text-amber-300"
-          />
+        <div className="text-center text-xs text-gray-400 pt-2 border-t border-amber-700/30">
+          <span>Created by </span>
+          <span className="text-amber-300 font-medium">{meal.profile?.username || 'Unknown'}</span>
         </div>
       </CardContent>
     </Card>
