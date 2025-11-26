@@ -4,9 +4,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Activity, ChefHat, Calendar, Search, Filter, Trophy, Gamepad2 } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
+import { VotingService } from '@/components/voting/VotingService';
+import { GameHistoryService } from '@/components/games/clicker-game/GameHistoryService';
+import { SessionDetailsModal } from '@/components/session/SessionDetailsModal';
 
 interface Consumption {
   ConsumptionID: number;
@@ -38,9 +41,20 @@ export default function GroupHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // Voting and game history
+  const [votingSessions, setVotingSessions] = useState<any[]>([]);
+  const [gameSessions, setGameSessions] = useState<any[]>([]);
+  const [votingLoading, setVotingLoading] = useState(false);
+  const [gameLoading, setGameLoading] = useState(false);
+  
+  // Session details modal
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
+  const [selectedSessionType, setSelectedSessionType] = useState<'voting' | 'game'>('voting');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Context hooks
-  const { } = useUser();
+  const { userData } = useUser();
 
   const fetchGroupHistory = useCallback(async () => {
     try {
@@ -59,10 +73,48 @@ export default function GroupHistoryPage() {
       setLoading(false);
     }
   }, [groupId]);
+  
+  const fetchVotingHistory = useCallback(async () => {
+    try {
+      setVotingLoading(true);
+      const profileId = userData?.profile?.id;
+      if (!profileId) return;
+      
+      const response = await VotingService.getVotingHistory(profileId, parseInt(groupId));
+      setVotingSessions(response.sessions.slice(0, 5)); // Show last 5 voting sessions
+    } catch (err) {
+      console.error('Error fetching voting history:', err);
+    } finally {
+      setVotingLoading(false);
+    }
+  }, [groupId, userData?.profile?.id]);
+  
+  const fetchGameHistory = useCallback(async () => {
+    try {
+      setGameLoading(true);
+      const profileId = userData?.profile?.id;
+      if (!profileId) return;
+      
+      const response = await GameHistoryService.getGameHistory(profileId, parseInt(groupId));
+      setGameSessions(response.sessions.slice(0, 5)); // Show last 5 game sessions
+    } catch (err) {
+      console.error('Error fetching game history:', err);
+    } finally {
+      setGameLoading(false);
+    }
+  }, [groupId, userData?.profile?.id]);
 
   useEffect(() => {
     fetchGroupHistory();
-  }, [fetchGroupHistory]);
+    fetchVotingHistory();
+    fetchGameHistory();
+  }, [fetchGroupHistory, fetchVotingHistory, fetchGameHistory]);
+  
+  const handleViewSessionDetails = (sessionId: number, type: 'voting' | 'game') => {
+    setSelectedSessionId(sessionId);
+    setSelectedSessionType(type);
+    setIsModalOpen(true);
+  };
 
 
 
@@ -188,6 +240,105 @@ function GroupHistorySkeleton() {
             Complete meal consumption history for {group?.name}
           </p>
         </div>
+      </div>
+      
+      {/* Voting & Game History Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Recent Voting Sessions */}
+        <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-200">
+              <Trophy className="w-5 h-5" />
+              Recent Voting Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {votingLoading ? (
+              <div className="text-center py-4 text-gray-400">Loading...</div>
+            ) : votingSessions.length > 0 ? (
+              <div className="space-y-2">
+                {votingSessions.map((session) => (
+                  <button
+                    key={session.sessionId}
+                    onClick={() => handleViewSessionDetails(session.sessionId, 'voting')}
+                    className="w-full text-left p-3 rounded-lg border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-300">
+                          {session.winnerMeal?.name || 'No winner meal'}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {new Date(session.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">{session.participantCount} participants</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                No voting sessions yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Game Sessions */}
+        <Card className="bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-200">
+              <Gamepad2 className="w-5 h-5" />
+              Recent Game Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {gameLoading ? (
+              <div className="text-center py-4 text-gray-400">Loading...</div>
+            ) : gameSessions.length > 0 ? (
+              <div className="space-y-2">
+                {gameSessions.map((session) => (
+                  <button
+                    key={session.sessionId}
+                    onClick={() => handleViewSessionDetails(session.sessionId, 'game')}
+                    className="w-full text-left p-3 rounded-lg border border-neutral-700 bg-neutral-800/50 hover:bg-neutral-700/50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-300">
+                          {session.winningMeal?.name || 'No winning meal'}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {new Date(session.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">{session.participantCount} participants</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                No game sessions yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -318,6 +469,22 @@ function GroupHistorySkeleton() {
           </CardContent>
         </Card>
       )}
+      
+      {/* Session Details Modal */}
+      <SessionDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedSessionId(null);
+        }}
+        sessionId={selectedSessionId}
+        sessionType={selectedSessionType}
+        onPortionRegistered={() => {
+          fetchGroupHistory();
+          fetchVotingHistory();
+          fetchGameHistory();
+        }}
+      />
     </div>
   );
 }

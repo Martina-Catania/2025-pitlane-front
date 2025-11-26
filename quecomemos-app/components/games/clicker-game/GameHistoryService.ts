@@ -51,8 +51,7 @@ export interface GameSessionDetails {
       foodId: number;
       name: string;
       quantity: number;
-      unit: string;
-      kcalsPer100g: number;
+      kCal: number; // kCal per unit, not per 100g
     }>;
   } | null;
   participants: Array<{
@@ -69,8 +68,7 @@ export interface GameSessionDetails {
         foodId: number;
         name: string;
         quantity: number;
-        unit: string;
-        kcalsPer100g: number;
+        kCal: number; // kCal per unit, not per 100g
       }>;
     } | null;
     clickCount: number;
@@ -78,6 +76,8 @@ export interface GameSessionDetails {
     hasSubmitted: boolean;
     joinedAt: string;
     submittedAt: string | null;
+    hasSelectedPortion?: boolean;
+    portionFraction?: number;
     mealPortions: Array<{
       mealId: number;
       mealName: string;
@@ -86,8 +86,8 @@ export interface GameSessionDetails {
       foodPortions: Array<{
         foodId: number;
         name: string;
-        gramsConsumed: number;
-        kcalsConsumed: number;
+        portionFraction: number;
+        quantityConsumed: number;
       }>;
     }>;
   }>;
@@ -133,12 +133,21 @@ export class GameHistoryService {
     sessionId: number,
     profileId: string,
     mealId: number,
+    mealPortionFraction: number,
     foodPortions: Array<{
       foodId: number;
-      gramsConsumed: number;
-      kcalsConsumed: number;
+      portionFraction: number;
     }>
   ): Promise<{ success: boolean; mealPortion: unknown }> {
+    const payload = {
+      profileId,
+      mealId,
+      mealPortionFraction,
+      foodPortions,
+    };
+    
+    console.log('[GameHistoryService] registerGameMealPortion payload:', JSON.stringify(payload, null, 2));
+    
     const response = await fetch(
       `${API_BASE_URL}/game-history/session/${sessionId}/register-portion`,
       {
@@ -146,19 +155,18 @@ export class GameHistoryService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          profileId,
-          mealId,
-          foodPortions,
-        }),
+        body: JSON.stringify(payload),
       }
     );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to register meal portion');
+      console.error('[GameHistoryService] Error response:', errorData);
+      throw new Error(errorData.message || errorData.error || 'Failed to register meal portion');
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('[GameHistoryService] Success response:', result);
+    return result;
   }
 }

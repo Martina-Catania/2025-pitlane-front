@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Users, Clock, ChevronRight, Vote } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { VotingService } from './VotingService';
-import { VotingDetailsModal } from './VotingDetailsModal';
+import { SessionDetailsModal } from '@/components/session/SessionDetailsModal';
 import { useVoting } from '@/lib/contexts/VotingContext';
 
 interface VotingHistoryItem {
@@ -200,10 +200,11 @@ export function VotingHistorySection({ groupId, className = '' }: VotingHistoryS
       </Card>
 
       {/* Details Modal */}
-      <VotingDetailsModal
+      <SessionDetailsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         sessionId={selectedSessionId}
+        sessionType="voting"
       />
     </>
   );

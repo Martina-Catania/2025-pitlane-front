@@ -53,15 +53,40 @@ export function PortionSelectionModal({
   const [loading, setLoading] = useState(false);
 
   const handlePortionConfirm = async (portionData: PortionData) => {
+    console.log('[PortionSelectionModal] Confirming portion:', {
+      isGameSession,
+      mealId,
+      sessionId,
+      userId,
+      portionData: {
+        portionFraction: portionData.portionFraction,
+        totalCalories: portionData.totalCalories,
+        mode: portionData.mode,
+        foodPortions: portionData.foodPortions
+      }
+    });
+    
     setLoading(true);
     try {
       if (isGameSession && mealId) {
         // Game session portion registration
+        console.log('[PortionSelectionModal] Calling GameHistoryService with:', {
+          sessionId,
+          userId,
+          mealId,
+          mealPortionFraction: portionData.portionFraction,
+          foodPortionsCount: portionData.foodPortions.length
+        });
+        
         await GameHistoryService.registerGameMealPortion(
           sessionId,
           userId!,
           mealId,
-          portionData.foodPortions
+          portionData.portionFraction,
+          portionData.foodPortions.map(fp => ({
+            foodId: fp.foodId,
+            portionFraction: fp.portionFraction
+          }))
         );
       } else if (winnerMeal && userId) {
         // Voting session portion registration
@@ -114,12 +139,12 @@ export function PortionSelectionModal({
         {/* Header */}
         <CardHeader className={`p-6 border-b ${
           isGameSession 
-            ? 'bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-800/30'
+            ? 'bg-gradient-to-r from-amber-900/20 to-amber-800/20 border-amber-800/30'
             : 'bg-gradient-to-r from-amber-900/20 to-amber-800/20 border-amber-800/30'
         }`}>
           <div className="flex items-center justify-between">
             <CardTitle className={`text-2xl font-bold ${
-              isGameSession ? 'text-green-400' : 'text-amber-200'
+              isGameSession ? 'text-amber-400' : 'text-amber-200'
             }`}>
               Select Your Portion
             </CardTitle>
@@ -133,7 +158,7 @@ export function PortionSelectionModal({
           </div>
           <p className="text-neutral-300 mt-2">
             Choose how much of <span className={`font-semibold ${
-              isGameSession ? 'text-green-400' : 'text-amber-200'
+              isGameSession ? 'text-amber-400' : 'text-amber-200'
             }`}>{displayMealName}</span> you consumed
           </p>
         </CardHeader>

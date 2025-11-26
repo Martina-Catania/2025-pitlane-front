@@ -45,6 +45,19 @@ export function MealPortionSelector({
   onCancel,
   loading = false
 }: MealPortionSelectorProps) {
+  console.log('[MealPortionSelector] Initialized with meal:', {
+    mealId: meal.mealId,
+    name: meal.name,
+    totalCalories: meal.totalCalories,
+    mealFoodsCount: meal.mealFoods.length,
+    mealFoods: meal.mealFoods.map(f => ({
+      foodId: f.foodId,
+      name: f.foodName,
+      quantity: f.quantity,
+      kCal: f.kCal
+    }))
+  });
+  
   // Per-food portions - initialize with full portions (100%)
   const [foodPortions, setFoodPortions] = useState<Record<number, number>>(() => {
     const initial: Record<number, number> = {};
@@ -174,12 +187,16 @@ export function MealPortionSelector({
       };
     });
 
-    onConfirm({
-      mode: 'percentage',
+    const portionData = {
+      mode: 'percentage' as const,
       portionFraction: calculateMealPortionFraction(),
       foodPortions: portionDataArray,
       totalCalories: calculateCalories()
-    });
+    };
+    
+    console.log('[MealPortionSelector] Confirming with portion data:', portionData);
+
+    onConfirm(portionData);
   };
 
   // Format quantity for display (eighths fractions)

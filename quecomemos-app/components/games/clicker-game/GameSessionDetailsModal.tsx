@@ -129,9 +129,9 @@ export function GameSessionDetailsModal({
   const getGameIcon = (gameType: string) => {
     switch (gameType) {
       case 'egg_clicker':
-        return <Egg className="h-5 w-5 text-green-400" />;
+        return <Egg className="h-5 w-5 text-amber-400" />;
       default:
-        return <Gamepad2 className="h-5 w-5 text-green-400" />;
+        return <Gamepad2 className="h-5 w-5 text-amber-400" />;
     }
   };
 
@@ -157,20 +157,20 @@ export function GameSessionDetailsModal({
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
         <Card 
-          className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-green-900/30 to-green-950/50 border-green-700/50 pointer-events-auto"
+          className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-amber-900/30 to-amber-950/50 border-amber-700/50 pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          <CardHeader className="sticky top-0 bg-gradient-to-br from-green-900/90 to-green-950/90 backdrop-blur-sm z-10 border-b border-green-700/50">
+          <CardHeader className="sticky top-0 bg-gradient-to-br from-amber-900/90 to-amber-950/90 backdrop-blur-sm z-10 border-b border-amber-700/50">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <CardTitle className="flex items-center gap-2 text-green-400 mb-2">
+                <CardTitle className="flex items-center gap-2 text-amber-400 mb-2">
                   {sessionDetails && getGameIcon(sessionDetails.gameType)}
                   Game Session Details
                 </CardTitle>
                 {sessionDetails && (
                   <div className="flex items-center gap-3 text-sm text-neutral-300">
                     <span>{getGameName(sessionDetails.gameType)}</span>
-                    <Badge variant="outline" className="border-green-600 text-green-300">
+                    <Badge variant="outline" className="border-amber-600 text-amber-300">
                       {sessionDetails.duration}s
                     </Badge>
                     <span className="text-neutral-400">
@@ -193,7 +193,7 @@ export function GameSessionDetailsModal({
           <CardContent className="p-6 space-y-6">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
               </div>
             ) : error ? (
               <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
@@ -260,13 +260,13 @@ export function GameSessionDetailsModal({
                             size="sm"
                             onClick={handleSelectPortion}
                             className={`flex-1 ${
-                              getCurrentUserParticipant()?.mealPortions.length > 0
-                                ? 'border-green-600 text-green-300'
+                              (getCurrentUserParticipant()?.mealPortions?.length ?? 0) > 0
+                                ? 'border-amber-600 text-amber-300'
                                 : 'border-amber-600 text-amber-300 hover:bg-amber-900/30'
                             }`}
                           >
                             <PieChart className="h-4 w-4 mr-2" />
-                            {getCurrentUserParticipant()?.mealPortions.length > 0
+                            {(getCurrentUserParticipant()?.mealPortions?.length ?? 0) > 0
                               ? 'View/Edit Portion'
                               : 'Register Portion'}
                           </Button>
@@ -278,7 +278,7 @@ export function GameSessionDetailsModal({
 
                 {/* Participants Section */}
                 <div>
-                  <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-amber-400 mb-3 flex items-center gap-2">
                     <Users className="h-5 w-5" />
                     Participants ({sessionDetails.participants.length})
                   </h3>
@@ -317,21 +317,21 @@ export function GameSessionDetailsModal({
                                 
                                 {/* Proposed meal */}
                                 {participant.proposedMeal && (
-                                  <p className="text-sm text-green-300 mt-1">
+                                  <p className="text-sm text-amber-300 mt-1">
                                     🍽️ Proposed: {participant.proposedMeal.name}
                                   </p>
                                 )}
                                 
                                 {/* Portion status */}
                                 {participant.mealPortions.length > 0 && (
-                                  <p className="text-xs text-green-400 mt-1">
+                                  <p className="text-xs text-amber-400 mt-1">
                                     ✓ Portion registered
                                   </p>
                                 )}
                               </div>
                               
                               <div className="text-right">
-                                <div className="text-xl font-bold text-green-400">
+                                <div className="text-xl font-bold text-amber-400">
                                   {participant.clickCount}
                                 </div>
                                 <p className="text-xs text-neutral-400">clicks</p>
@@ -344,7 +344,7 @@ export function GameSessionDetailsModal({
                 </div>
 
                 {/* Game Info */}
-                <div className="flex items-center gap-4 text-sm text-neutral-400 pt-4 border-t border-green-700/30">
+                <div className="flex items-center gap-4 text-sm text-neutral-400 pt-4 border-t border-amber-700/30">
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     <span>Started: {sessionDetails.startTime && formatDate(sessionDetails.startTime)}</span>
@@ -376,10 +376,10 @@ export function GameSessionDetailsModal({
               foodId: f.foodId,
               foodName: f.name,
               quantity: f.quantity,
-              kCal: f.kcalsPer100g
+              kCal: f.kCal
             })),
             totalCalories: sessionDetails.winningMeal.foods.reduce((sum, f) => 
-              sum + (f.kcalsPer100g * f.quantity / 100), 0
+              sum + (f.kCal * f.quantity / 100), 0
             )
           }}
           userId={userId}
@@ -402,3 +402,4 @@ export function GameSessionDetailsModal({
     </>
   );
 }
+

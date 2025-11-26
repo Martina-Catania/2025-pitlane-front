@@ -11,6 +11,7 @@ import { useUser } from '@/lib/contexts/UserContext';
 import { GameService, GameSession, GameType } from '@/lib/services/GameService';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { ProposeGameMealModal } from '@/components/games/clicker-game/ProposeGameMealModal';
+import { GameHistorySection } from '@/components/games/clicker-game/GameHistorySection';
 
 export default function GameLobbyPage() {
   const params = useParams();
@@ -292,13 +293,16 @@ export default function GameLobbyPage() {
             </CardContent>
           </Card>
           </div>
+
+          {/* Game History */}
+          <GameHistorySection groupId={groupId} />
         </div>
       ) : gameSession ? (
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Game Info Card */}
-          <Card className="bg-gradient-to-br from-green-900/20 to-green-950/40 border-green-700/50">
+          <Card className="bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-green-400">
+              <CardTitle className="flex items-center gap-3 text-amber-400">
                 <Gamepad2 className="w-6 h-6" />
                 {gameSession.gameType === 'egg_clicker' ? 'Egg Clicker' : 'Roulette'}
               </CardTitle>
@@ -325,7 +329,7 @@ export default function GameLobbyPage() {
                 </div>
               )}
               {gameSession.status === 'ready' && (
-                <div className="text-sm text-green-400">
+                <div className="text-sm text-amber-400">
                   ✓ All players ready! Host can start the game.
                 </div>
               )}
@@ -346,7 +350,7 @@ export default function GameLobbyPage() {
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <div className={`w-3 h-3 rounded-full ${
-                        participant.isReady ? 'bg-green-500' : 'bg-gray-500'
+                        participant.isReady ? 'bg-amber-500' : 'bg-gray-500'
                       }`} />
                       <div className="flex flex-col flex-1">
                         <span className="text-gray-200">
@@ -356,14 +360,14 @@ export default function GameLobbyPage() {
                           )}
                         </span>
                         {participant.meal && (
-                          <span className="text-xs text-green-400 flex items-center gap-1 mt-1">
+                          <span className="text-xs text-amber-400 flex items-center gap-1 mt-1">
                             🍽️ {participant.meal.name}
                           </span>
                         )}
                       </div>
                     </div>
                     {participant.isReady && (
-                      <span className="text-green-400 text-sm">Ready</span>
+                      <span className="text-amber-400 text-sm">Ready</span>
                     )}
                   </div>
                 ))}
@@ -376,9 +380,10 @@ export default function GameLobbyPage() {
             {!currentParticipant ? (
               <Button
                 onClick={joinGame}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={joiningGame}
+                className="bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
               >
-                Join Game
+                {joiningGame ? 'Joining...' : 'Join Game'}
               </Button>
             ) : (
               <>
@@ -386,8 +391,8 @@ export default function GameLobbyPage() {
                   onClick={toggleReady}
                   variant={currentParticipant.isReady ? 'outline' : 'default'}
                   className={currentParticipant.isReady ? 
-                    'border-green-500 text-green-500' : 
-                    'bg-green-600 hover:bg-green-700 text-white'
+                    'border-amber-500 text-amber-500' : 
+                    'bg-amber-600 hover:bg-amber-700 text-white'
                   }
                 >
                   {currentParticipant.isReady ? 'Not Ready' : 'Ready Up'}

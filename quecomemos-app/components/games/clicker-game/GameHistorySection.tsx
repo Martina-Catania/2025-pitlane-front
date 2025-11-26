@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Users, Clock, ChevronRight, Gamepad2, Egg } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { GameHistoryService } from './GameHistoryService';
-import { GameSessionDetailsModal } from './GameSessionDetailsModal';
+import { SessionDetailsModal } from '@/components/session/SessionDetailsModal';
 
 interface GameHistoryItem {
   sessionId: number;
@@ -80,9 +80,9 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
   const getGameIcon = (gameType: string) => {
     switch (gameType) {
       case 'egg_clicker':
-        return <Egg className="h-4 w-4 text-green-400" />;
+        return <Egg className="h-4 w-4 text-amber-400" />;
       default:
-        return <Gamepad2 className="h-4 w-4 text-green-400" />;
+        return <Gamepad2 className="h-4 w-4 text-amber-400" />;
     }
   };
 
@@ -97,15 +97,15 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
   if (loading) {
     return (
-      <Card className={`bg-gradient-to-br from-green-900/20 to-green-950/40 border-green-700/50 ${className}`}>
+      <Card className={`bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50 ${className}`}>
         <CardHeader>
-          <CardTitle className="flex items-center text-green-400">
+          <CardTitle className="flex items-center text-amber-400">
             <Gamepad2 className="w-5 h-5 mr-2" /> Game History
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
           </div>
         </CardContent>
       </Card>
@@ -114,9 +114,9 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
   if (error) {
     return (
-      <Card className={`bg-gradient-to-br from-green-900/20 to-green-950/40 border-green-700/50 ${className}`}>
+      <Card className={`bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50 ${className}`}>
         <CardHeader>
-          <CardTitle className="flex items-center text-green-400">
+          <CardTitle className="flex items-center text-amber-400">
             <Gamepad2 className="w-5 h-5 mr-2" /> Game History
           </CardTitle>
         </CardHeader>
@@ -139,9 +139,9 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
   return (
     <>
-      <Card className={`bg-gradient-to-br from-green-900/20 to-green-950/40 border-green-700/50 ${className}`}>
+      <Card className={`bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50 ${className}`}>
         <CardHeader>
-          <CardTitle className="flex items-center text-green-400">
+          <CardTitle className="flex items-center text-amber-400">
             <Gamepad2 className="w-5 h-5 mr-2" /> Game History
           </CardTitle>
         </CardHeader>
@@ -153,7 +153,7 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
                 {history.map((session) => (
                   <div
                     key={session.sessionId}
-                    className="border border-green-700/30 rounded-lg p-4 bg-neutral-800/50 hover:bg-neutral-800/70 transition-all cursor-pointer"
+                    className="border border-amber-700/30 rounded-lg p-4 bg-neutral-800/50 hover:bg-neutral-800/70 transition-all cursor-pointer"
                     onClick={() => handleViewDetails(session.sessionId)}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -161,10 +161,10 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
                         {/* Game type */}
                         <div className="flex items-center gap-2 mb-2">
                           {getGameIcon(session.gameType)}
-                          <span className="text-sm font-medium text-green-300">
+                          <span className="text-sm font-medium text-amber-300">
                             {getGameName(session.gameType)}
                           </span>
-                          <Badge variant="outline" className="border-green-600 text-green-300 text-xs">
+                          <Badge variant="outline" className="border-amber-600 text-amber-300 text-xs">
                             {session.duration}s
                           </Badge>
                         </div>
@@ -182,7 +182,7 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
                         {/* Winning meal */}
                         {session.winningMeal && (
-                          <div className="text-sm text-green-300 ml-6">
+                          <div className="text-sm text-amber-300 ml-6">
                             🍽️ {session.winningMeal.name}
                           </div>
                         )}
@@ -211,7 +211,7 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
               {history.length >= 10 && (
                 <Button
                   variant="outline"
-                  className="w-full border-green-600 text-green-400 hover:bg-green-900/30"
+                  className="w-full border-amber-600 text-amber-400 hover:bg-amber-900/30"
                   onClick={loadHistory}
                 >
                   Load More
@@ -220,7 +220,7 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
             </div>
           ) : (
             <div className="text-center py-8 text-gray-400">
-              <Gamepad2 className="h-12 w-12 mx-auto mb-3 text-green-600 opacity-50" />
+              <Gamepad2 className="h-12 w-12 mx-auto mb-3 text-amber-600 opacity-50" />
               <p>No games played yet</p>
               <p className="text-sm mt-1">Start a game to see history here</p>
             </div>
@@ -230,16 +230,18 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
       {/* Game session details modal */}
       {selectedSessionId && (
-        <GameSessionDetailsModal
+        <SessionDetailsModal
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedSessionId(null);
           }}
           sessionId={selectedSessionId}
+          sessionType="game"
           onPortionRegistered={loadHistory}
         />
       )}
     </>
   );
 }
+

@@ -82,12 +82,12 @@ export function ProposeGameMealModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-4xl bg-neutral-900 rounded-2xl shadow-2xl border border-green-800/30 overflow-hidden max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-neutral-900 rounded-2xl shadow-2xl border border-amber-800/30 overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 bg-gradient-to-r from-green-900/20 to-green-800/20 border-b border-green-800/30">
+        <div className="p-6 bg-gradient-to-r from-amber-900/20 to-amber-800/20 border-b border-amber-800/30">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-green-200">Propose Your Meal</h2>
+              <h2 className="text-2xl font-bold text-amber-200">Propose Your Meal</h2>
               <p className="text-gray-300 mt-1">
                 Choose a meal to compete in the egg clicker game
               </p>
@@ -108,12 +108,12 @@ export function ProposeGameMealModal({
               {/* Meal Search */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-green-200">
+                  <h3 className="text-lg font-semibold text-amber-200">
                     Select a Meal
                   </h3>
                   <button
                     onClick={() => setShowCreateMeal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Create New Meal
@@ -133,10 +133,10 @@ export function ProposeGameMealModal({
               {/* Selected Meal Preview */}
               {selectedMeal && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-green-200">
+                  <h3 className="text-lg font-semibold text-amber-200">
                     Selected Meal
                   </h3>
-                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-green-700/30">
+                  <div className="bg-neutral-800/50 rounded-xl p-4 border border-amber-700/30">
                     <MealComposition meal={selectedMeal} />
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export function ProposeGameMealModal({
             /* Create Meal Form */
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-green-200">
+                <h3 className="text-lg font-semibold text-amber-200">
                   Create New Meal
                 </h3>
                 <button
@@ -166,7 +166,7 @@ export function ProposeGameMealModal({
 
         {/* Footer */}
         {!showCreateMeal && (
-          <div className="p-6 bg-neutral-800/50 border-t border-green-800/30 flex justify-end gap-3">
+          <div className="p-6 bg-neutral-800/50 border-t border-amber-800/30 flex justify-end gap-3">
             <button
               onClick={handleClose}
               className="px-6 py-2 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors"
@@ -176,7 +176,7 @@ export function ProposeGameMealModal({
             <button
               onClick={handlePropose}
               disabled={!selectedMeal}
-              className="px-6 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Propose Meal
             </button>
@@ -186,3 +186,4 @@ export function ProposeGameMealModal({
     </div>
   );
 }
+
