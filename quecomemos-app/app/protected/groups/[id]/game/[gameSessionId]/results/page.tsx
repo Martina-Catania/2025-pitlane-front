@@ -55,9 +55,9 @@ export default function GameResultsPage() {
   }
 
   const isWinner = gameSession.winner?.id === userData?.profile?.id;
-  const sortedParticipants = [...gameSession.participants].sort(
-    (a, b) => b.clickCount - a.clickCount
-  );
+  const sortedParticipants = gameSession.gameType === 'egg_clicker'
+    ? [...gameSession.participants].sort((a, b) => b.clickCount - a.clickCount)
+    : [...gameSession.participants];
 
   const getMedalIcon = (index: number) => {
     if (index === 0) return <Trophy className="w-6 h-6 text-yellow-400" />;
@@ -96,12 +96,14 @@ export default function GameResultsPage() {
               <p className="text-3xl font-bold text-yellow-400">
                 {gameSession.winner.username}
               </p>
-              <div className="flex items-center justify-center gap-2 text-gray-400">
-                <Egg className="w-5 h-5" />
-                <span className="text-2xl font-bold">
-                  {sortedParticipants[0]?.clickCount || 0} clicks
-                </span>
-              </div>
+              {gameSession.gameType === 'egg_clicker' && (
+                <div className="flex items-center justify-center gap-2 text-gray-400">
+                  <Egg className="w-5 h-5" />
+                  <span className="text-2xl font-bold">
+                    {sortedParticipants[0]?.clickCount || 0} clicks
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -159,12 +161,14 @@ export default function GameResultsPage() {
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-green-400">
-                    {participant.clickCount}
-                  </p>
-                  <p className="text-xs text-gray-400">clicks</p>
-                </div>
+                {gameSession.gameType === 'egg_clicker' && (
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-400">
+                      {participant.clickCount}
+                    </p>
+                    <p className="text-xs text-gray-400">clicks</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

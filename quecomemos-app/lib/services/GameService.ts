@@ -324,4 +324,27 @@ export class GameService {
 
     return response.json();
   }
+
+  /**
+   * Spin roulette to randomly select a proposed meal (host only)
+   */
+  static async spinRoulette(
+    gameSessionId: number,
+    hostId: string
+  ): Promise<GameSession> {
+    const response = await fetch(`${API_BASE_URL}/games/${gameSessionId}/roulette/spin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ hostId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to spin roulette');
+    }
+
+    return response.json();
+  }
 }

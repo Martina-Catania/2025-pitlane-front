@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trophy, Egg } from 'lucide-react';
+import { Loader2, Trophy, Egg, RotateCw, Users } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { GameService, GameSession } from '@/lib/services/GameService';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
@@ -25,6 +25,7 @@ export default function GamePlayPage() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [eggShaking, setEggShaking] = useState(false);
   const [eggCracks, setEggCracks] = useState(0);
+  const [spinning, setSpinning] = useState(false);
   
   const clickCountRef = useRef(0);
   const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -80,7 +81,7 @@ export default function GamePlayPage() {
     loadGame();
   }, [gameSessionId, groupId, router, showError]);
 
-  // Handle countdown phase
+  // Handle countdown phase (used by egg_clicker; roulette can skip to playing or host can spin)
   useEffect(() => {
     if (gameSession?.status === 'countdown') {
       setCountdown(3);
@@ -107,7 +108,7 @@ export default function GamePlayPage() {
     }
   }, [gameSession?.status, gameSessionId]);
 
-  // Submit clicks function
+  // Submit clicks function (egg_clicker only)
   const submitClicks = useCallback(async () => {
     if (!userData?.profile?.id || hasSubmitted) return;
 
@@ -133,6 +134,22 @@ export default function GamePlayPage() {
     } catch (error) {
       console.error('Error forcing game completion:', error);
       showError('Error', 'Failed to force complete game');
+    }
+  };
+
+  // Spin roulette (host only)
+  const handleSpinRoulette = async () => {
+    if (!userData?.profile?.id || gameSession?.hostId !== userData.profile.id) return;
+    if (gameSession?.gameType !== 'roulette') return;
+
+    try {
+      setSpinning(true);
+      await GameService.spinRoulette(gameSessionId, userData.profile.id);
+    } catch (error) {
+      console.error('Error spinning roulette:', error);
+      showError('Error', 'Failed to spin roulette');
+    } finally {
+      setSpinning(false);
     }
   };
 
@@ -194,7 +211,7 @@ export default function GamePlayPage() {
     );
   }
 
-  if (countdown !== null) {
+  if (countdown !== null && gameSession?.gameType === 'egg_clicker') {
     return (
       <div className="container mx-auto p-6 flex flex-col items-center justify-center min-h-[80vh] space-y-8">
         <h2 className="text-4xl font-bold text-amber-400">Get Ready!</h2>
@@ -206,7 +223,7 @@ export default function GamePlayPage() {
     );
   }
 
-  if (gameSession?.status === 'submitting' || hasSubmitted) {
+  if ((gameSession?.status === 'submitting' || hasSubmitted) && gameSession?.gameType === 'egg_clicker') {
     const isHost = gameSession?.hostId === userData?.profile?.id;
     
     return (
@@ -234,6 +251,70 @@ export default function GamePlayPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Render gameplay based on game type
+  if (gameSession?.gameType === 'roulette') {
+    const isHost = gameSession?.hostId === userData?.profile?.id;
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <Card className="bg-gradient-to-r from-purple-900/40 to-purple-950/60 border-purple-700/50 px-6 py-3">
+            <div className="flex items-center gap-3">
+              <RotateCw className="w-6 h-6 text-purple-300" />
+              <div>
+                <p className="text-xs text-gray-400">Roulette</p>
+                <p className="text-3xl font-bold text-purple-300">Proposed Meals</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-amber-900/40 to-amber-950/60 border-amber-700/50 px-6 py-3">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-amber-400" />
+              <div>
+                <p className="text-xs text-gray-400">Players</p>
+                <p className="text-3xl font-bold text-amber-400">{gameSession?.participants.length}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Proposed meals list */}
+        <Card className="bg-zinc-900/60 border-zinc-700/50">
+          <CardContent className="p-4">
+            <div className="grid md:grid-cols-2 gap-3">
+              {gameSession?.participants.map((p) => (
+                <div key={p.GameParticipantID} className="p-3 rounded-lg bg-zinc-800/50 flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-gray-200">{p.profile.username}</span>
+                    {p.meal ? (
+                      <span className="text-xs text-purple-300 mt-1">🍽️ {p.meal.name}</span>
+                    ) : (
+                      <span className="text-xs text-gray-500 mt-1">No meal proposed</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Spin button for host */}
+        {isHost && (
+          <div className="flex justify-center">
+            <Button
+              onClick={handleSpinRoulette}
+              disabled={spinning || !gameSession?.participants.some(p => p.mealId)}
+              className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
+            >
+              {spinning ? 'Spinning...' : 'Spin Roulette'}
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

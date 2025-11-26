@@ -275,7 +275,8 @@ export default function GameLobbyPage() {
             </Card>
 
           <Card 
-            className="cursor-not-allowed opacity-60 bg-gradient-to-br from-purple-900/20 to-purple-950/40 border-purple-700/50"
+            className="cursor-pointer transition-all hover:scale-105 hover:border-purple-500 bg-gradient-to-br from-purple-900/20 to-purple-950/40 border-purple-700/50"
+            onClick={() => createGame('roulette')}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-purple-400">
@@ -287,8 +288,9 @@ export default function GameLobbyPage() {
               <p className="text-gray-300">
                 Spin the wheel of fortune! Let fate decide your meal.
               </p>
-              <div className="text-sm text-amber-400 font-semibold">
-                Coming Soon!
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Users className="w-4 h-4" />
+                <span>{minPlayers}+ players</span>
               </div>
             </CardContent>
           </Card>

@@ -114,6 +114,15 @@ export class GameHistoryService {
   }
 
   /**
+   * Get game history for a specific user within a group (alias)
+   * Currently proxies to group game history and does not filter by user.
+   */
+  static async getGameHistory(profileId: string, groupId: number) {
+    // Future: filter sessions by participant when backend supports it
+    return this.getGroupGameHistory(groupId, 10, 0);
+  }
+
+  /**
    * Get detailed information about a specific game session
    */
   static async getGameSessionDetails(sessionId: number): Promise<GameSessionDetails> {
