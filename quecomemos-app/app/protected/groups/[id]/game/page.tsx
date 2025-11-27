@@ -179,6 +179,13 @@ export default function GameLobbyPage() {
   const cancelGame = async () => {
     if (!userData?.profile?.id || !gameSession) return;
 
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      'Are you sure you want to cancel this game? This action cannot be undone.'
+    );
+    
+    if (!confirmed) return;
+
     try {
       await GameService.cancelGameSession(
         gameSession.GameSessionID,

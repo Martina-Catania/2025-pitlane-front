@@ -163,7 +163,9 @@ export default function UserHistoryPage() {
       
       // Transform meal portions to consumption format for display
       const consumptionsFromPortions = data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((mp: any) => mp && mp.meal) // Filter out invalid entries
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((mp: any) => ({
           ConsumptionID: mp.consumption?.ConsumptionID || `mp-${mp.mealPortionId}`,
           name: mp.consumption?.name || mp.meal?.name || 'Unknown Meal',

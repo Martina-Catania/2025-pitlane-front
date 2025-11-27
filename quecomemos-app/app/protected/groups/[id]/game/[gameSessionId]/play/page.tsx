@@ -8,6 +8,8 @@ import { Loader2, Trophy, Egg, RotateCw, Users } from 'lucide-react';
 import { useUser } from '@/lib/contexts/UserContext';
 import { GameService, GameSession } from '@/lib/services/GameService';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
+import { useBadges } from '@/lib/contexts/BadgeContext';
+import RouletteWheel from '@/components/games/roulette-game/RouletteWheel';
 
 export default function GamePlayPage() {
   const params = useParams();
@@ -16,6 +18,7 @@ export default function GamePlayPage() {
   const gameSessionId = parseInt(params.gameSessionId as string);
   const { userData } = useUser();
   const { showError } = useGlobalNotification();
+  const { processBadgeNotifications } = useBadges();
 
   const [loading, setLoading] = useState(true);
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
@@ -26,6 +29,11 @@ export default function GamePlayPage() {
   const [eggShaking, setEggShaking] = useState(false);
   const [eggCracks, setEggCracks] = useState(0);
   const [spinning, setSpinning] = useState(false);
+  const [showWheel, setShowWheel] = useState(false);
+  const [rouletteWinner, setRouletteWinner] = useState<{
+    winnerId: number;
+    meals: Array<{ id: number; name: string; username: string }>;
+  } | null>(null);
   
   const clickCountRef = useRef(0);
   const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -115,22 +123,38 @@ export default function GamePlayPage() {
     setHasSubmitted(true);
 
     try {
-      await GameService.submitClickCount(
+      const result = await GameService.submitClickCount(
         gameSessionId,
         userData.profile.id,
         clickCountRef.current
       );
+      
+      // Process badge notifications if game completed and this player won
+      if (result.badgeNotifications && result.badgeNotifications.length > 0) {
+        console.log('[GamePlay] Processing', result.badgeNotifications.length, 'badge notifications');
+        // Backend returns partial badge data, cast to expected type
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await processBadgeNotifications(result.badgeNotifications as any);
+      }
     } catch (error) {
       console.error('Error submitting clicks:', error);
       showError('Error', 'Failed to submit your score');
     }
-  }, [gameSessionId, userData?.profile?.id, hasSubmitted, showError]);
+  }, [gameSessionId, userData?.profile?.id, hasSubmitted, showError, processBadgeNotifications]);
 
   const handleForceComplete = async () => {
     if (!userData?.profile?.id || gameSession?.hostId !== userData.profile.id) return;
 
     try {
-      await GameService.forceCompleteGame(gameSessionId, userData.profile.id);
+      const result = await GameService.forceCompleteGame(gameSessionId, userData.profile.id);
+      
+      // Process badge notifications if any
+      if (result.badgeNotifications && result.badgeNotifications.length > 0) {
+        console.log('[GamePlay] Processing', result.badgeNotifications.length, 'badge notifications');
+        // Backend returns partial badge data, cast to expected type
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await processBadgeNotifications(result.badgeNotifications as any);
+      }
     } catch (error) {
       console.error('Error forcing game completion:', error);
       showError('Error', 'Failed to force complete game');
@@ -144,12 +168,54 @@ export default function GamePlayPage() {
 
     try {
       setSpinning(true);
-      await GameService.spinRoulette(gameSessionId, userData.profile.id);
+      
+      // Step 1: Determine winner for animation
+      const winnerData = await GameService.determineRouletteWinner(gameSessionId, userData.profile.id);
+      
+      // Prepare meals for wheel
+      const mealsForWheel = winnerData.meals.map(m => ({
+        id: m.id,
+        name: m.mealName,
+        username: m.username
+      }));
+      
+      // Show the wheel and start animation
+      setRouletteWinner({
+        winnerId: winnerData.winnerId,
+        meals: mealsForWheel
+      });
+      setShowWheel(true);
+      
     } catch (error) {
       console.error('Error spinning roulette:', error);
       showError('Error', 'Failed to spin roulette');
+      setSpinning(false);
+    }
+  };
+
+  // Complete roulette after animation
+  const handleRouletteComplete = async () => {
+    if (!userData?.profile?.id) return;
+    
+    try {
+      // Step 2: Complete the game on backend
+      const result = await GameService.spinRoulette(gameSessionId, userData.profile.id);
+      
+      // Process badge notifications if any
+      if (result.badgeNotifications && result.badgeNotifications.length > 0) {
+        console.log('[GamePlay] Processing', result.badgeNotifications.length, 'badge notifications');
+        // Backend returns partial badge data, cast to expected type
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await processBadgeNotifications(result.badgeNotifications as any);
+      }
+      
+      // Poll will pick up the completed status and navigate to results
+    } catch (error) {
+      console.error('Error completing roulette:', error);
+      showError('Error', 'Failed to complete roulette');
     } finally {
       setSpinning(false);
+      setShowWheel(false);
     }
   };
 
@@ -258,6 +324,20 @@ export default function GamePlayPage() {
   // Render gameplay based on game type
   if (gameSession?.gameType === 'roulette') {
     const isHost = gameSession?.hostId === userData?.profile?.id;
+    
+    // Show spinning wheel animation
+    if (showWheel && rouletteWinner) {
+      return (
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[80vh]">
+          <RouletteWheel
+            meals={rouletteWinner.meals}
+            winnerId={rouletteWinner.winnerId}
+            onSpinComplete={handleRouletteComplete}
+          />
+        </div>
+      );
+    }
+    
     return (
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}

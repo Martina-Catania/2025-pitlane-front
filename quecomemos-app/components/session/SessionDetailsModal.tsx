@@ -120,6 +120,7 @@ export function SessionDetailsModal({
   
   // Meal details modal
   const [showMealModal, setShowMealModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedMeal, setSelectedMeal] = useState<any | null>(null);
 
   const userId = userData?.profile?.id;
@@ -247,7 +248,7 @@ export function SessionDetailsModal({
                   <div>
                     <p className="font-medium">{proposal.mealName}</p>
                     <UserNameWithBadge 
-                      userId={proposal.proposedById || ''} 
+                      profileId={proposal.proposedById || ''} 
                       username={proposal.proposedBy}
                       className="text-sm text-neutral-400"
                     />
@@ -278,7 +279,7 @@ export function SessionDetailsModal({
         <div className="grid gap-2">
           {gameDetails.participants
             .sort((a, b) => b.clickCount - a.clickCount)
-            .map((participant, index) => {
+            .map((participant) => {
               const isWinner = gameDetails.winner?.id === participant.profile.id;
               const hasSelectedPortion = participant.hasSelectedPortion || false;
               const portionFraction = participant.portionFraction;
@@ -295,7 +296,7 @@ export function SessionDetailsModal({
                   <div className="flex items-center gap-2">
                     {isWinner && <Trophy className="h-4 w-4 text-amber-400 flex-shrink-0" />}
                     <UserNameWithBadge 
-                      userId={participant.profile.id} 
+                      profileId={participant.profile.id} 
                       username={participant.profile.username}
                       badgeSize="sm"
                       usernameClassName="text-sm font-medium text-neutral-100"
@@ -528,19 +529,23 @@ export function SessionDetailsModal({
       )}
 
       {/* Portion Selection Modal */}
-      {showPortionModal && winningMeal && userId && sessionId && (
-        <PortionSelectionModal
-          isOpen={showPortionModal}
-          onClose={() => setShowPortionModal(false)}
-          sessionId={sessionId}
-          mealId={winningMeal.mealId}
-          mealName={winningMeal.name}
-          winnerMeal={getWinnerMealForPortionModal()}
-          userId={userId}
-          isGameSession={sessionType === 'game'}
-          onSuccess={handlePortionSuccess}
-        />
-      )}
+      {showPortionModal && winningMeal && userId && sessionId && (() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const winnerMealData = getWinnerMealForPortionModal() as any;
+        return (
+          <PortionSelectionModal
+            isOpen={showPortionModal}
+            onClose={() => setShowPortionModal(false)}
+            sessionId={sessionId}
+            mealId={winningMeal.mealId}
+            mealName={winningMeal.name}
+            winnerMeal={winnerMealData}
+            userId={userId}
+            isGameSession={sessionType === 'game'}
+            onSuccess={handlePortionSuccess}
+          />
+        );
+      })()}
 
       {/* Meal Details Modal */}
       {selectedMeal && (

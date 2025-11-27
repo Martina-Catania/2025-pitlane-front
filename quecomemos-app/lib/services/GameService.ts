@@ -43,6 +43,20 @@ export interface GameSession {
     name: string;
   };
   participants: GameParticipant[];
+  badgeNotifications?: Array<{
+    badge: {
+      BadgeID: number;
+      name: string;
+      description: string;
+      badgeType: string;
+      iconUrl?: string;
+    };
+    level: string;
+    isNewBadge?: boolean;
+    isLevelUp?: boolean;
+    oldLevel?: string;
+    progress?: number;
+  }>;
 }
 
 export interface GameParticipant {
@@ -64,6 +78,20 @@ export interface GameParticipant {
     name: string;
     description?: string;
   };
+  badgeNotifications?: Array<{
+    badge: {
+      BadgeID: number;
+      name: string;
+      description: string;
+      badgeType: string;
+      iconUrl?: string;
+    };
+    level: string;
+    isNewBadge?: boolean;
+    isLevelUp?: boolean;
+    oldLevel?: string;
+    progress?: number;
+  }>;
 }
 
 export class GameService {
@@ -320,6 +348,40 @@ export class GameService {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to force complete game');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Determine roulette winner for animation (doesn't complete game)
+   */
+  static async determineRouletteWinner(
+    gameSessionId: number,
+    hostId: string
+  ): Promise<{
+    winnerId: number;
+    winnerProfileId: string;
+    winnerMealId: number;
+    meals: Array<{
+      id: number;
+      profileId: string;
+      username: string;
+      mealId: number;
+      mealName: string;
+    }>;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/games/${gameSessionId}/roulette/determine-winner`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ hostId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to determine winner');
     }
 
     return response.json();

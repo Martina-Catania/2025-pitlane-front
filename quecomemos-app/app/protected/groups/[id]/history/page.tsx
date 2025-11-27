@@ -43,7 +43,9 @@ export default function GroupHistoryPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Voting and game history
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [votingSessions, setVotingSessions] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [gameSessions, setGameSessions] = useState<any[]>([]);
   const [votingLoading, setVotingLoading] = useState(false);
   const [gameLoading, setGameLoading] = useState(false);
