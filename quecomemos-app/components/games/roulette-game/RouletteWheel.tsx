@@ -16,6 +16,7 @@ interface RouletteWheelProps {
 export default function RouletteWheel({ meals, winnerId, onSpinComplete }: RouletteWheelProps) {
   const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [hasSpun, setHasSpun] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const drawWheel = useCallback((currentRotation: number) => {
@@ -99,9 +100,10 @@ export default function RouletteWheel({ meals, winnerId, onSpinComplete }: Roule
   }, [isSpinning, drawWheel]);
 
   const spinWheel = () => {
-    if (isSpinning) return;
+    if (isSpinning || hasSpun) return;
 
     setIsSpinning(true);
+    setHasSpun(true);
 
     // Find winner index
     const winnerIndex = meals.findIndex(m => m.id === winnerId);
@@ -175,7 +177,7 @@ export default function RouletteWheel({ meals, winnerId, onSpinComplete }: Roule
           />
         </div>
 
-        {!isSpinning && (
+        {!isSpinning && !hasSpun && (
           <button
             onClick={spinWheel}
             className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all transform hover:scale-105"
@@ -187,6 +189,12 @@ export default function RouletteWheel({ meals, winnerId, onSpinComplete }: Roule
         {isSpinning && (
           <div className="text-purple-300 text-xl font-semibold animate-pulse">
             Spinning...
+          </div>
+        )}
+        
+        {!isSpinning && hasSpun && (
+          <div className="text-purple-300 text-xl font-semibold">
+            🎉 Winner determined!
           </div>
         )}
       </div>

@@ -39,21 +39,56 @@ export default function GamePlayPage() {
   const clickCountRef = useRef(0);
   const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSeenRouletteAnimation = useRef(false);
 
   // Poll for game updates
   const pollGameSession = useCallback(async () => {
     try {
       const updated = await GameService.getGameSession(gameSessionId);
+      const prevStatus = gameSession?.status;
       setGameSession(updated);
 
-      // Navigate to results when completed
-      if (updated.status === 'completed') {
+      // For roulette games, if game just completed and we haven't seen animation yet
+      if (updated.gameType === 'roulette' && 
+          updated.status === 'completed' &&
+          prevStatus !== 'completed' &&
+          !hasSeenRouletteAnimation.current &&
+          !showWheel) {
+        
+        const isHost = updated.hostId === userData?.profile?.id;
+        
+        // Non-hosts: show animation with the winning data from completed game
+        if (!isHost && updated.winner && updated.participants) {
+          const eligible = updated.participants.filter(p => p.mealId);
+          const mealsForWheel = eligible.map(p => ({
+            id: p.GameParticipantID,
+            name: p.meal?.name || 'Unknown',
+            username: p.profile.username
+          }));
+          
+          const winnerParticipant = eligible.find(p => p.profileId === updated.winnerId);
+          
+          if (winnerParticipant) {
+            setRouletteWinner({
+              winnerId: winnerParticipant.GameParticipantID,
+              winnerProfileId: winnerParticipant.profileId,
+              meals: mealsForWheel
+            });
+            hasSeenRouletteAnimation.current = true;
+            setShowWheel(true);
+            return; // Don't navigate yet, let animation play
+          }
+        }
+      }
+
+      // Navigate to results when completed (after animation for non-hosts)
+      if (updated.status === 'completed' && hasSeenRouletteAnimation.current) {
         router.push(`/protected/groups/${groupId}/game/${gameSessionId}/results`);
       }
     } catch (error) {
       console.error('Error polling game session:', error);
     }
-  }, [gameSessionId, groupId, router]);
+  }, [gameSessionId, groupId, router, gameSession?.status, userData, showWheel]);
 
   useEffect(() => {
     const interval = setInterval(pollGameSession, 2000);
@@ -166,6 +201,7 @@ export default function GamePlayPage() {
   const handleSpinRoulette = async () => {
     if (!userData?.profile?.id || gameSession?.hostId !== userData.profile.id) return;
     if (gameSession?.gameType !== 'roulette') return;
+    if (spinning || hasSeenRouletteAnimation.current) return; // Prevent multiple spins
 
     try {
       setSpinning(true);
@@ -186,12 +222,14 @@ export default function GamePlayPage() {
         winnerProfileId: winnerData.winnerProfileId,
         meals: mealsForWheel
       });
+      hasSeenRouletteAnimation.current = true;
       setShowWheel(true);
       
     } catch (error) {
       console.error('Error spinning roulette:', error);
       showError('Error', 'Failed to spin roulette');
       setSpinning(false);
+      hasSeenRouletteAnimation.current = false; // Reset on error
     }
   };
 
@@ -199,29 +237,41 @@ export default function GamePlayPage() {
   const handleRouletteComplete = async () => {
     if (!userData?.profile?.id || !rouletteWinner) return;
     
-    try {
-      // Step 2: Complete the game on backend with predetermined winner
-      const result = await GameService.spinRoulette(
-        gameSessionId, 
-        userData.profile.id,
-        rouletteWinner.winnerProfileId
-      );
-      
-      // Process badge notifications if any
-      if (result.badgeNotifications && result.badgeNotifications.length > 0) {
-        console.log('[GamePlay] Processing', result.badgeNotifications.length, 'badge notifications');
-        // Backend returns partial badge data, cast to expected type
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await processBadgeNotifications(result.badgeNotifications as any);
+    const isHost = gameSession?.hostId === userData.profile.id;
+    
+    // Host completes the game
+    if (isHost) {
+      try {
+        // Step 2: Complete the game on backend with predetermined winner
+        const result = await GameService.spinRoulette(
+          gameSessionId, 
+          userData.profile.id,
+          rouletteWinner.winnerProfileId
+        );
+        
+        // Process badge notifications if any
+        if (result.badgeNotifications && result.badgeNotifications.length > 0) {
+          console.log('[GamePlay] Processing', result.badgeNotifications.length, 'badge notifications');
+          // Backend returns partial badge data, cast to expected type
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await processBadgeNotifications(result.badgeNotifications as any);
+        }
+        
+        // Hide animation, keep spinning true to prevent re-clicking
+        setShowWheel(false);
+        // Poll will pick up the completed status and navigate to results
+      } catch (error) {
+        console.error('Error completing roulette:', error);
+        showError('Error', 'Failed to complete roulette');
+        // On error, reset states to allow retry
+        setSpinning(false);
+        setShowWheel(false);
+        hasSeenRouletteAnimation.current = false;
       }
-      
-      // Poll will pick up the completed status and navigate to results
-    } catch (error) {
-      console.error('Error completing roulette:', error);
-      showError('Error', 'Failed to complete roulette');
-    } finally {
-      setSpinning(false);
+    } else {
+      // Non-host: just hide animation and wait for navigation
       setShowWheel(false);
+      // Keep spinning true to show loading state
     }
   };
 
@@ -344,6 +394,23 @@ export default function GamePlayPage() {
       );
     }
     
+    // Show loading while waiting for host to complete after spinning
+    if (spinning && !isHost) {
+      return (
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[80vh]">
+          <Card className="w-full max-w-md">
+            <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
+              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+              <h3 className="text-2xl font-bold">Host is spinning the roulette...</h3>
+              <p className="text-muted-foreground text-center">
+                Please wait while the winner is being determined
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
     return (
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
@@ -394,10 +461,10 @@ export default function GamePlayPage() {
           <div className="flex justify-center">
             <Button
               onClick={handleSpinRoulette}
-              disabled={spinning || !gameSession?.participants.some(p => p.mealId)}
+              disabled={spinning || hasSeenRouletteAnimation.current || !gameSession?.participants.some(p => p.mealId)}
               className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
             >
-              {spinning ? 'Spinning...' : 'Spin Roulette'}
+              {spinning || hasSeenRouletteAnimation.current ? 'Spinning...' : 'Spin Roulette'}
             </Button>
           </div>
         )}
