@@ -128,12 +128,12 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
 
   return (
     <div className={cn("max-w-md mx-auto", className)} {...props}>
-      <Card className="bg-neutral-800 border-amber-800/30">
-        <CardHeader>
+      <Card className="bg-neutral-800 border-amber-800/30 max-h-[85vh] flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="text-amber-100">Add Food</CardTitle>
           <CardDescription className="text-gray-400">Add a new food item to the list</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-y-auto flex-1 pr-6">
           <form onSubmit={handleAddFood}>
             <div className="grid gap-4">
               {/* Korven Inspiration Section */}

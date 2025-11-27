@@ -78,18 +78,20 @@ export function AdminSection() {
 
       {/* MODAL: Editar comida - Using EditForm with Korven integration */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="sm:max-w-[600px] bg-neutral-900/95 border-amber-800/30 backdrop-blur-sm">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] bg-neutral-900/95 border-amber-800/30 backdrop-blur-sm max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-2xl font-bold text-amber-100">
               Edit Food
             </DialogTitle>
           </DialogHeader>
-          {selectedFood && (
-            <EditFoodForm
-              food={selectedFood}
-              onSuccess={handleCloseEditModal}
-            />
-          )}
+          <div className="overflow-y-auto flex-1 pr-6">
+            {selectedFood && (
+              <EditFoodForm
+                food={selectedFood}
+                onSuccess={handleCloseEditModal}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
