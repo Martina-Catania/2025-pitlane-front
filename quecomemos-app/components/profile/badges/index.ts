@@ -9,10 +9,13 @@ export { BadgeProgressDisplay } from './BadgeProgressDisplay';
 export { BadgeSelectionModal } from './BadgeSelectionModal';
 export { PrimaryBadgeDisplay } from './PrimaryBadgeDisplay';
 
-export {
+export type {
   Badge,
   BadgeLevel,
-  LevelConfig,
+  LevelConfig
+} from './badgeHelpers';
+
+export {
   LEVEL_CONFIG,
   LEVEL_COLORS,
   BADGE_TYPE_LABELS,

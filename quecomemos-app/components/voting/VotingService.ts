@@ -459,4 +459,13 @@ export class VotingService {
 
     return response.json();
   }
+
+  /**
+   * Get voting history for a specific user within a group (alias)
+   * Currently proxies to group voting history and does not filter by user.
+   */
+  static async getVotingHistory(profileId: string, groupId: number) {
+    // Future: filter sessions by participant when backend supports it
+    return this.getGroupVotingHistory(groupId, 10, 0);
+  }
 }

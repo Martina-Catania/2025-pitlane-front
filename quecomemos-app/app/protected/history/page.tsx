@@ -30,6 +30,24 @@ interface Consumption {
   consumedAt: string;
   profileId?: string;
   totalKcal?: number;
+  source?: 'individual' | 'voting' | 'game';
+  votingSession?: {
+    VotingSessionID: number;
+    completedAt: string;
+    group: {
+      GroupID: number;
+      name: string;
+    };
+  };
+  gameSession?: {
+    GameSessionID: number;
+    endTime: string;
+    gameType: string;
+    group: {
+      GroupID: number;
+      name: string;
+    };
+  };
   consumptionMeals?: Array<{
     ConsumptionMealID: number;
     mealId: number;
@@ -124,24 +142,54 @@ export default function UserHistoryPage() {
   const { triggerRefresh } = useCalorieProgressContext();
   const { stats } = useUserBadges(profile?.id);
 
+  // Format game type for display
+  const formatGameType = (gameType: string) => {
+    return gameType
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ') + ' Game';
+  };
+
   const fetchUserHistory = useCallback(async () => {
     if (!profile?.id) return;
     
     try {
       setLoading(true);
-      console.debug('Fetching user history', `${API_BASE_URL}/consumptions/user/${profile.id}`);
-      const res = await fetch(`${API_BASE_URL}/consumptions/user/${profile.id}`);
+      console.debug('Fetching user meal portions', `${API_BASE_URL}/consumptions/user/${profile.id}/meal-portions`);
+      const res = await fetch(`${API_BASE_URL}/consumptions/user/${profile.id}/meal-portions`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      console.debug('User history payload', data);
+      console.debug('User meal portions payload', data);
       
-      // Log consumptions with meal portions
-      const consumptionsWithPortions = data.filter((c: Consumption) => 
-        c.consumptionMeals?.[0]?.mealPortion
-      );
-      console.debug('Consumptions with meal portions:', consumptionsWithPortions.length, 'out of', data.length);
+      // Transform meal portions to consumption format for display
+      const consumptionsFromPortions = data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((mp: any) => mp && mp.meal) // Filter out invalid entries
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((mp: any) => ({
+          ConsumptionID: mp.consumption?.ConsumptionID || `mp-${mp.mealPortionId}`,
+          name: mp.consumption?.name || mp.meal?.name || 'Unknown Meal',
+          description: mp.consumption?.description || mp.meal?.description || '',
+          consumedAt: mp.consumedAt,
+          profileId: mp.profileId,
+          totalKcal: mp.totalCalories,
+          source: mp.source,
+          votingSession: mp.votingSession,
+          gameSession: mp.gameSession,
+          consumptionMeals: [{
+            ConsumptionMealID: mp.consumption?.ConsumptionID || mp.mealPortionId,
+            mealId: mp.mealId,
+            quantity: 1,
+            meal: mp.meal,
+            mealPortion: {
+              MealPortionID: mp.mealPortionId,
+              portionFraction: mp.portionFraction,
+              foodPortions: mp.foodPortions || []
+            }
+          }]
+        }));
       
-      setConsumptions(Array.isArray(data) ? data : []);
+      setConsumptions(consumptionsFromPortions);
     } catch (err) {
       console.debug('Error fetching user history', err);
       setError(err instanceof Error ? err.message : String(err));
@@ -460,33 +508,54 @@ export default function UserHistoryPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {dayConsumptions.map((consumption) => {
+                  {dayConsumptions.map((consumption, idx) => {
                     const consumptionMeal = consumption.consumptionMeals?.[0];
                     const mealPortion = consumptionMeal?.mealPortion;
                     const hasFoodPortions = mealPortion && mealPortion.foodPortions && mealPortion.foodPortions.length > 0;
+                    const groupInfo = consumption.votingSession?.group || consumption.gameSession?.group;
+                    const sourceLabel = consumption.source === 'voting' ? 'Voting' : consumption.source === 'game' ? 'Game' : 'Manual';
+                    const sourceColor = consumption.source === 'voting' ? 'text-purple-600 bg-purple-100 border-purple-300' : 
+                                      consumption.source === 'game' ? 'text-blue-600 bg-blue-100 border-blue-300' : 
+                                      'text-green-600 bg-green-100 border-green-300';
+                    const uniqueKey = `${consumption.ConsumptionID}-${idx}`;
+                    
+                    // Format display name for game sessions
+                    const displayName = consumption.source === 'game' && consumption.gameSession?.gameType
+                      ? formatGameType(consumption.gameSession.gameType)
+                      : consumption.name;
                     
                     return (
                       <div 
-                        key={consumption.ConsumptionID} 
+                        key={uniqueKey}
                         className="border-l-4 border-primary pl-4 py-3 bg-muted/30 rounded-r-lg"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <ChefHat className="w-4 h-4 text-primary" />
-                              <p className="font-medium">{consumption.name}</p>
+                              <p className="font-medium">{displayName}</p>
                               {mealPortion && (
                                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
                                   {(mealPortion.portionFraction * 100).toFixed(0)}% of meal
                                 </span>
                               )}
+                              {consumption.source && (
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${sourceColor}`}>
+                                  {sourceLabel}
+                                </span>
+                              )}
                             </div>
+                            {groupInfo && (
+                              <p className="text-sm text-amber-600 mt-1 ml-6">
+                                From group: {groupInfo.name}
+                              </p>
+                            )}
                             {consumption.description && (
                               <p className="text-sm text-muted-foreground mt-1 ml-6">
                                 {consumption.description}
                               </p>
                             )}
-                            {consumptionMeal && consumptionMeal.meal.name !== consumption.name && (
+                            {consumptionMeal && consumptionMeal.meal.name !== displayName && (
                               <p className="text-sm text-amber-600 mt-1 ml-6">
                                 From meal: {consumptionMeal.meal.name}
                               </p>

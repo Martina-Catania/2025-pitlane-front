@@ -11,7 +11,8 @@ import { API_BASE_URL } from '@/lib/config/api';
 import { 
   BadgeLevel, 
   LEVEL_CONFIG, 
-  BADGE_TYPE_LABELS, 
+  getBadgeActionSubtitle,
+  getBadgeTypeLabel, 
   getTierSpecificBadgeName 
 } from './badgeHelpers';
 
@@ -210,7 +211,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                           
                           {/* Progress indicator */}
                           <div className="text-[10px] text-amber-400/60">
-                            {badgeData.progress} {BADGE_TYPE_LABELS[badge.badgeType]?.toLowerCase() || 'actions'}
+                            {badgeData.progress} {getBadgeActionSubtitle(badge.badgeType)}
                           </div>
                         </div>
                       </div>
@@ -328,7 +329,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                           {currentLevel ? getTierSpecificBadgeName(badge.badgeType, currentLevel, badge.name) : badge.name}
                         </h3>
                         <p className="text-xs text-amber-400/60">
-                          {BADGE_TYPE_LABELS[badge.badgeType] || badge.badgeType}
+                          {getBadgeTypeLabel(badge.badgeType)}
                         </p>
                       </div>
                     </div>

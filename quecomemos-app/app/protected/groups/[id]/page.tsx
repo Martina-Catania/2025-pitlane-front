@@ -149,7 +149,14 @@ export default function GroupDetailPage() {
             onClick={() => router.push(`/protected/groups/${groupId}/voting`)} 
             className="w-full sm:w-auto border-amber-600 text-amber-600 hover:bg-amber-600 hover:text-white"
           >
-            <ChefHat className="w-4 h-4 mr-2" /> Group voting
+            <ChefHat className="w-4 h-4 mr-2" /> Group Voting
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/protected/groups/${groupId}/game`)} 
+            className="w-full sm:w-auto border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+          >
+            <ChefHat className="w-4 h-4 mr-2" /> Group Game
           </Button>
         </div>
       </div>
