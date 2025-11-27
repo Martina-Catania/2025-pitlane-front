@@ -379,7 +379,7 @@ export function GameSessionDetailsModal({
               kCal: f.kCal
             })),
             totalCalories: sessionDetails.winningMeal.foods.reduce((sum, f) => 
-              sum + (f.kCal * f.quantity / 100), 0
+              sum + (f.kCal * f.quantity), 0
             )
           }}
           userId={userId}

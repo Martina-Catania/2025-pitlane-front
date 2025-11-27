@@ -131,7 +131,16 @@ export function PortionSelectionModal({
   const meal = winnerMeal;
   const displayMealName = isGameSession ? mealName : winnerMeal?.name;
 
-  if (!meal) return null;
+  // Validate required data based on session type
+  // For voting sessions, winnerMeal is always required
+  if (!isGameSession && !meal) return null;
+  
+  // For game sessions, we need winnerMeal for the MealPortionSelector
+  // If only mealId is provided without winnerMeal, we can't render the portion selector
+  if (isGameSession && !meal) {
+    console.error('[PortionSelectionModal] Game session requires winnerMeal object for portion selection');
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
@@ -166,7 +175,7 @@ export function PortionSelectionModal({
         {/* Content */}
         <CardContent className="p-6">
           <MealPortionSelector
-            meal={meal}
+            meal={meal!}
             onConfirm={handlePortionConfirm}
             onCancel={onClose}
             loading={loading}
