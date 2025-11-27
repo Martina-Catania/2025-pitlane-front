@@ -32,6 +32,7 @@ export default function GamePlayPage() {
   const [showWheel, setShowWheel] = useState(false);
   const [rouletteWinner, setRouletteWinner] = useState<{
     winnerId: number;
+    winnerProfileId: string;
     meals: Array<{ id: number; name: string; username: string }>;
   } | null>(null);
   
@@ -182,6 +183,7 @@ export default function GamePlayPage() {
       // Show the wheel and start animation
       setRouletteWinner({
         winnerId: winnerData.winnerId,
+        winnerProfileId: winnerData.winnerProfileId,
         meals: mealsForWheel
       });
       setShowWheel(true);
@@ -195,11 +197,15 @@ export default function GamePlayPage() {
 
   // Complete roulette after animation
   const handleRouletteComplete = async () => {
-    if (!userData?.profile?.id) return;
+    if (!userData?.profile?.id || !rouletteWinner) return;
     
     try {
-      // Step 2: Complete the game on backend
-      const result = await GameService.spinRoulette(gameSessionId, userData.profile.id);
+      // Step 2: Complete the game on backend with predetermined winner
+      const result = await GameService.spinRoulette(
+        gameSessionId, 
+        userData.profile.id,
+        rouletteWinner.winnerProfileId
+      );
       
       // Process badge notifications if any
       if (result.badgeNotifications && result.badgeNotifications.length > 0) {

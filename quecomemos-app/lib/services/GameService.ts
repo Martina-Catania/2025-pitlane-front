@@ -389,17 +389,19 @@ export class GameService {
 
   /**
    * Spin roulette to randomly select a proposed meal (host only)
+   * @param winnerProfileId - Optional predetermined winner profile ID
    */
   static async spinRoulette(
     gameSessionId: number,
-    hostId: string
+    hostId: string,
+    winnerProfileId?: string
   ): Promise<GameSession> {
     const response = await fetch(`${API_BASE_URL}/games/${gameSessionId}/roulette/spin`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ hostId }),
+      body: JSON.stringify({ hostId, winnerProfileId }),
     });
 
     if (!response.ok) {
