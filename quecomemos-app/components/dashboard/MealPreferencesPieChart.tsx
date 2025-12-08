@@ -80,7 +80,7 @@ export default function MealPreferencesPieChart() {
         }
 
         // Fetch user's consumption history
-        const consumptionResponse = await fetch(`${API_BASE_URL}/consumptions/user/${profile.id}`, {
+        const consumptionResponse = await fetch(`${API_BASE_URL}/meal-consumptions/user/${profile.id}`, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',

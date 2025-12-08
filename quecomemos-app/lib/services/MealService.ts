@@ -65,7 +65,7 @@ export class MealService {
       const quantity = mealData.portions?.portionFraction || 1;
       const description = `Consumption of ${mealName} at ${new Date(mealData.date).toLocaleString()}`;
 
-      const response = await fetch(`${API_BASE_URL}/consumptions/individual`, {
+      const response = await fetch(`${API_BASE_URL}/meal-consumptions/individual`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,10 +75,7 @@ export class MealService {
           name: description,
           description: description,
           profileId: profileId,
-          meals: [{
-            mealId: mealData.mealId,
-            quantity: quantity
-          }],
+          mealId: mealData.mealId,
           consumedAt: mealData.date,
           portions: mealData.portions || null
         }),
@@ -137,7 +134,7 @@ export class MealService {
       const quantity = mealData.portions?.portionFraction || 1;
       const description = `Group consumption of ${mealName} at ${new Date(mealData.date).toLocaleString()}`;
 
-      const response = await fetch(`${API_BASE_URL}/consumptions/group`, {
+      const response = await fetch(`${API_BASE_URL}/meal-consumptions/group`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,10 +145,7 @@ export class MealService {
           description: description,
           profileId: profileId,
           groupId: groupId,
-          meals: [{
-            mealId: mealData.mealId,
-            quantity: quantity
-          }],
+          mealId: mealData.mealId,
           consumedAt: mealData.date,
           portions: mealData.portions || null
         }),

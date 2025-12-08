@@ -10,14 +10,14 @@ import { API_BASE_URL } from '@/lib/config/api';
 import type { Group } from '@/components/groups';
 
 interface Consumption {
-  ConsumptionID: number;
+  MealConsumptionID: number;
   name: string;
   consumedAt: string;
 }
 
-// Extend the imported Group interface to include consumptions
+// Extend the imported Group interface to include mealConsumptions
 interface GroupWithConsumptions extends Group {
-  consumptions?: Consumption[];
+  mealConsumptions?: Consumption[];
 }
 
 export default function GroupDetailPage() {
@@ -169,12 +169,12 @@ export default function GroupDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {group?.consumptions && group.consumptions.length > 0 ? (
+          {group?.mealConsumptions && group.mealConsumptions.length > 0 ? (
             <div className="space-y-3">
               {/* Scrollable container for activities */}
               <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
-                {group!.consumptions!.slice(0, 10).map((c: Consumption) => (
-                  <div key={c.ConsumptionID} className="border-l-4 border-amber-700 pl-4 py-2">
+                {group!.mealConsumptions!.slice(0, 10).map((c: Consumption) => (
+                  <div key={c.MealConsumptionID} className="border-l-4 border-amber-700 pl-4 py-2">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-gray-300">{c.name}</p>
@@ -191,9 +191,9 @@ export default function GroupDetailPage() {
               {/* View more button */}
               <div className="pt-4 border-t border-amber-700/30">
                 <div className="flex items-center justify-between">
-                  {group!.consumptions!.length > 10 && (
+                  {group!.mealConsumptions!.length > 10 && (
                     <p className="text-sm text-gray-400">
-                      Showing 10 of {group!.consumptions!.length} activities
+                      Showing 10 of {group!.mealConsumptions!.length} activities
                     </p>
                   )}
                   <Button variant="outline" size="sm" onClick={goHistory} className="ml-auto bg-amber-700 hover:bg-amber-600 text-white border-amber-600">

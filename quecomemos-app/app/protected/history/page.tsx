@@ -155,41 +155,41 @@ export default function UserHistoryPage() {
     
     try {
       setLoading(true);
-      console.debug('Fetching user meal portions', `${API_BASE_URL}/consumptions/user/${profile.id}/meal-portions`);
-      const res = await fetch(`${API_BASE_URL}/consumptions/user/${profile.id}/meal-portions`);
+      console.debug('Fetching user meal consumptions', `${API_BASE_URL}/meal-consumptions/user/${profile.id}`);
+      const res = await fetch(`${API_BASE_URL}/meal-consumptions/user/${profile.id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      console.debug('User meal portions payload', data);
+      console.debug('User meal consumptions payload', data);
       
-      // Transform meal portions to consumption format for display
-      const consumptionsFromPortions = data
+      // Transform meal consumptions to consumption format for display
+      const consumptionsFromMealConsumptions = data
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((mp: any) => mp && mp.meal) // Filter out invalid entries
+        .filter((mc: any) => mc && mc.meal) // Filter out invalid entries
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((mp: any) => ({
-          ConsumptionID: mp.consumption?.ConsumptionID || `mp-${mp.mealPortionId}`,
-          name: mp.consumption?.name || mp.meal?.name || 'Unknown Meal',
-          description: mp.consumption?.description || mp.meal?.description || '',
-          consumedAt: mp.consumedAt,
-          profileId: mp.profileId,
-          totalKcal: mp.totalCalories,
-          source: mp.source,
-          votingSession: mp.votingSession,
-          gameSession: mp.gameSession,
+        .map((mc: any) => ({
+          ConsumptionID: mc.MealConsumptionID,
+          name: mc.name || mc.meal?.name || 'Unknown Meal',
+          description: mc.description || mc.meal?.description || '',
+          consumedAt: mc.consumedAt,
+          profileId: mc.profileId,
+          totalKcal: mc.totalKcal,
+          source: mc.source,
+          votingSession: mc.votingSession,
+          gameSession: mc.gameSession,
           consumptionMeals: [{
-            ConsumptionMealID: mp.consumption?.ConsumptionID || mp.mealPortionId,
-            mealId: mp.mealId,
-            quantity: 1,
-            meal: mp.meal,
+            ConsumptionMealID: mc.MealConsumptionID,
+            mealId: mc.mealId,
+            quantity: mc.quantity || 1,
+            meal: mc.meal,
             mealPortion: {
-              MealPortionID: mp.mealPortionId,
-              portionFraction: mp.portionFraction,
-              foodPortions: mp.foodPortions || []
+              MealPortionID: mc.MealConsumptionID,
+              portionFraction: mc.portionFraction || 1.0,
+              foodPortions: mc.foodPortions || []
             }
           }]
         }));
       
-      setConsumptions(consumptionsFromPortions);
+      setConsumptions(consumptionsFromMealConsumptions);
     } catch (err) {
       console.debug('Error fetching user history', err);
       setError(err instanceof Error ? err.message : String(err));

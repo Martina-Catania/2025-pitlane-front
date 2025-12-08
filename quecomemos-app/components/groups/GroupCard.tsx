@@ -23,7 +23,7 @@ interface Group {
   members: GroupMember[];
   _count: {
     members: number;
-    consumptions: number;
+    mealConsumptions: number;
   };
 }
 
@@ -73,7 +73,7 @@ const handleClick = () => {
             {showActivity && (
               <Badge variant="secondary" className="ml-2 bg-amber-700/30 text-amber-200 border-amber-700/50">
                 <Activity className="w-3 h-3 mr-1" />
-                {group._count.consumptions}
+                {group._count.mealConsumptions}
               </Badge>
             )}
           </div>

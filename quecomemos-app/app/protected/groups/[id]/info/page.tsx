@@ -137,7 +137,7 @@ export default function GroupInfoPage() {
     try {
       setMealsLoading(true);
       setMealsError(null);
-      const response = await fetch(`${API_BASE_URL}/consumptions/groups/${groupId}/most-consumed?limit=3`);
+      const response = await fetch(`${API_BASE_URL}/meal-consumptions/groups/${groupId}/most-consumed?limit=3`);
 
       if (!response.ok) {
         throw new Error('Error loading most consumed meals');

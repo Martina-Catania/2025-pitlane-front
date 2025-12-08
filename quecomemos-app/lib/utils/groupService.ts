@@ -68,7 +68,7 @@ export async function fetchGroupFilteredMeals(groupId: string): Promise<GroupFil
       throw new Error('No authentication token');
     }
 
-    const response = await fetch(`${API_BASE_URL}/consumptions/groups/${groupId}/filtered-meals`, {
+    const response = await fetch(`${API_BASE_URL}/meal-consumptions/groups/${groupId}/filtered-meals`, {
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',

@@ -96,7 +96,7 @@ export default function GroupMealPreferencesPieChart({ groupId, members }: Group
         // Fetch consumption history for each group member
         for (const member of members) {
           try {
-            const consumptionResponse = await fetch(`${API_BASE_URL}/consumptions/user/${member.profile.id}`, {
+            const consumptionResponse = await fetch(`${API_BASE_URL}/meal-consumptions/user/${member.profile.id}`, {
               headers: {
                 'Authorization': `Bearer ${session.access_token}`,
                 'Content-Type': 'application/json',

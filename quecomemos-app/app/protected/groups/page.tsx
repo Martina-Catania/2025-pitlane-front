@@ -29,7 +29,7 @@ interface Group {
   }>;
   _count: {
     members: number;
-    consumptions: number;
+    mealConsumptions: number;
   };
 }
 
@@ -94,7 +94,7 @@ export default function GroupsPage() {
     if (filterType === 'all') {
       // Mostrar los primeros 5 grupos con más actividad (más consumptions)
       filtered = filtered
-        .sort((a, b) => b._count.consumptions - a._count.consumptions)
+        .sort((a, b) => b._count.mealConsumptions - a._count.mealConsumptions)
         .slice(0, 5);
     } else if (filterType === 'mine' && currentUserId) {
       // Mostrar grupos donde el usuario es miembro
@@ -174,17 +174,14 @@ export default function GroupsPage() {
       const consumptionData = {
         name: mealName,
         description,
-        meals: [{
-          mealId: mealData.mealId,
-          quantity: 1
-        }],
+        mealId: mealData.mealId,
         profileId: userData.profile.id,
         groupId: selectedGroupForMeal.GroupID,
         consumedAt: mealData.date,
         portions: mealData.portions // Include portions if provided
       };
 
-      const response = await fetch('http://localhost:3005/consumptions/group', {
+      const response = await fetch('http://localhost:3005/meal-consumptions/group', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
