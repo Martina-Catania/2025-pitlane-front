@@ -30,14 +30,14 @@ export default function GameResultsPage() {
         // If game is not completed, redirect
         if (game.status !== 'completed') {
           if (game.status === 'countdown' || game.status === 'playing') {
-            router.push(`/protected/groups/${groupId}/game/${gameSessionId}/play`);
+            router.replace(`/protected/groups/${groupId}/game/${gameSessionId}/play`);
           } else {
-            router.push(`/protected/groups/${groupId}/game`);
+            router.replace(`/protected/groups/${groupId}/game`);
           }
         }
       } catch {
         showError('Error', 'Failed to load results');
-        router.push(`/protected/groups/${groupId}/game`);
+        router.replace(`/protected/groups/${groupId}/game`);
       } finally {
         setLoading(false);
       }

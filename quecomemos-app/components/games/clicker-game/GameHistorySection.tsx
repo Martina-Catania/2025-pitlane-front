@@ -149,62 +149,46 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
           {history.length > 0 ? (
             <div className="space-y-3">
               {/* Scrollable container for game history */}
-              <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
-                {history.map((session) => (
-                  <div
-                    key={session.sessionId}
-                    className="border border-amber-700/30 rounded-lg p-4 bg-neutral-800/50 hover:bg-neutral-800/70 transition-all cursor-pointer"
-                    onClick={() => handleViewDetails(session.sessionId)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        {/* Game type */}
-                        <div className="flex items-center gap-2 mb-2">
-                          {getGameIcon(session.gameType)}
-                          <span className="text-sm font-medium text-amber-300">
-                            {getGameName(session.gameType)}
-                          </span>
-                          <Badge variant="outline" className="border-amber-600 text-amber-300 text-xs">
-                            {session.duration}s
-                          </Badge>
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-2">
+                {history.map((session) => {
+                  const isRoulette = session.gameType === 'roulette';
+                  const isClicker = session.gameType === 'egg_clicker';
+                  
+                  return (
+                    <button
+                      key={session.sessionId}
+                      onClick={() => handleViewDetails(session.sessionId)}
+                      className="w-full text-left p-3 rounded-lg border border-amber-700/30 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="font-medium text-neutral-100">
+                            {session.winningMeal?.name || 'No winning meal'}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {formatDate(session.createdAt)}
+                          </p>
                         </div>
-
-                        {/* Winner */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <Trophy className="h-4 w-4 text-yellow-400" />
-                          <h3 className="font-semibold text-neutral-100">
-                            {session.winner.username}
-                          </h3>
-                          <span className="text-xs text-gray-400">
-                            ({session.winner.clickCount} clicks)
-                          </span>
-                        </div>
-
-                        {/* Winning meal */}
-                        {session.winningMeal && (
-                          <div className="text-sm text-amber-300 ml-6">
-                            🍽️ {session.winningMeal.name}
-                          </div>
-                        )}
-
-                        {/* Session info */}
-                        <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
-                          <div className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            <span>{session.participantCount} players</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatDate(session.createdAt)}</span>
-                          </div>
+                        <div className="flex flex-col items-end gap-1 text-xs text-gray-400">
+                          {isRoulette && (
+                            <>
+                              <span>{session.participantCount} options</span>
+                              <span className="text-amber-500">
+                                {((1 / session.participantCount) * 100).toFixed(1)}% chance
+                              </span>
+                            </>
+                          )}
+                          {isClicker && (
+                            <span>{session.winner.clickCount} clicks</span>
+                          )}
+                          {!isRoulette && !isClicker && (
+                            <span>{session.participantCount} participants</span>
+                          )}
                         </div>
                       </div>
-
-                      {/* View details arrow */}
-                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0 mt-2" />
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Load more button (if needed) */}

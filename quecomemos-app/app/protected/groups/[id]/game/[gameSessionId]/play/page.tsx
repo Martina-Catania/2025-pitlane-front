@@ -83,7 +83,7 @@ export default function GamePlayPage() {
 
       // Navigate to results when completed (after animation for non-hosts)
       if (updated.status === 'completed' && hasSeenRouletteAnimation.current) {
-        router.push(`/protected/groups/${groupId}/game/${gameSessionId}/results`);
+        router.replace(`/protected/groups/${groupId}/game/${gameSessionId}/results`);
       }
     } catch (error) {
       console.error('Error polling game session:', error);
@@ -105,18 +105,18 @@ export default function GamePlayPage() {
 
         // If game is already completed, navigate to results
         if (game.status === 'completed') {
-          router.push(`/protected/groups/${groupId}/game/${gameSessionId}/results`);
+          router.replace(`/protected/groups/${groupId}/game/${gameSessionId}/results`);
           return;
         }
 
         // If game hasn't started, go back to lobby
         if (game.status === 'waiting' || game.status === 'ready') {
-          router.push(`/protected/groups/${groupId}/game`);
+          router.replace(`/protected/groups/${groupId}/game`);
           return;
         }
       } catch {
         showError('Error', 'Failed to load game');
-        router.push(`/protected/groups/${groupId}/game`);
+        router.replace(`/protected/groups/${groupId}/game`);
       } finally {
         setLoading(false);
       }

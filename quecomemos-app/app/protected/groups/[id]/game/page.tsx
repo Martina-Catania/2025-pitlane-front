@@ -37,7 +37,7 @@ export default function GameLobbyPage() {
 
       // Navigate to game when countdown starts
       if (updated.status === 'countdown' || updated.status === 'playing') {
-        router.push(`/protected/groups/${groupId}/game/${updated.GameSessionID}/play`);
+        router.replace(`/protected/groups/${groupId}/game/${updated.GameSessionID}/play`);
       }
     } catch (error) {
       console.error('Error polling game session:', error);
@@ -64,11 +64,11 @@ export default function GameLobbyPage() {
           
           // If game is already in progress, navigate to play page
           if (['countdown', 'playing', 'submitting'].includes(activeGame.status)) {
-            router.push(`/protected/groups/${groupId}/game/${activeGame.GameSessionID}/play`);
+            router.replace(`/protected/groups/${groupId}/game/${activeGame.GameSessionID}/play`);
           }
           // If completed, show results
           else if (activeGame.status === 'completed') {
-            router.push(`/protected/groups/${groupId}/game/${activeGame.GameSessionID}/results`);
+            router.replace(`/protected/groups/${groupId}/game/${activeGame.GameSessionID}/results`);
           }
         }
       } catch {
@@ -387,13 +387,24 @@ export default function GameLobbyPage() {
           {/* Action Buttons */}
           <div className="flex gap-3 justify-center flex-wrap">
             {!currentParticipant ? (
-              <Button
-                onClick={joinGame}
-                disabled={joiningGame}
-                className="bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
-              >
-                {joiningGame ? 'Joining...' : 'Join Game'}
-              </Button>
+              <>
+                <Button
+                  onClick={joinGame}
+                  disabled={joiningGame}
+                  className="bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
+                >
+                  {joiningGame ? 'Joining...' : 'Join Game'}
+                </Button>
+                {isHost && (
+                  <Button
+                    onClick={cancelGame}
+                    variant="outline"
+                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                  >
+                    Cancel Game
+                  </Button>
+                )}
+              </>
             ) : (
               <>
                 <Button
