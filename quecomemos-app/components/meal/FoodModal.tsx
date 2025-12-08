@@ -278,21 +278,79 @@ export default function FoodModal(props: Props) {
     
     try {
       if (mode === 'edit' && editingItem) {
-        // Edit mode: only allow quantity changes
-        if (!quantity || typeof quantity !== "number" || quantity <= 0) {
-          showError("Invalid Quantity", "Please enter a valid quantity.");
+        // Check if this is an existing food (has id) or a newly created food (no id)
+        const isExistingFood = Boolean(editingItem.id);
+        
+        if (forMeal && isExistingFood) {
+          // Existing food in meal context - only allow quantity changes
+          if (!quantity || typeof quantity !== "number" || quantity <= 0) {
+            showError("Invalid Quantity", "Please enter a valid quantity.");
+            return;
+          }
+          
+          const originalKcalPerUnit = editingItem.kcalPerUnit || (editingItem.kCal / editingItem.quantity);
+          onConfirm({ 
+            ...editingItem,
+            quantity: quantity,
+            kCal: Math.round(originalKcalPerUnit * quantity),
+            kcalPerUnit: originalKcalPerUnit
+          });
+          onClose(); 
+          return;
+        } else if (forMeal && !isExistingFood) {
+          // Newly created food in meal context - allow full editing including quantity
+          if (!name.trim() || !quantity || !kcalPerUnit) {
+            showError("Invalid Input", "Please fill in all required fields.");
+            return;
+          }
+          
+          if (typeof quantity !== "number" || quantity <= 0) {
+            showError("Invalid Quantity", "Please enter a valid quantity.");
+            return;
+          }
+          
+          const kcalPerUnitNum = typeof kcalPerUnit === "number" ? kcalPerUnit : Number(kcalPerUnit);
+          if (isNaN(kcalPerUnitNum) || kcalPerUnitNum < 0) {
+            showError("Invalid Calories", "Please enter valid calories per unit.");
+            return;
+          }
+          
+          // Check if name already exists (if it was changed)
+          if (name.trim() !== editingItem.name && checkFoodNameExists(name)) {
+            showError("Duplicate Name", "A food with this name already exists.");
+            return;
+          }
+          
+          onConfirm({
+            name: name.trim(),
+            quantity: quantity,
+            kCal: Math.round(kcalPerUnitNum * quantity),
+            kcalPerUnit: kcalPerUnitNum,
+            svgLink: createIcon,
+            preferences: createPreferences,
+            dietaryRestrictions: createHasRestrictions === true ? [] : createRestrictions,
+            hasNoRestrictions: createHasRestrictions === true ? true : (createRestrictions.length > 0 ? false : null),
+          });
+          onClose();
+          return;
+        } else {
+          // Outside meal context - full editing allowed (handled by existing logic below)
+          // This case shouldn't normally happen in meal creation flow
+          if (!quantity || typeof quantity !== "number" || quantity <= 0) {
+            showError("Invalid Quantity", "Please enter a valid quantity.");
+            return;
+          }
+          
+          const originalKcalPerUnit = editingItem.kcalPerUnit || (editingItem.kCal / editingItem.quantity);
+          onConfirm({ 
+            ...editingItem,
+            quantity: quantity,
+            kCal: Math.round(originalKcalPerUnit * quantity),
+            kcalPerUnit: originalKcalPerUnit
+          });
+          onClose(); 
           return;
         }
-        
-        const originalKcalPerUnit = editingItem.kcalPerUnit || (editingItem.kCal / editingItem.quantity);
-        onConfirm({ 
-          ...editingItem,
-          quantity: quantity,
-          kCal: Math.round(originalKcalPerUnit * quantity),
-          kcalPerUnit: originalKcalPerUnit
-        });
-        onClose(); 
-        return;
       }
       
       if (mode === 'search') {
@@ -717,7 +775,7 @@ export default function FoodModal(props: Props) {
           ) : mode === 'edit' ? (
             // EDIT MODE - Full editing capabilities when outside meal creation, quantity-only when in meal
             <div className="space-y-4">
-              {forMeal ? (
+              {forMeal && editingItem?.id ? (
                 // When editing in meal context - only allow quantity changes
                 <>
                   {/* Food Information - Read Only */}
@@ -964,15 +1022,7 @@ export default function FoodModal(props: Props) {
                             <CustomCheckbox
                               initialOptions={createRestrictions}
                               endpoint="dietary-restrictions/excluding-for-everyone"
-                              onSelectionChange={(newRestrictions) => {
-                                // Automatically remove 'For Everyone' (id=0) if other restrictions are selected
-                                const filteredRestrictions = newRestrictions.filter(id => id !== 0);
-                                setCreateRestrictions(filteredRestrictions);
-                                // If user adds any restriction, ensure hasRestrictions remains false
-                                if (filteredRestrictions.length > 0 && createHasRestrictions !== false) {
-                                  setCreateHasRestrictions(false);
-                                }
-                              }}
+                              onSelectionChange={setCreateRestrictions}
                             />
                           </DropdownWrapper>
                         )}
@@ -1137,7 +1187,7 @@ export default function FoodModal(props: Props) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-amber-200 text-sm mb-2 block">Calories per unit</Label>
+                  <Label className="text-amber-200 text-sm mb-2 block">Calories per uniteee</Label>
                   <input
                     type="number"
                     min={0}
@@ -1211,15 +1261,7 @@ export default function FoodModal(props: Props) {
                         <CustomCheckbox
                           initialOptions={createRestrictions}
                           endpoint="dietary-restrictions/excluding-for-everyone"
-                          onSelectionChange={(newRestrictions) => {
-                            // Automatically remove 'For Everyone' (id=0) if other restrictions are selected
-                            const filteredRestrictions = newRestrictions.filter(id => id !== 0);
-                            setCreateRestrictions(filteredRestrictions);
-                            // If user adds any restriction, ensure hasRestrictions remains false
-                            if (filteredRestrictions.length > 0 && createHasRestrictions !== false) {
-                              setCreateHasRestrictions(false);
-                            }
-                          }}
+                          onSelectionChange={setCreateRestrictions}
                         />
                       </DropdownWrapper>
                     )}

@@ -38,7 +38,7 @@ export default function GroupsPage() {
   const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'mine'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'mine'>('mine');
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [isRegisterMealModalOpen, setIsRegisterMealModalOpen] = useState(false);
   const [selectedGroupForMeal, setSelectedGroupForMeal] = useState<Group | null>(null);
@@ -91,17 +91,15 @@ export default function GroupsPage() {
     }
 
     // Filtrar por tipo
-    if (filterType === 'all') {
-      // Mostrar los primeros 5 grupos con más actividad (más consumptions)
-      filtered = filtered
-        .sort((a, b) => b._count.mealConsumptions - a._count.mealConsumptions)
-        .slice(0, 5);
-    } else if (filterType === 'mine' && currentUserId) {
+    if (filterType === 'mine' && currentUserId) {
       // Mostrar grupos donde el usuario es miembro
       filtered = filtered.filter(group => {
         const isMember = group.members.some(member => member.profile.id === currentUserId);
         return isMember;
       });
+    } else if (filterType === 'all') {
+      // Mostrar todos los grupos ordenados por actividad
+      filtered = filtered.sort((a, b) => b._count.mealConsumptions - a._count.mealConsumptions);
     }
 
     setFilteredGroups(filtered);
@@ -366,7 +364,7 @@ function GroupsPageSkeleton() {
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
-                  Groups
+                  {filterType === 'mine' ? 'My Groups' : 'All Groups'}
                 </div>
                 <Badge variant="secondary">
                   {filteredGroups.length}

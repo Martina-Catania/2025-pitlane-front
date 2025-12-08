@@ -457,7 +457,7 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
         editingItem={editingIndex !== null ? foods[editingIndex] : null}
         onConfirm={handleConfirmFood}
         onSwitchToCreate={modalMode === 'search' ? handleSwitchToCreate : undefined}
-        forMeal={false}
+        forMeal={true}
       />
     </Card>
   );

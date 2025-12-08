@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { IconSelect } from "@/components/forms";
 import { useState, useEffect } from "react";
 import { useFoods, Food } from "@/lib/contexts/FoodsContext";
+import { useMeals } from "@/lib/contexts/MealsContext";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
 import { ConfirmationModal } from "@/components/modals";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
-import { SquarePen, Hexagon, Loader2, AlertCircle } from "lucide-react";
+import { SquarePen, Hexagon, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
 
 interface KorvenProduct {
@@ -23,9 +24,10 @@ interface EditFoodFormProps {
 }
 
 export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
-  const { updateFood } = useFoods();
+  const { updateFood, removeFood } = useFoods();
+  const { handleFoodDeletion } = useMeals();
   const { showSuccess, showError } = useGlobalNotification();
-  const { confirmation, handleConfirm, closeConfirmation } = useConfirmation();
+  const { confirmation, showConfirmation, handleConfirm, closeConfirmation } = useConfirmation();
   
   const [foodName, setFoodName] = useState(food.name || "");
   const [kCal, setKCal] = useState<number>(food.kCal || 0);
@@ -34,6 +36,13 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
   );
   const [restrictions, setRestrictions] = useState<number[]>(
     food.dietaryRestrictions?.map((r: { DietaryRestrictionID?: number } | number) => typeof r === 'number' ? r : r.DietaryRestrictionID || 0) || []
+  );
+  const [hasRestrictions, setHasRestrictions] = useState<boolean>(
+    () => {
+      const initialRestrictions = food.dietaryRestrictions?.map((r: { DietaryRestrictionID?: number } | number) => typeof r === 'number' ? r : r.DietaryRestrictionID || 0) || [];
+      // If has no restrictions or only has "For Everyone" (id=0), then hasRestrictions = false
+      return initialRestrictions.length > 0 && !(initialRestrictions.length === 1 && initialRestrictions[0] === 0);
+    }
   );
   const [icon, setIcon] = useState<string | null>(food.svgLink || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -186,6 +195,58 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
     }
   };
 
+  const handleDeleteFood = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/foods/${food.FoodID}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete food');
+      }
+
+      // Remove from global context
+      removeFood(food.FoodID);
+      
+      // Update meals that contain this food
+      handleFoodDeletion(food.FoodID);
+      
+      showSuccess(
+        'Food Deleted Successfully!',
+        `"${food.name}" has been permanently removed from your food list.`,
+        <Trash2 className="w-8 h-8" />
+      );
+      
+      setTimeout(() => {
+        onSuccess();
+      }, 1000);
+    } catch (err: unknown) {
+      showError(
+        'Failed to Delete Food',
+        err instanceof Error ? err.message : 'An unexpected error occurred while deleting the food.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    showConfirmation(
+      {
+        type: 'danger',
+        title: 'Delete Food',
+        message: `Are you sure you want to delete "${food.name}"? This action cannot be undone and will remove this food from all meals.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        customIcon: <Trash2 className="w-6 h-6" />
+      },
+      handleDeleteFood
+    );
+  };
+
   const inputClass = "w-full p-3 rounded-lg border border-amber-700 bg-amber-800 text-amber-100 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500";
 
   return (
@@ -279,9 +340,12 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
             <div className="grid grid-cols-2 gap-2 mb-3">
               <Button
                 type="button"
-                onClick={() => setRestrictions([])}
+                onClick={() => {
+                  setHasRestrictions(false);
+                  setRestrictions([]);
+                }}
                 className={`py-2 px-4 rounded-lg transition-colors ${
-                  restrictions.length === 0
+                  !hasRestrictions
                     ? 'bg-gray-700 text-white border border-gray-600'
                     : 'bg-transparent text-gray-400 border border-gray-700 hover:bg-gray-800'
                 }`}
@@ -290,8 +354,15 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
               </Button>
               <Button
                 type="button"
+                onClick={() => {
+                  setHasRestrictions(true);
+                  // When switching to "Has restrictions", remove the "For Everyone" restriction if present
+                  if (restrictions.length === 1 && restrictions[0] === 0) {
+                    setRestrictions([]);
+                  }
+                }}
                 className={`py-2 px-4 rounded-lg transition-colors ${
-                  restrictions.length > 0
+                  hasRestrictions
                     ? 'bg-orange-600 text-white border border-orange-500'
                     : 'bg-transparent text-gray-400 border border-gray-700 hover:bg-gray-800'
                 }`}
@@ -300,13 +371,13 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
               </Button>
             </div>
             
-            {restrictions.length > 0 && (
+            {hasRestrictions && (
               <div>
                 <Label className="text-amber-200 text-sm mb-2 block">Select Dietary Restrictions</Label>
                 <DropdownWrapper label="Select Dietary Restrictions">
                   <CustomCheckbox
-                    initialOptions={restrictions}
-                    endpoint="dietary-restrictions"
+                    initialOptions={restrictions.filter(id => id !== 0)}
+                    endpoint="dietary-restrictions/excluding-for-everyone"
                     onSelectionChange={setRestrictions}
                   />
                 </DropdownWrapper>
@@ -315,12 +386,30 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="flex justify-center pt-4">
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4">
+          <Button 
+            type="button"
+            onClick={handleDeleteClick}
+            disabled={isLoading || confirmation.isLoading}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-all disabled:opacity-50"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Deleting...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </div>
+            )}
+          </Button>
           <Button 
             type="submit" 
             disabled={isLoading || confirmation.isLoading || isDuplicateName || isCheckingName}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-lg transition-all disabled:opacity-50"
+            className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-lg transition-all disabled:opacity-50"
           >
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
