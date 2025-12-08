@@ -13,6 +13,25 @@ interface Consumption {
   MealConsumptionID: number;
   name: string;
   consumedAt: string;
+  portionFraction?: number;
+  totalKcal?: number;
+  source?: 'individual' | 'voting' | 'game' | 'group';
+  meal?: {
+    MealID: number;
+    name: string;
+    description?: string;
+  };
+  profile?: {
+    id: string;
+    username: string;
+  };
+  votingSession?: {
+    VotingSessionID: number;
+  };
+  gameSession?: {
+    GameSessionID: number;
+    gameType: string;
+  };
 }
 
 // Extend the imported Group interface to include mealConsumptions
@@ -173,19 +192,57 @@ export default function GroupDetailPage() {
             <div className="space-y-3">
               {/* Scrollable container for activities */}
               <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
-                {group!.mealConsumptions!.slice(0, 10).map((c: Consumption) => (
-                  <div key={c.MealConsumptionID} className="border-l-4 border-amber-700 pl-4 py-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-300">{c.name}</p>
-                        <p className="text-sm text-gray-400">{formatDate(c.consumedAt)}</p>
-                      </div>
-                      <div className="flex items-center text-amber-700">
-                        <ChefHat className="w-4 h-4" />
+                {group!.mealConsumptions!.slice(0, 10).map((c: Consumption) => {
+                  // Format game type for display
+                  const displayName = c.source === 'game' && c.gameSession?.gameType
+                    ? c.gameSession.gameType
+                        .split('_')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ') + ' Game'
+                    : c.meal?.name || c.name;
+
+                  const sourceLabel = c.source === 'voting' ? 'Voting' : c.source === 'game' ? 'Game' : c.source === 'group' ? 'Group Meal' : 'Manual';
+                  const sourceColor = c.source === 'voting' ? 'text-purple-400 bg-purple-900/30 border-purple-700' : 
+                                    c.source === 'game' ? 'text-blue-400 bg-blue-900/30 border-blue-700' : 
+                                    c.source === 'group' ? 'text-amber-400 bg-amber-900/30 border-amber-700' :
+                                    'text-green-400 bg-green-900/30 border-green-700';
+
+                  return (
+                    <div key={c.MealConsumptionID} className="border-l-4 border-amber-700 pl-4 py-3 bg-amber-950/20 rounded-r-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <ChefHat className="w-4 h-4 text-amber-400" />
+                            <p className="font-medium text-gray-200">{displayName}</p>
+                            {c.source && (
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${sourceColor}`}>
+                                {sourceLabel}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Participants info */}
+                          {c.profile && (
+                            <p className="text-sm text-amber-500 ml-6">
+                              Registered by {c.profile.username}
+                            </p>
+                          )}
+                          
+                          {/* Date and time */}
+                          <p className="text-xs text-gray-400 ml-6 mt-1">
+                            {new Date(c.consumedAt).toLocaleString('es-ES', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               
               {/* View more button */}
