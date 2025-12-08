@@ -271,7 +271,11 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
                     <CustomCheckbox
                       initialOptions={restrictions.length > 0 ? restrictions : []}
                       endpoint="dietary-restrictions/excluding-for-everyone"
-                      onSelectionChange={setRestrictions}
+                      onSelectionChange={(newRestrictions) => {
+                        // Automatically remove 'For Everyone' (id=0) if other restrictions are selected
+                        const filteredRestrictions = newRestrictions.filter(id => id !== 0);
+                        setRestrictions(filteredRestrictions);
+                      }}
                     />
                   </DropdownWrapper>
                 )}

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Users, Clock, ChevronRight, Gamepad2, Egg } from 'lucide-react';
+import { Gamepad2, Egg, Trophy, Users, Clock, ChevronRight, CircleDot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { GameHistoryService } from './GameHistoryService';
 import { SessionDetailsModal } from '@/components/session/SessionDetailsModal';
@@ -41,18 +41,23 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
   const [error, setError] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [limit, setLimit] = useState(3);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
-    loadHistory();
+    loadHistory(limit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+  }, [groupId, limit]);
 
-  const loadHistory = async () => {
+  const loadHistory = async (currentLimit: number) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await GameHistoryService.getGroupGameHistory(groupId, 10, 0);
-      setHistory(data.sessions || []);
+      // Fetch one extra to check if there are more
+      const data = await GameHistoryService.getGroupGameHistory(groupId, currentLimit + 1, 0);
+      const sessions = data.sessions || [];
+      setHasMore(sessions.length > currentLimit);
+      setHistory(sessions.slice(0, currentLimit));
       onRefresh?.();
     } catch (err) {
       console.error('Failed to load game history:', err);
@@ -60,6 +65,10 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    setLimit(prevLimit => prevLimit + 10);
   };
 
   const handleViewDetails = (sessionId: number) => {
@@ -77,29 +86,11 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
     });
   };
 
-  const getGameIcon = (gameType: string) => {
-    switch (gameType) {
-      case 'egg_clicker':
-        return <Egg className="h-4 w-4 text-amber-400" />;
-      default:
-        return <Gamepad2 className="h-4 w-4 text-amber-400" />;
-    }
-  };
-
-  const getGameName = (gameType: string) => {
-    switch (gameType) {
-      case 'egg_clicker':
-        return 'Egg Clicker';
-      default:
-        return gameType;
-    }
-  };
-
   if (loading) {
     return (
-      <Card className={`bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50 ${className}`}>
+      <Card className={`bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50 ${className}`}>
         <CardHeader>
-          <CardTitle className="flex items-center text-amber-400">
+          <CardTitle className="flex items-center text-amber-200">
             <Gamepad2 className="w-5 h-5 mr-2" /> Game History
           </CardTitle>
         </CardHeader>
@@ -114,9 +105,9 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
   if (error) {
     return (
-      <Card className={`bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50 ${className}`}>
+      <Card className={`bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50 ${className}`}>
         <CardHeader>
-          <CardTitle className="flex items-center text-amber-400">
+          <CardTitle className="flex items-center text-amber-200">
             <Gamepad2 className="w-5 h-5 mr-2" /> Game History
           </CardTitle>
         </CardHeader>
@@ -126,7 +117,7 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={loadHistory}
+              onClick={() => loadHistory(limit)}
               className="mt-3 border-red-500/50 text-red-400 hover:bg-red-900/30"
             >
               Retry
@@ -139,9 +130,9 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
 
   return (
     <>
-      <Card className={`bg-gradient-to-br from-amber-900/20 to-amber-950/40 border-amber-700/50 ${className}`}>
+      <Card className={`bg-gradient-to-br from-amber-800/30 to-amber-900/30 border-amber-700/50 ${className}`}>
         <CardHeader>
-          <CardTitle className="flex items-center text-amber-400">
+          <CardTitle className="flex items-center text-amber-200">
             <Gamepad2 className="w-5 h-5 mr-2" /> Game History
           </CardTitle>
         </CardHeader>
@@ -149,54 +140,93 @@ export function GameHistorySection({ groupId, className = '', onRefresh }: GameH
           {history.length > 0 ? (
             <div className="space-y-3">
               {/* Scrollable container for game history */}
-              <div className="max-h-80 overflow-y-auto pr-2 space-y-2">
+              <div className="max-h-80 overflow-y-auto pr-2 space-y-3">
                 {history.map((session) => {
                   const isRoulette = session.gameType === 'roulette';
                   const isClicker = session.gameType === 'egg_clicker';
+                  const GameIcon = isClicker ? Egg : isRoulette ? CircleDot : Gamepad2;
                   
                   return (
-                    <button
+                    <div
                       key={session.sessionId}
+                      className="border border-amber-700/30 rounded-lg p-4 bg-neutral-800/50 hover:bg-neutral-800/70 transition-all cursor-pointer"
                       onClick={() => handleViewDetails(session.sessionId)}
-                      className="w-full text-left p-3 rounded-lg border border-amber-700/30 bg-neutral-800/50 hover:bg-neutral-800/70 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className="font-medium text-neutral-100">
-                            {session.winningMeal?.name || 'No winning meal'}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {formatDate(session.createdAt)}
-                          </p>
+                          {/* Game type indicator with icon */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <GameIcon className={`h-4 w-4 ${isClicker ? 'text-amber-400' : isRoulette ? 'text-purple-400' : 'text-blue-400'}`} />
+                            <span className="text-xs font-medium text-neutral-400 uppercase">
+                              {isClicker ? 'Egg Clicker' : isRoulette ? 'Roulette' : session.gameType}
+                            </span>
+                          </div>
+
+                          {/* Winner meal */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <Trophy className="h-4 w-4 text-yellow-400" />
+                            <h3 className="font-semibold text-neutral-100">
+                              {session.winningMeal?.name || 'No winning meal'}
+                            </h3>
+                            <Badge variant="outline" className="text-xs border-yellow-600 text-yellow-400">
+                              Winner
+                            </Badge>
+                          </div>
+
+                          {/* Session info */}
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{formatDate(session.createdAt)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              <span>{session.participantCount} participant{session.participantCount !== 1 ? 's' : ''}</span>
+                            </div>
+                            {isClicker && (
+                              <div className="flex items-center gap-1">
+                                <Egg className="h-3 w-3" />
+                                <span className="text-amber-400 font-medium">
+                                  {session.winner.clickCount} clicks by {session.winner.username}
+                                </span>
+                              </div>
+                            )}
+                            {isRoulette && (
+                              <div className="flex items-center gap-1">
+                                <CircleDot className="h-3 w-3" />
+                                <span className="text-purple-400 font-medium">
+                                  Won by {session.winner.username}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1 text-xs text-gray-400">
-                          {isRoulette && (
-                            <>
-                              <span>{session.participantCount} options</span>
-                              <span className="text-amber-500">
-                                {((1 / session.participantCount) * 100).toFixed(1)}% chance
-                              </span>
-                            </>
-                          )}
-                          {isClicker && (
-                            <span>{session.winner.clickCount} clicks</span>
-                          )}
-                          {!isRoulette && !isClicker && (
-                            <span>{session.participantCount} participants</span>
-                          )}
-                        </div>
+
+                        {/* View details button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(session.sessionId);
+                          }}
+                        >
+                          Details
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
 
               {/* Load more button (if needed) */}
-              {history.length >= 10 && (
+              {hasMore && (
                 <Button
                   variant="outline"
                   className="w-full border-amber-600 text-amber-400 hover:bg-amber-900/30"
-                  onClick={loadHistory}
+                  onClick={handleLoadMore}
                 >
                   Load More
                 </Button>

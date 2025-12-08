@@ -24,7 +24,7 @@ interface VotingContextType {
   lastSyncTime: Date | null;
 }
 
-const VotingContext = createContext<VotingContextType | undefined>(undefined);
+export const VotingContext = createContext<VotingContextType | undefined>(undefined);
 
 interface VotingProviderProps {
   children: React.ReactNode;

@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Users, Clock, ChevronRight, Vote } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { VotingService } from './VotingService';
 import { SessionDetailsModal } from '@/components/session/SessionDetailsModal';
-import { useVoting } from '@/lib/contexts/VotingContext';
+import { VotingContext } from '@/lib/contexts/VotingContext';
 
 interface VotingHistoryItem {
   sessionId: number;
@@ -34,35 +34,48 @@ export function VotingHistorySection({ groupId, className = '' }: VotingHistoryS
   const [error, setError] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { onVotingCompleted } = useVoting();
+  const [limit, setLimit] = useState(3);
+  const [hasMore, setHasMore] = useState(false);
+  
+  // Optional voting context - only used if component is within VotingProvider
+  const votingContext = useContext(VotingContext);
 
   useEffect(() => {
-    loadHistory();
+    loadHistory(limit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+  }, [groupId, limit]);
 
-  // Listen for voting completion events from VotingContext
+  // Listen for voting completion events from VotingContext (if available)
   useEffect(() => {
-    const unsubscribe = onVotingCompleted(() => {
-      loadHistory();
+    if (!votingContext?.onVotingCompleted) return;
+    
+    const unsubscribe = votingContext.onVotingCompleted(() => {
+      loadHistory(limit);
     });
 
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+  }, [groupId, limit]);
 
-  const loadHistory = async () => {
+  const loadHistory = async (currentLimit: number) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await VotingService.getGroupVotingHistory(groupId, 10, 0);
-      setHistory(data.sessions || []);
+      // Fetch one extra to check if there are more
+      const data = await VotingService.getGroupVotingHistory(groupId, currentLimit + 1, 0);
+      const sessions = data.sessions || [];
+      setHasMore(sessions.length > currentLimit);
+      setHistory(sessions.slice(0, currentLimit));
     } catch (err) {
       console.error('Failed to load voting history:', err);
       setError(err instanceof Error ? err.message : 'Failed to load voting history');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    setLimit(prevLimit => prevLimit + 10);
   };
 
   const handleViewDetails = (sessionId: number) => {
@@ -111,7 +124,7 @@ export function VotingHistorySection({ groupId, className = '' }: VotingHistoryS
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={loadHistory}
+              onClick={() => loadHistory(limit)}
               className="mt-3 border-red-500/50 text-red-400 hover:bg-red-900/30"
             >
               Retry
@@ -188,6 +201,17 @@ export function VotingHistorySection({ groupId, className = '' }: VotingHistoryS
                   </div>
                 ))}
               </div>
+
+              {/* Load more button (if needed) */}
+              {hasMore && (
+                <Button
+                  variant="outline"
+                  className="w-full border-amber-600 text-amber-400 hover:bg-amber-900/30"
+                  onClick={handleLoadMore}
+                >
+                  Load More
+                </Button>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">

@@ -61,8 +61,6 @@ export class MealService {
         mealName: mealName
       });
 
-      // Calculate quantity based on portions (default to 1 for full meal)
-      const quantity = mealData.portions?.portionFraction || 1;
       const description = `Consumption of ${mealName} at ${new Date(mealData.date).toLocaleString()}`;
 
       const response = await fetch(`${API_BASE_URL}/meal-consumptions/individual`, {
@@ -130,8 +128,6 @@ export class MealService {
         };
       }
 
-      // Calculate quantity based on portions (default to 1 for full meal)
-      const quantity = mealData.portions?.portionFraction || 1;
       const description = `Group consumption of ${mealName} at ${new Date(mealData.date).toLocaleString()}`;
 
       const response = await fetch(`${API_BASE_URL}/meal-consumptions/group`, {

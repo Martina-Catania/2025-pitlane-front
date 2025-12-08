@@ -844,7 +844,7 @@ export default function FoodModal(props: Props) {
                 // When editing outside meal context - allow full editing (same as create mode)
                 <>
                   {/* Basic Info */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
                         Food Name
@@ -885,28 +885,6 @@ export default function FoodModal(props: Props) {
                           ✓ Food name is available
                         </p>
                       ) : null}
-                    </div>
-                    <div>
-                      <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
-                      <input
-                        type="number"
-                        min={1}
-                        placeholder="Enter quantity"
-                        value={quantity === "" ? "" : quantity}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === '') {
-                            setQuantity('');
-                          } else {
-                            const num = Number(val);
-                            if (!isNaN(num) && num > 0) {
-                              setQuantity(num);
-                            }
-                          }
-                        }}
-                        disabled={isSubmitting}
-                        className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      />
                     </div>
                   </div>
 
@@ -986,7 +964,15 @@ export default function FoodModal(props: Props) {
                             <CustomCheckbox
                               initialOptions={createRestrictions}
                               endpoint="dietary-restrictions/excluding-for-everyone"
-                              onSelectionChange={setCreateRestrictions}
+                              onSelectionChange={(newRestrictions) => {
+                                // Automatically remove 'For Everyone' (id=0) if other restrictions are selected
+                                const filteredRestrictions = newRestrictions.filter(id => id !== 0);
+                                setCreateRestrictions(filteredRestrictions);
+                                // If user adds any restriction, ensure hasRestrictions remains false
+                                if (filteredRestrictions.length > 0 && createHasRestrictions !== false) {
+                                  setCreateHasRestrictions(false);
+                                }
+                              }}
                             />
                           </DropdownWrapper>
                         )}
@@ -1065,7 +1051,7 @@ export default function FoodModal(props: Props) {
               )}
 
               {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 ${forMeal ? 'md:grid-cols-2' : ''} gap-4`}>
                 <div>
                   <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
                     Food Name
@@ -1122,28 +1108,31 @@ export default function FoodModal(props: Props) {
                     ) : null
                   )}
                 </div>
-                <div>
-                  <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
-                  <input
-                    type="number"
-                    min={1}
-                    placeholder="Enter quantity"
-                    value={quantity === "" ? "" : quantity}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '') {
-                        setQuantity('');
-                      } else {
-                        const num = Number(val);
-                        if (!isNaN(num) && num > 0) {
-                          setQuantity(num);
+                {/* Only show Quantity field when forMeal is true (adding food to meal) */}
+                {forMeal && (
+                  <div>
+                    <Label className="text-amber-200 text-sm mb-2 block">Quantity</Label>
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="Enter quantity"
+                      value={quantity === "" ? "" : quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setQuantity('');
+                        } else {
+                          const num = Number(val);
+                          if (!isNaN(num) && num > 0) {
+                            setQuantity(num);
+                          }
                         }
-                      }
-                    }}
-                    disabled={isSubmitting}
-                    className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  />
-                </div>
+                      }}
+                      disabled={isSubmitting}
+                      className={`${inputClass} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1222,7 +1211,15 @@ export default function FoodModal(props: Props) {
                         <CustomCheckbox
                           initialOptions={createRestrictions}
                           endpoint="dietary-restrictions/excluding-for-everyone"
-                          onSelectionChange={setCreateRestrictions}
+                          onSelectionChange={(newRestrictions) => {
+                            // Automatically remove 'For Everyone' (id=0) if other restrictions are selected
+                            const filteredRestrictions = newRestrictions.filter(id => id !== 0);
+                            setCreateRestrictions(filteredRestrictions);
+                            // If user adds any restriction, ensure hasRestrictions remains false
+                            if (filteredRestrictions.length > 0 && createHasRestrictions !== false) {
+                              setCreateHasRestrictions(false);
+                            }
+                          }}
                         />
                       </DropdownWrapper>
                     )}
