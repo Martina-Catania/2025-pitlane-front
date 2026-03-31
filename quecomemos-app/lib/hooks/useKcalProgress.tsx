@@ -32,10 +32,13 @@ export function useCalorieProgress(date?: Date) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No valid session found');
+
       const dateParam = date ? `?date=${date.toISOString()}` : '';
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/${user.id}/calorie-progress${dateParam}`, {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
@@ -76,12 +79,15 @@ export function useCalorieProgress(date?: Date) {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No valid session found');
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/${user.id}/calorie-goal`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ calorieGoal: newGoal })
       });
