@@ -21,6 +21,8 @@ interface KorvenProduct {
   name: string;
 }
 
+const KORVEN_ENABLED = false;
+
 type Props = {
   apiBase: string;
   open: boolean;
@@ -91,6 +93,15 @@ export default function FoodModal(props: Props) {
 
   // Fetch Korven products
   useEffect(() => {
+    if (!KORVEN_ENABLED) {
+      setKorvenProducts([]);
+      setIsLoadingKorven(false);
+      setShowKorvenOptions(false);
+      setSelectedKorvenProduct(null);
+      setIsKorvenInspired(false);
+      return;
+    }
+
     if (!open || mode !== 'create') return;
     
     const fetchKorvenProducts = async () => {
@@ -906,7 +917,7 @@ export default function FoodModal(props: Props) {
                     <div>
                       <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
                         Food Name
-                        {isKorvenInspired && (
+                        {KORVEN_ENABLED && isKorvenInspired && (
                           <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                             <Hexagon className="w-3 h-3 fill-amber-400/30" />
                             Korven
@@ -920,7 +931,7 @@ export default function FoodModal(props: Props) {
                         onChange={(e) => {
                           setName(e.target.value);
                           // Clear Korven inspired flag if user manually changes the name
-                          if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
+                          if (KORVEN_ENABLED && selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
                             setIsKorvenInspired(false);
                             setSelectedKorvenProduct(null);
                           }
@@ -1036,7 +1047,7 @@ export default function FoodModal(props: Props) {
             // CREATE MODE - Full form
             <div className="space-y-4">
               {/* Korven Inspiration Section */}
-              {!editingItem && (
+              {KORVEN_ENABLED && !editingItem && (
                 <div className="bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border border-amber-600/50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -1105,7 +1116,7 @@ export default function FoodModal(props: Props) {
                 <div>
                   <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
                     Food Name
-                    {isKorvenInspired && (
+                    {KORVEN_ENABLED && isKorvenInspired && (
                       <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                         <Hexagon className="w-3 h-3 fill-amber-400/30" />
                         Korven
@@ -1119,7 +1130,7 @@ export default function FoodModal(props: Props) {
                     onChange={(e) => {
                       setName(e.target.value);
                       // Clear Korven inspired flag if user manually changes the name
-                      if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
+                      if (KORVEN_ENABLED && selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
                         setIsKorvenInspired(false);
                         setSelectedKorvenProduct(null);
                       }

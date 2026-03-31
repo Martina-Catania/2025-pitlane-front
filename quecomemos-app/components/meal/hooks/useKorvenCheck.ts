@@ -24,33 +24,12 @@ const fetchKorvenProducts = async (): Promise<KorvenProduct[]> => {
     return loadPromise;
   }
 
-  isLoading = true;
-  loadPromise = fetch('/api/korven-products', {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-    },
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((products: KorvenProduct[]) => {
-      cachedProducts = products;
-      isLoading = false;
-      return products;
-    })
-    .catch(error => {
-      console.error('Error fetching Korven products:', error);
-      isLoading = false;
-      loadPromise = null;
-      // Return empty array on error so the app continues to work
-      return [];
-    });
+  // Korven integration is temporarily disabled.
+  cachedProducts = [];
+  isLoading = false;
+  loadPromise = Promise.resolve(cachedProducts);
 
-  return loadPromise;
+  return cachedProducts;
 };
 
 export const useKorvenCheck = () => {

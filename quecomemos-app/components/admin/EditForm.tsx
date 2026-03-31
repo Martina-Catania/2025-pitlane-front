@@ -18,6 +18,8 @@ interface KorvenProduct {
   name: string;
 }
 
+const KORVEN_ENABLED = false;
+
 interface EditFoodFormProps {
   food: Food;
   onSuccess: () => void;
@@ -65,6 +67,13 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
 
   // Fetch Korven products on mount
   useEffect(() => {
+    if (!KORVEN_ENABLED) {
+      setKorvenProducts([]);
+      setSelectedKorvenProduct(null);
+      setIsKorvenInspired(false);
+      return;
+    }
+
     const fetchKorvenProducts = async () => {
       try {
         const response = await fetch('/api/korven-products', {
@@ -257,7 +266,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
         <div>
           <Label className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
             Food Name
-            {isKorvenInspired && (
+            {KORVEN_ENABLED && isKorvenInspired && (
               <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Hexagon className="w-3 h-3 fill-amber-400/30" />
                 Korven
@@ -268,7 +277,7 @@ export function EditFoodForm({ food, onSuccess }: EditFoodFormProps) {
             value={foodName}
             onChange={(e) => {
               setFoodName(e.target.value);
-              if (selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
+              if (KORVEN_ENABLED && selectedKorvenProduct && e.target.value !== selectedKorvenProduct) {
                 setIsKorvenInspired(false);
                 setSelectedKorvenProduct(null);
               }

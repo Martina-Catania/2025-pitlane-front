@@ -26,6 +26,8 @@ interface AddFoodFormProps {
   className?: string;
 }
 
+const KORVEN_ENABLED = false;
+
 export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps & React.ComponentPropsWithoutRef<"div">) {
   const { addFood } = useFoods();
   const { showSuccess, showError } = useGlobalNotification();
@@ -137,6 +139,7 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
           <form onSubmit={handleAddFood}>
             <div className="grid gap-4">
               {/* Korven Inspiration Section */}
+              {KORVEN_ENABLED && (
               <div className="bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border border-amber-600/50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -197,11 +200,12 @@ export function AddFoodForm({ className, onSuccess, ...props }: AddFoodFormProps
                   </div>
                 )}
               </div>
+              )}
 
               <div>
                 <Label htmlFor="food-name" className="text-amber-200 text-sm mb-2 block flex items-center gap-2">
                   Food Name
-                  {isKorvenInspired && (
+                  {KORVEN_ENABLED && isKorvenInspired && (
                     <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                       <Hexagon className="w-3 h-3 fill-amber-400/30" />
                       Korven

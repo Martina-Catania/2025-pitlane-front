@@ -21,6 +21,8 @@ interface KorvenProduct {
   name: string;
 }
 
+const KORVEN_ENABLED = false;
+
 type Props = AddMealFormProps & { onClose?: () => void };
 
 export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: Props) {
@@ -72,6 +74,15 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
 
   // Fetch Korven products for meal names (with connectors)
   useEffect(() => {
+    if (!KORVEN_ENABLED) {
+      setKorvenMealProducts([]);
+      setIsLoadingKorvenMeals(false);
+      setShowKorvenMealOptions(false);
+      setSelectedKorvenMealProduct(null);
+      setIsMealKorvenInspired(false);
+      return;
+    }
+
     const fetchKorvenMealProducts = async () => {
       setIsLoadingKorvenMeals(true);
       try {
@@ -295,6 +306,7 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Korven Meal Name Inspiration */}
+        {KORVEN_ENABLED && (
         <div className="bg-gradient-to-r from-amber-900/30 to-yellow-900/30 border border-amber-600/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -354,12 +366,13 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
             </div>
           )}
         </div>
+        )}
 
         {/* nombre + sugerencia */}
         <div>
           <div className="flex items-center gap-2 mb-2">
             <label className="text-amber-200 text-sm">Meal Name</label>
-            {isMealKorvenInspired && (
+            {KORVEN_ENABLED && isMealKorvenInspired && (
               <span className="text-xs bg-amber-600/50 text-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Hexagon className="w-3 h-3 fill-amber-400/30" />
                 Korven
@@ -373,7 +386,7 @@ export default function AddMealForm({ onFoodAdded, onClose, initialMealName }: P
             onChange={(e) => {
               setMealName(e.target.value);
               // Clear Korven inspired flag if user manually changes the name
-              if (selectedKorvenMealProduct && e.target.value !== selectedKorvenMealProduct) {
+              if (KORVEN_ENABLED && selectedKorvenMealProduct && e.target.value !== selectedKorvenMealProduct) {
                 setIsMealKorvenInspired(false);
                 setSelectedKorvenMealProduct(null);
               }
