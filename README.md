@@ -1,13 +1,5 @@
 # PID - QueComemos Frontend
 
-[![CI](https://github.com/uca-pid/2025-pitlane-back/actions/workflows/GHA.yml/badge.svg)](https://github.com/uca-pid/2025-pitlane-front/actions/workflows/GHA.yml)
-[![Coverage Status](https://coveralls.io/repos/github/uca-pid/2025-pitlane-back/badge.svg?branch=master)](https://coveralls.io/github/uca-pid/2025-pitlane-front?branch=master)
+This repository root keeps the frontend workspace. The actual application lives in [quecomemos-app](quecomemos-app/README.md).
 
-## Metacello
-
-```smalltalk
-Metacello new
-   baseline: 'IngSoft2';
-   githubUser: 'uca-argentina' project: 'project-template' commitish: 'master' path: 'repository';
-   load: 'development'.
-```
+Use the app README for setup, environment variables, and local development commands.
