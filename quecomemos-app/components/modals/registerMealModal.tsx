@@ -386,7 +386,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
               {!showDateTimeSelection ? (
                 <div className="space-y-4">
                   <label className="block text-sm font-medium text-amber-200">
-                    When did you eat this meal? <span className="text-red-400">*</span>
+                    When did/will you eat this meal? <span className="text-red-400">*</span>
                   </label>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -421,7 +421,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
                       <div className="text-center">
                         <div className="font-semibold">Choose Date & Time</div>
                         <div className="text-sm opacity-90 mt-1">
-                          Specify when you ate this meal
+                          Past = consumed now, future = planned meal
                         </div>
                       </div>
                     </button>
@@ -474,7 +474,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
                           id="mealDate"
                           value={mealDate}
                           onChange={(e) => setMealDate(e.target.value)}
-                          max={new Date().toISOString().split('T')[0]}
+                          // max={new Date().toISOString().split('T')[0]}
                           className="w-full px-3 py-2 bg-neutral-800 text-gray-100 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                           disabled={isSubmitting}
                         />
@@ -501,7 +501,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
                     disabled={isSubmitting || !selectedMeal || (!useCurrentTime && (!mealDate || !mealTime))}
                     className="w-full py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
                   >
-                    {isSubmitting ? 'Registering...' : 'Register Meal'}
+                    {isSubmitting ? 'Saving...' : 'Save Meal'}
                   </button>
                 </div>
               )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
+import { PlannedMealsService } from '@/lib/services/PlannedMealsService';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -19,6 +20,7 @@ export interface RegisterMealData {
 
 export interface MealRegistrationResult {
   success: boolean;
+  planned?: boolean;
   consumption?: {
     ConsumptionID: number;
     name: string;
@@ -42,6 +44,20 @@ export class MealService {
   ): Promise<MealRegistrationResult> {
     try {
       console.log('Attempting to register meal:', mealData);
+
+      const targetDate = new Date(mealData.date);
+      if (!Number.isNaN(targetDate.getTime()) && targetDate > new Date()) {
+        await PlannedMealsService.createPlannedMeal({
+          profileId,
+          mealId: mealData.mealId,
+          plannedFor: targetDate.toISOString()
+        });
+
+        return {
+          success: true,
+          planned: true
+        };
+      }
 
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -117,6 +133,21 @@ export class MealService {
   ): Promise<MealRegistrationResult> {
     try {
       console.log('Attempting to register group meal:', mealData);
+
+      const targetDate = new Date(mealData.date);
+      if (!Number.isNaN(targetDate.getTime()) && targetDate > new Date()) {
+        await PlannedMealsService.createPlannedMeal({
+          profileId,
+          groupId,
+          mealId: mealData.mealId,
+          plannedFor: targetDate.toISOString()
+        });
+
+        return {
+          success: true,
+          planned: true
+        };
+      }
 
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();

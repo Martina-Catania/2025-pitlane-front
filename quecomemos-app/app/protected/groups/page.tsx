@@ -14,6 +14,7 @@ import GroupCard from '@/components/groups/GroupCard';
 import GroupInvitations from '@/components/groups/GroupInvitations';
 import { RegisterMealModal } from '@/components/modals';
 import { API_BASE_URL } from '@/lib/config/api';
+import { MealService, type RegisterMealData } from '@/lib/services/MealService';
 
 interface Group {
   GroupID: number;
@@ -162,43 +163,34 @@ export default function GroupsPage() {
       const meal = getMealById(mealData.mealId);
       const mealName = meal?.name || `Meal #${mealData.mealId}`;
 
-      // Build description based on whether portions were specified
-      let description = `Group meal consumed on ${mealData.date}`;
-      if (mealData.portions) {
-        const portionPercent = (mealData.portions.portionFraction * 100).toFixed(0);
-        description = `${portionPercent}% portion - ${description}`;
-      }
-
-      const consumptionData = {
-        name: mealName,
-        description,
+      const registerMealData: RegisterMealData = {
         mealId: mealData.mealId,
-        profileId: userData.profile.id,
-        groupId: selectedGroupForMeal.GroupID,
-        consumedAt: mealData.date,
-        portions: mealData.portions // Include portions if provided
+        date: mealData.date,
+        portions: mealData.portions
       };
 
-      const response = await fetch('http://localhost:3005/meal-consumptions/group', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(consumptionData),
-      });
+      const result = await MealService.registerGroupMeal(
+        registerMealData,
+        userData.profile.id,
+        selectedGroupForMeal.GroupID,
+        mealName
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to register group meal consumption');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to register group meal consumption');
       }
 
-      const consumption = await response.json();
-      console.log('Group meal consumption registered successfully:', consumption);
-      
-      showSuccess(
-        'Group Meal Registered Successfully!', 
-        `"${mealName}" has been recorded for ${selectedGroupForMeal.name} on ${mealData.date}.`
-      );
+      if (result.planned) {
+        showSuccess(
+          'Group Meal Planned!',
+          `"${mealName}" was planned for ${selectedGroupForMeal.name}. Foods were added to the group shopping list.`
+        );
+      } else {
+        showSuccess(
+          'Group Meal Registered Successfully!',
+          `"${mealName}" has been recorded for ${selectedGroupForMeal.name} on ${mealData.date}.`
+        );
+      }
       
       closeRegisterMealModal();
       

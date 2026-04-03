@@ -4,6 +4,8 @@ import { useCalorieProgress } from '@/lib/hooks/useKcalProgress';
 import { CalorieProgressWithHistory } from '@/components/profile/calorie-progress-with-history';
 import { CalorieGoalSettings } from '@/components/profile/calorie-goal';
 import { BadgeProgressDisplay } from '@/components/profile/badges/BadgeProgressDisplay';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
   const { progress, loading, updateCalorieGoal } = useCalorieProgress();
@@ -18,6 +20,12 @@ export default function ProfilePage() {
       </div>
       
       <div className="space-y-6">
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Button asChild variant="outline">
+            <Link href="/protected/shopping-list">Shopping List</Link>
+          </Button>
+        </div>
+
         {/* Progreso de calorías con historial */}
         {progress && (
           <CalorieProgressWithHistory

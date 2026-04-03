@@ -175,6 +175,13 @@ export default function GroupDetailPage() {
           >
             <ChefHat className="w-4 h-4 mr-2" /> Group Game
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/protected/shopping-list?groupId=${groupId}`)}
+            className="w-full sm:w-auto"
+          >
+            Group Shopping List
+          </Button>
         </div>
       </div>
 

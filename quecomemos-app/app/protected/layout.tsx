@@ -1,5 +1,6 @@
 import { AuthButton } from "@/components/auth";
 import { Logo } from "@/components/common";
+import { OverduePlannedMealModal } from "@/components/planned/OverduePlannedMealModal";
 
 export default function ProtectedLayout({
   children,
@@ -23,6 +24,7 @@ export default function ProtectedLayout({
           <div className="flex-1 flex flex-col gap-16 w-full max-w-6xl p-4 md:p-6">
             {children}
           </div>
+          <OverduePlannedMealModal />
         </div>
       </main>
   );

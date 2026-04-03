@@ -340,11 +340,13 @@ export default function UserHistoryPage() {
     );
 
     if (result.success) {
-      showNotification('success', 'Meal registered successfully', `${meal.name} has been added to your consumption history.`);
-      
-      // Refresh the history to show the new consumption
+      if (result.planned) {
+        showNotification('success', 'Meal planned successfully', `${meal.name} was planned for the selected future date and added to your shopping list.`);
+      } else {
+        showNotification('success', 'Meal registered successfully', `${meal.name} has been added to your consumption history.`);
+      }
+
       await fetchUserHistory();
-      
       closeRegisterMealModal();
     } else {
       showNotification(
