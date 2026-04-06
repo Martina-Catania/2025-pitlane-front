@@ -144,6 +144,8 @@ export class PlannedMealsService {
     profileId?: string;
     groupId?: number;
     includePurchased?: boolean;
+    startDate?: string;
+    endDate?: string;
   }): Promise<ShoppingListItem[]> {
     const headers = await getAuthHeaders();
     const query = new URLSearchParams();
@@ -151,6 +153,8 @@ export class PlannedMealsService {
     if (params.profileId) query.set('profileId', params.profileId);
     if (params.groupId) query.set('groupId', String(params.groupId));
     query.set('includePurchased', params.includePurchased === false ? 'false' : 'true');
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
 
     const response = await fetch(`${API_BASE_URL}/planned-meals/shopping/list?${query.toString()}`, {
       headers
@@ -169,6 +173,8 @@ export class PlannedMealsService {
     groupId?: number;
     foodId: number;
     isPurchased: boolean;
+    startDate?: string;
+    endDate?: string;
   }): Promise<unknown> {
     const headers = await getAuthHeaders();
 

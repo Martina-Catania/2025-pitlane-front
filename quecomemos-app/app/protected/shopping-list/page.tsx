@@ -11,6 +11,45 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+type ShoppingDateRange = 'all' | 'tomorrow' | 'next-week' | 'next-month';
+
+function getDateRangePayload(range: ShoppingDateRange): { startDate?: string; endDate?: string } {
+  if (range === 'all') {
+    return {};
+  }
+
+  const start = new Date();
+  const end = new Date(start);
+
+  if (range === 'tomorrow') {
+    end.setHours(end.getHours() + 24);
+  } else if (range === 'next-week') {
+    end.setDate(end.getDate() + 7);
+  } else {
+    end.setDate(end.getDate() + 30);
+  }
+
+  return {
+    startDate: start.toISOString(),
+    endDate: end.toISOString()
+  };
+}
+
+function formatPlannedFor(dateValue: string): string {
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown date';
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
 function ShoppingListContent() {
   const { userData } = useUser();
   const { showError, showSuccess } = useGlobalNotification();
@@ -21,12 +60,25 @@ function ShoppingListContent() {
 
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<ShoppingDateRange>('all');
 
   const profileId = userData.profile?.id;
+  const dateRangePayload = useMemo(() => getDateRangePayload(dateRange), [dateRange]);
 
   const title = useMemo(() => {
     return groupId ? 'Group shopping list' : 'My shopping list';
   }, [groupId]);
+
+  const dateRangeLabel = useMemo(() => {
+    const labels: Record<ShoppingDateRange, string> = {
+      all: 'All future meals',
+      tomorrow: 'Tomorrow',
+      'next-week': 'Next 7 days',
+      'next-month': 'Next 30 days'
+    };
+
+    return labels[dateRange];
+  }, [dateRange]);
 
   const fetchList = async () => {
     if (!profileId) {
@@ -38,7 +90,9 @@ function ShoppingListContent() {
       const list = await PlannedMealsService.getShoppingList({
         profileId: groupId ? undefined : profileId,
         groupId,
-        includePurchased: true
+        includePurchased: true,
+        startDate: dateRangePayload.startDate,
+        endDate: dateRangePayload.endDate
       });
       setItems(list);
     } catch (error) {
@@ -50,7 +104,7 @@ function ShoppingListContent() {
 
   useEffect(() => {
     fetchList();
-  }, [profileId, groupId]);
+  }, [profileId, groupId, dateRangePayload.startDate, dateRangePayload.endDate]);
 
   const handleToggle = async (item: ShoppingListItem, checked: boolean) => {
     if (!profileId) {
@@ -62,7 +116,9 @@ function ShoppingListContent() {
         profileId: groupId ? profileId : profileId,
         groupId,
         foodId: item.foodId,
-        isPurchased: checked
+        isPurchased: checked,
+        startDate: dateRangePayload.startDate,
+        endDate: dateRangePayload.endDate
       });
 
       setItems((prev) => prev.map((entry) => (
@@ -96,9 +152,32 @@ function ShoppingListContent() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Foods to buy</CardTitle>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <CardTitle>Foods to buy</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { value: 'tomorrow', label: 'Tomorrow' },
+                  { value: 'next-week', label: 'Next week' },
+                  { value: 'next-month', label: 'Next month' },
+                  { value: 'all', label: 'Show all' }
+                ] as Array<{ value: ShoppingDateRange; label: string }>
+              ).map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={dateRange === option.value ? 'default' : 'outline'}
+                  className={dateRange === option.value ? 'bg-amber-700 text-white hover:bg-amber-600' : ''}
+                  onClick={() => setDateRange(option.value)}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">Showing: {dateRangeLabel}</p>
           {loading ? (
             <p className="text-muted-foreground">Loading shopping list...</p>
           ) : items.length === 0 ? (
@@ -113,7 +192,7 @@ function ShoppingListContent() {
                       Total quantity: {item.totalQuantity} · Purchased: {item.purchasedQuantity} · {item.kCal} kcal/unit
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Planned meals: {item.entries.map((e) => e.meal.name).join(', ')}
+                      Planned meals: {item.entries.map((e) => `${e.meal.name} (${formatPlannedFor(e.plannedFor)})`).join(', ')}
                     </p>
                   </div>
 
