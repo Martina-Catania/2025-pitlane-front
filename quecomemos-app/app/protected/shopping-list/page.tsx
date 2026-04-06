@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
@@ -8,7 +8,7 @@ import { PlannedMealsService, ShoppingListItem } from '@/lib/services/PlannedMea
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 
-export default function ShoppingListPage() {
+function ShoppingListContent() {
   const { userData } = useUser();
   const { showError, showSuccess } = useGlobalNotification();
   const searchParams = useSearchParams();
@@ -122,5 +122,13 @@ export default function ShoppingListPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ShoppingListPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto p-6 text-muted-foreground">Loading shopping list...</div>}>
+      <ShoppingListContent />
+    </Suspense>
   );
 }
