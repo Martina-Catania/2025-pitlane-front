@@ -82,7 +82,8 @@ export const getDefaultBadgeIcon = (badgeType: string): string => {
     'group_creation': '👥',
     'voting_participation': '🗳️',
     'voting_winner': '🏆',
-    'meal_creation': '👨‍🍳'
+    'meal_creation': '👨‍🍳',
+    'meal_planning': '📅'
   };
   return typeIconMap[badgeType] || '🏅';
 };
@@ -98,6 +99,12 @@ export const getTierSpecificBadgeName = (
       'silver': 'Skilled Chef',
       'gold': 'Master Chef',
       'diamond': 'Culinary Visionary'
+    },
+    'meal_planning': {
+      'bronze': 'First Planner',
+      'silver': 'Routine Planner',
+      'gold': 'Meal Strategist',
+      'diamond': 'Future Feast Architect'
     },
     'group_creation': {
       'bronze': 'Community Builder',
@@ -145,6 +152,7 @@ export const getBadgeTypeLabel = (badgeType: string): string => {
     'voting_participation': 'Democracy Enthusiast',
     'voting_winner': 'Taste Maker',
     'meal_creation': 'Chef',
+    'meal_planning': 'Meal Planner',
   };
   // Fallback: convert snake_case to Title Case
   return typeLabels[badgeType] || badgeType
@@ -162,6 +170,7 @@ export const getBadgeActionSubtitle = (badgeType: string): string => {
     'group_creation': 'groups created',
     'voting_participation': 'votes cast',
     'meal_creation': 'meals created',
+    'meal_planning': 'meals planned',
     'voting_winner': 'voting wins',
     'game_clicker_winner': 'games won'
   };
@@ -176,5 +185,6 @@ export const BADGE_TYPE_LABELS: Record<string, string> = {
   'group_creation': 'Group Creator',
   'voting_participation': 'Voter',
   'meal_creation': 'Chef',
+  'meal_planning': 'Meal Planner',
   'voting_winner': 'Winner',
 };

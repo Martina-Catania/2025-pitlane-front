@@ -9,6 +9,7 @@ export type BadgeType =
   | 'voting_participation'
   | 'voting_winner'
   | 'meal_creation'
+  | 'meal_planning'
   | 'consumption_tracking'
   | 'social_engagement';
 
@@ -224,6 +225,43 @@ export const BADGE_DEFINITIONS: Record<BadgeType, BadgeDefinition> = {
         name: 'Diamond Chef',
         icon: '💎👨‍🍳',
         description: 'Created 100 meals - Master culinary artist!'
+      }
+    ]
+  },
+  meal_planning: {
+    badgeType: 'meal_planning',
+    baseName: 'Meal Planner',
+    baseDescription: 'Plan meals ahead of time',
+    baseIcon: '📅',
+    rarity: 'common',
+    levels: [
+      {
+        level: 'bronze',
+        requiredCount: STANDARD_LEVEL_THRESHOLDS.bronze,
+        name: 'Bronze Meal Planner',
+        icon: '🥉📅',
+        description: 'Planned your first meal in advance'
+      },
+      {
+        level: 'silver',
+        requiredCount: STANDARD_LEVEL_THRESHOLDS.silver,
+        name: 'Silver Meal Planner',
+        icon: '🥈📅',
+        description: 'Planned 10 meals in advance'
+      },
+      {
+        level: 'gold',
+        requiredCount: STANDARD_LEVEL_THRESHOLDS.gold,
+        name: 'Gold Meal Planner',
+        icon: '🥇📅',
+        description: 'Planned 50 meals in advance'
+      },
+      {
+        level: 'diamond',
+        requiredCount: STANDARD_LEVEL_THRESHOLDS.diamond,
+        name: 'Diamond Meal Planner',
+        icon: '💎📅',
+        description: 'Planned 100 meals in advance - Future-focused nutrition master!'
       }
     ]
   },
