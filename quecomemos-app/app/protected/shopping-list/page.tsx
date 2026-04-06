@@ -2,15 +2,19 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/contexts/UserContext';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
 import { PlannedMealsService, ShoppingListItem } from '@/lib/services/PlannedMealsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 function ShoppingListContent() {
   const { userData } = useUser();
   const { showError, showSuccess } = useGlobalNotification();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const groupIdParam = searchParams.get('groupId');
   const groupId = groupIdParam ? parseInt(groupIdParam) : undefined;
@@ -80,9 +84,14 @@ function ShoppingListContent() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="text-muted-foreground">Grouped foods needed for all future planned meals.</p>
+      <div className="flex items-center space-x-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="p-2">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">{title}</h1>
+          <p className="text-muted-foreground">Grouped foods needed for all future planned meals.</p>
+        </div>
       </div>
 
       <Card>
