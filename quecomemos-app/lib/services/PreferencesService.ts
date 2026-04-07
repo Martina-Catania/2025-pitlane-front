@@ -1,7 +1,7 @@
 'use client';
 
 import { API_BASE_URL } from '@/lib/config/api';
-import { createClient } from '@/lib/supabase/client';
+import { authFetch } from '@/lib/utils/authFetch';
 
 export interface Preference {
   PreferenceID: number;
@@ -15,18 +15,12 @@ export interface DietaryRestriction {
 
 export async function fetchAllPreferences(): Promise<Preference[]> {
   try {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('No authentication token');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/preferences`, {
+    const response = await authFetch(`${API_BASE_URL}/preferences`, {
       headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
+    }, {
+      tokenErrorMessage: 'No authentication token'
     });
 
     if (!response.ok) {
@@ -42,18 +36,12 @@ export async function fetchAllPreferences(): Promise<Preference[]> {
 
 export async function fetchAllDietaryRestrictions(): Promise<DietaryRestriction[]> {
   try {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('No authentication token');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/dietary-restrictions`, {
+    const response = await authFetch(`${API_BASE_URL}/dietary-restrictions`, {
       headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
+    }, {
+      tokenErrorMessage: 'No authentication token'
     });
 
     if (!response.ok) {

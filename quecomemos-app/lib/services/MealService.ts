@@ -1,9 +1,8 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
 import { PlannedMealsService } from '@/lib/services/PlannedMealsService';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL } from '@/lib/config/api';
+import { getAccessTokenOrThrow } from '@/lib/utils/authFetch';
 
 export interface RegisterMealData {
   mealId: number;
@@ -51,10 +50,10 @@ export class MealService {
         };
       }
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
+      let accessToken: string;
+      try {
+        accessToken = await getAccessTokenOrThrow('Authentication required. Please log in to register meals.');
+      } catch {
         return {
           success: false,
           error: 'Authentication required. Please log in to register meals.'
@@ -74,7 +73,7 @@ export class MealService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           name: description,
@@ -139,10 +138,10 @@ export class MealService {
         };
       }
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
+      let accessToken: string;
+      try {
+        accessToken = await getAccessTokenOrThrow('Authentication required. Please log in to register meals.');
+      } catch {
         return {
           success: false,
           error: 'Authentication required. Please log in to register meals.'
@@ -155,7 +154,7 @@ export class MealService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           name: description,

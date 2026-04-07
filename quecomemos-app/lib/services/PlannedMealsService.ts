@@ -1,7 +1,7 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
 import { API_BASE_URL } from '@/lib/config/api';
+import { authFetch } from '@/lib/utils/authFetch';
 
 export interface PlannedMealFoodItem {
   PlannedMealFoodID: number;
@@ -63,20 +63,6 @@ export interface ShoppingListItem {
   }>;
 }
 
-async function getAuthHeaders() {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error('Authentication required');
-  }
-
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${session.access_token}`
-  };
-}
-
 export class PlannedMealsService {
   static async createPlannedMeal(payload: {
     profileId: string;
@@ -85,11 +71,8 @@ export class PlannedMealsService {
     plannedFor: string;
     resolutionNote?: string;
   }): Promise<PlannedMeal> {
-    const headers = await getAuthHeaders();
-
-    const response = await fetch(`${API_BASE_URL}/planned-meals`, {
+    const response = await authFetch(`${API_BASE_URL}/planned-meals`, {
       method: 'POST',
-      headers,
       body: JSON.stringify(payload)
     });
 
@@ -110,7 +93,6 @@ export class PlannedMealsService {
     endDate?: string;
     includeInactive?: boolean;
   }): Promise<PlannedMeal[]> {
-    const headers = await getAuthHeaders();
     const query = new URLSearchParams();
 
     if (params.profileId) query.set('profileId', params.profileId);
@@ -121,8 +103,7 @@ export class PlannedMealsService {
     if (params.endDate) query.set('endDate', params.endDate);
     if (params.includeInactive) query.set('includeInactive', 'true');
 
-    const response = await fetch(`${API_BASE_URL}/planned-meals?${query.toString()}`, {
-      headers,
+    const response = await authFetch(`${API_BASE_URL}/planned-meals?${query.toString()}`, {
       cache: 'no-store'
     });
 
@@ -147,11 +128,8 @@ export class PlannedMealsService {
       }>;
     };
   }): Promise<PlannedMeal> {
-    const headers = await getAuthHeaders();
-
-    const response = await fetch(`${API_BASE_URL}/planned-meals/${plannedMealId}`, {
+    const response = await authFetch(`${API_BASE_URL}/planned-meals/${plannedMealId}`, {
       method: 'PUT',
-      headers,
       body: JSON.stringify(payload)
     });
 
@@ -166,11 +144,8 @@ export class PlannedMealsService {
   static async deletePlannedMeal(plannedMealId: number, payload: {
     requesterId: string;
   }): Promise<{ deleted: boolean; plannedMealId: number }> {
-    const headers = await getAuthHeaders();
-
-    const response = await fetch(`${API_BASE_URL}/planned-meals/${plannedMealId}`, {
+    const response = await authFetch(`${API_BASE_URL}/planned-meals/${plannedMealId}`, {
       method: 'DELETE',
-      headers,
       body: JSON.stringify(payload)
     });
 
@@ -189,11 +164,8 @@ export class PlannedMealsService {
     note?: string;
     newPlannedFor?: string;
   }): Promise<unknown> {
-    const headers = await getAuthHeaders();
-
-    const response = await fetch(`${API_BASE_URL}/planned-meals/${plannedMealId}/resolve`, {
+    const response = await authFetch(`${API_BASE_URL}/planned-meals/${plannedMealId}/resolve`, {
       method: 'PUT',
-      headers,
       body: JSON.stringify(payload)
     });
 
@@ -212,7 +184,6 @@ export class PlannedMealsService {
     startDate?: string;
     endDate?: string;
   }): Promise<ShoppingListItem[]> {
-    const headers = await getAuthHeaders();
     const query = new URLSearchParams();
 
     if (params.profileId) query.set('profileId', params.profileId);
@@ -221,8 +192,7 @@ export class PlannedMealsService {
     if (params.startDate) query.set('startDate', params.startDate);
     if (params.endDate) query.set('endDate', params.endDate);
 
-    const response = await fetch(`${API_BASE_URL}/planned-meals/shopping/list?${query.toString()}`, {
-      headers,
+    const response = await authFetch(`${API_BASE_URL}/planned-meals/shopping/list?${query.toString()}`, {
       cache: 'no-store'
     });
 
@@ -242,11 +212,8 @@ export class PlannedMealsService {
     startDate?: string;
     endDate?: string;
   }): Promise<unknown> {
-    const headers = await getAuthHeaders();
-
-    const response = await fetch(`${API_BASE_URL}/planned-meals/shopping/status`, {
+    const response = await authFetch(`${API_BASE_URL}/planned-meals/shopping/status`, {
       method: 'PUT',
-      headers,
       body: JSON.stringify(payload)
     });
 
