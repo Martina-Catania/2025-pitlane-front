@@ -66,7 +66,7 @@ export function PrimaryBadgeDisplay({
             alt={primaryBadge.name}
             width={config.imageSize}
             height={config.imageSize}
-            className={`rounded-full ${levelColors.border} border-2 bg-white p-0.5`}
+            className={`w-full h-full rounded-full object-cover ${levelColors.border} border-2`}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               const parent = target.parentElement;

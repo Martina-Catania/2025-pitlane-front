@@ -22,12 +22,22 @@ export interface PlannedMeal {
   groupId?: number | null;
   mealId: number;
   plannedFor: string;
+  resolutionNote?: string | null;
   status: 'scheduled' | 'awaiting_confirmation' | 'consumed' | 'rescheduled' | 'cancelled';
   estimatedKcal: number;
   meal: {
     MealID: number;
     name: string;
     description?: string;
+    mealFoods?: Array<{
+      foodId: number;
+      quantity: number;
+      food: {
+        FoodID: number;
+        name: string;
+        kCal: number;
+      };
+    }>;
   };
   foodItems: PlannedMealFoodItem[];
 }
@@ -96,6 +106,9 @@ export class PlannedMealsService {
     groupId?: number;
     onlyFuture?: boolean;
     onlyOverdue?: boolean;
+    startDate?: string;
+    endDate?: string;
+    includeInactive?: boolean;
   }): Promise<PlannedMeal[]> {
     const headers = await getAuthHeaders();
     const query = new URLSearchParams();
@@ -104,14 +117,66 @@ export class PlannedMealsService {
     if (params.groupId) query.set('groupId', String(params.groupId));
     if (params.onlyFuture) query.set('onlyFuture', 'true');
     if (params.onlyOverdue) query.set('onlyOverdue', 'true');
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    if (params.includeInactive) query.set('includeInactive', 'true');
 
     const response = await fetch(`${API_BASE_URL}/planned-meals?${query.toString()}`, {
-      headers
+      headers,
+      cache: 'no-store'
     });
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || 'Failed to fetch planned meals');
+    }
+
+    return response.json();
+  }
+
+  static async updatePlannedMeal(plannedMealId: number, payload: {
+    requesterId: string;
+    mealId?: number;
+    plannedFor?: string;
+    portions?: {
+      portionFraction: number;
+      foodPortions: Array<{
+        foodId: number;
+        portionFraction: number;
+        absoluteQuantity?: number;
+      }>;
+    };
+  }): Promise<PlannedMeal> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${API_BASE_URL}/planned-meals/${plannedMealId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to update planned meal');
+    }
+
+    return response.json();
+  }
+
+  static async deletePlannedMeal(plannedMealId: number, payload: {
+    requesterId: string;
+  }): Promise<{ deleted: boolean; plannedMealId: number }> {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(`${API_BASE_URL}/planned-meals/${plannedMealId}`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to delete planned meal');
     }
 
     return response.json();
@@ -157,7 +222,8 @@ export class PlannedMealsService {
     if (params.endDate) query.set('endDate', params.endDate);
 
     const response = await fetch(`${API_BASE_URL}/planned-meals/shopping/list?${query.toString()}`, {
-      headers
+      headers,
+      cache: 'no-store'
     });
 
     if (!response.ok) {

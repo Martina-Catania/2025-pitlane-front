@@ -85,7 +85,7 @@ export function UserBadgeDisplay({
             return (
               <div
                 key={badge.BadgeID}
-                className={`relative ${sizeClasses[size]} flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity`}
+                className={`relative ${sizeClasses[size]} flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity rounded-full overflow-hidden border border-gray-200`}
                 title={showTooltip ? `${badge.name} ${badge.currentLevel ? `(${badge.currentLevel.toUpperCase()})` : ''}: ${badge.description}` : undefined}
                 onClick={() => setSelectedBadge(badge)}
                 role="button"
@@ -103,7 +103,7 @@ export function UserBadgeDisplay({
                   alt={badge.name}
                   width={size === 'sm' ? 16 : size === 'md' ? 24 : 32}
                   height={size === 'sm' ? 16 : size === 'md' ? 24 : 32}
-                  className="rounded-full border border-gray-200 bg-white p-0.5"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     // If Supabase image fails, show level-specific emoji fallback
                     const target = e.target as HTMLImageElement;

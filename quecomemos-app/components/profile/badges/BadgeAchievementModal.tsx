@@ -188,7 +188,7 @@ export function BadgeAchievementModal({
                     alt={badge.name}
                     width={100}
                     height={100}
-                    className="w-24 h-24 object-contain"
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       const parent = target.parentElement;

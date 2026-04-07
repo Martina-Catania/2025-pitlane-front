@@ -31,11 +31,32 @@ interface RegisterMealModalProps {
     portions?: PortionData; 
   }) => void;
   group?: Group | null; // For group meal registration
+  mode?: 'create' | 'edit';
+  initialMealId?: number;
+  initialMeal?: Meal | null;
+  initialDateTime?: string;
+  initialPortions?: PortionData | null;
+  title?: string;
+  description?: string;
+  submitLabel?: string;
 }
 
-export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: RegisterMealModalProps) {
+export function RegisterMealModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  group,
+  mode = 'create',
+  initialMealId,
+  initialMeal,
+  initialDateTime,
+  initialPortions,
+  title,
+  description,
+  submitLabel
+}: RegisterMealModalProps) {
   const { userData } = useUser();
-  const { allMeals, addMeal } = useMeals();
+  const { allMeals, addMeal, getMealById } = useMeals();
   
   // Form state
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
@@ -63,6 +84,20 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
   const userRestrictions = userData?.preferences?.dietaryRestrictions || [];
   const groupRestrictions = groupDietaryInfo?.dietaryRestrictions?.map(r => r.DietaryRestrictionID) || [];
   const isGroupMode = !!group;
+  const isEditMode = mode === 'edit';
+
+  const toLocalDateInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const toLocalTimeInput = (date: Date) => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
 
   // Fetch group dietary info when group is provided
   useEffect(() => {
@@ -137,6 +172,51 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
     onClose();
   }, [onClose]);
 
+  useEffect(() => {
+    if (!isOpen || !isEditMode) {
+      return;
+    }
+
+    if (initialMealId) {
+      const mealToEdit = initialMeal || allMeals.find(m => m.MealID === initialMealId) || getMealById(initialMealId);
+      if (mealToEdit) {
+        setSelectedMeal(mealToEdit);
+      }
+    } else if (initialMeal) {
+      setSelectedMeal(initialMeal);
+    }
+
+    if (initialDateTime) {
+      const parsedDate = new Date(initialDateTime);
+      if (!Number.isNaN(parsedDate.getTime())) {
+        setUseCurrentTime(false);
+        setMealDate(toLocalDateInput(parsedDate));
+        setMealTime(toLocalTimeInput(parsedDate));
+      }
+    }
+
+    if (initialPortions) {
+      setPortionMode('partial');
+      setSelectedPortions(initialPortions);
+      setShowPortionSelector(false);
+    } else {
+      setPortionMode('full');
+      setSelectedPortions(null);
+      setShowPortionSelector(false);
+    }
+
+    setShowDateTimeSelection(true);
+  }, [
+    isOpen,
+    isEditMode,
+    initialMealId,
+    initialMeal,
+    initialDateTime,
+    initialPortions,
+    allMeals,
+    getMealById
+  ]);
+
   // Handle closing the AddMealForm
   const handleCloseAddMealForm = () => {
     setShowCreateMeal(false);
@@ -208,6 +288,10 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
 
   if (!isOpen) return null;
 
+  const modalTitle = title || (group ? `Register Meal for ${group.name}` : 'Register Meal');
+  const modalDescription = description || (group ? 'Add a meal consumption for your group' : 'Track your meal consumption');
+  const actionLabel = submitLabel || (isEditMode ? 'Save Changes' : 'Save Meal');
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       {/* Modal Container */}
@@ -217,10 +301,10 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-amber-200">
-                {group ? `Register Meal for ${group.name}` : 'Register Meal'}
+                {modalTitle}
               </h2>
               <p className="text-gray-300 mt-1">
-                {group ? 'Add a meal consumption for your group' : 'Track your meal consumption'}
+                {modalDescription}
               </p>
             </div>
             <button
@@ -501,7 +585,7 @@ export function RegisterMealModal({ isOpen, onClose, onSubmit, group }: Register
                     disabled={isSubmitting || !selectedMeal || (!useCurrentTime && (!mealDate || !mealTime))}
                     className="w-full py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
                   >
-                    {isSubmitting ? 'Saving...' : 'Save Meal'}
+                    {isSubmitting ? 'Saving...' : actionLabel}
                   </button>
                 </div>
               )}

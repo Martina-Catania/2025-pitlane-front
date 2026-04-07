@@ -273,7 +273,7 @@ export function BadgeDetailsModal({ badge, isOpen, onClose }: BadgeDetailsModalP
                   alt={badge.name}
                   width={80}
                   height={80}
-                  className="w-20 h-20 object-contain"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     const parent = target.parentElement;
