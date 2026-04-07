@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { RegisterMealModal } from '@/components/modals';
 import { ConfirmationModal } from '@/components/modals';
-import type { PortionData } from '@/components/meal';
 import type { Meal } from '@/lib/contexts/MealsContext';
 
 type ShoppingDateRange = 'all' | 'tomorrow' | 'next-week' | 'next-month';
@@ -158,33 +157,6 @@ function ShoppingListContent() {
     }
   };
 
-  const getPortionsForEdit = (meal: PlannedMeal): PortionData | null => {
-    const baseFoods = meal.meal?.mealFoods;
-    if (!baseFoods || baseFoods.length === 0 || !meal.foodItems || meal.foodItems.length === 0) {
-      return null;
-    }
-
-    const fullCalories = baseFoods.reduce((sum, mf) => sum + (mf.food.kCal * mf.quantity), 0);
-    const selectedCalories = meal.foodItems.reduce((sum, item) => sum + (item.food.kCal * item.quantity), 0);
-
-    return {
-      mode: 'percentage',
-      portionFraction: fullCalories > 0 ? Math.min(1, selectedCalories / fullCalories) : 1,
-      foodPortions: baseFoods.map((mf) => {
-        const selected = meal.foodItems.find((item) => item.foodId === mf.food.FoodID);
-        const quantity = selected?.quantity ?? 0;
-        const fraction = mf.quantity > 0 ? quantity / mf.quantity : 0;
-
-        return {
-          foodId: mf.food.FoodID,
-          portionFraction: fraction,
-          absoluteQuantity: quantity
-        };
-      }),
-      totalCalories: Math.round(selectedCalories)
-    };
-  };
-
   const handleEdit = (meal: PlannedMeal) => {
     setEditingMeal(meal);
     setIsEditModalOpen(true);
@@ -221,7 +193,7 @@ function ShoppingListContent() {
     };
   };
 
-  const handleEditSubmit = async (mealData: { mealId: number; date: string; portions?: PortionData }) => {
+  const handleEditSubmit = async (mealData: { mealId: number; date: string }) => {
     if (!profileId || !editingMeal) {
       showError('Unable to update planned meal', 'User profile or selected planned meal is missing.');
       return;
@@ -232,8 +204,7 @@ function ShoppingListContent() {
       await PlannedMealsService.updatePlannedMeal(editingMeal.PlannedMealID, {
         requesterId: profileId,
         mealId: mealData.mealId,
-        plannedFor: mealData.date,
-        portions: mealData.portions
+        plannedFor: mealData.date
       });
 
       setIsEditModalOpen(false);
@@ -397,9 +368,8 @@ function ShoppingListContent() {
         initialMealId={editingMeal?.mealId}
         initialMeal={editingMeal ? buildFallbackMealForEdit(editingMeal) : null}
         initialDateTime={editingMeal?.plannedFor}
-        initialPortions={editingMeal ? getPortionsForEdit(editingMeal) : null}
         title="Modify Planned Meal"
-        description="Update the meal, date, or portions for this planned item."
+        description="Update the meal or date for this planned item."
         submitLabel={isMutatingPlannedMeal ? 'Saving...' : 'Save Changes'}
       />
 

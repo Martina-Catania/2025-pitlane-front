@@ -7,7 +7,6 @@ import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import AddMealForm from '../meal/AddMealForm';
 import { MealSearchBar } from '../meal/MealSearchBar';
 import { MealComposition } from '../meal/MealComposition';
-import { MealPortionSelector, type PortionData } from '../meal';
 import { fetchGroupDietaryInfo } from '@/lib/utils/groupService';
 import { Group } from '../groups/index';
 
@@ -27,15 +26,13 @@ interface RegisterMealModalProps {
   onClose: () => void;
   onSubmit: (mealData: { 
     mealId: number; 
-    date: string; 
-    portions?: PortionData; 
+    date: string;
   }) => void;
   group?: Group | null; // For group meal registration
   mode?: 'create' | 'edit';
   initialMealId?: number;
   initialMeal?: Meal | null;
   initialDateTime?: string;
-  initialPortions?: PortionData | null;
   title?: string;
   description?: string;
   submitLabel?: string;
@@ -50,7 +47,6 @@ export function RegisterMealModal({
   initialMealId,
   initialMeal,
   initialDateTime,
-  initialPortions,
   title,
   description,
   submitLabel
@@ -74,11 +70,6 @@ export function RegisterMealModal({
   // Date/time selection mode
   const [useCurrentTime, setUseCurrentTime] = useState(true);
   const [showDateTimeSelection, setShowDateTimeSelection] = useState(false);
-
-  // Portion selection state
-  const [portionMode, setPortionMode] = useState<'full' | 'partial'>('full');
-  const [showPortionSelector, setShowPortionSelector] = useState(false);
-  const [selectedPortions, setSelectedPortions] = useState<PortionData | null>(null);
 
   const profile = userData?.profile;
   const userRestrictions = userData?.preferences?.dietaryRestrictions || [];
@@ -146,8 +137,7 @@ export function RegisterMealModal({
 
       await onSubmit({ 
         mealId: selectedMeal.MealID, 
-        date: finalDateTime,
-        portions: selectedPortions || undefined
+        date: finalDateTime
       });
       handleClose();
     } catch {
@@ -166,9 +156,6 @@ export function RegisterMealModal({
     setShowCreateMeal(false);
     setUseCurrentTime(true);
     setShowDateTimeSelection(false);
-    setPortionMode('full');
-    setShowPortionSelector(false);
-    setSelectedPortions(null);
     onClose();
   }, [onClose]);
 
@@ -195,16 +182,6 @@ export function RegisterMealModal({
       }
     }
 
-    if (initialPortions) {
-      setPortionMode('partial');
-      setSelectedPortions(initialPortions);
-      setShowPortionSelector(false);
-    } else {
-      setPortionMode('full');
-      setSelectedPortions(null);
-      setShowPortionSelector(false);
-    }
-
     setShowDateTimeSelection(true);
   }, [
     isOpen,
@@ -212,7 +189,6 @@ export function RegisterMealModal({
     initialMealId,
     initialMeal,
     initialDateTime,
-    initialPortions,
     allMeals,
     getMealById
   ]);
@@ -360,56 +336,6 @@ export function RegisterMealModal({
                   <MealComposition meal={selectedMeal} />
                 )}
 
-                {/* Portion Selection Option */}
-                {selectedMeal && !showPortionSelector && (
-                  <div className="space-y-3">
-                    <label className="block text-sm font-medium text-amber-200">
-                      Portion Selection
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPortionMode('full');
-                          setSelectedPortions(null);
-                        }}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          portionMode === 'full'
-                            ? 'bg-amber-600 border-amber-500 text-white'
-                            : 'bg-neutral-800 border-neutral-700 text-neutral-300 hover:border-amber-600'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="font-semibold">Full Meal</div>
-                          <div className="text-xs opacity-80 mt-1">100% of all foods</div>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPortionMode('partial');
-                          setShowPortionSelector(true);
-                        }}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          portionMode === 'partial'
-                            ? 'bg-amber-600 border-amber-500 text-white'
-                            : 'bg-neutral-800 border-neutral-700 text-neutral-300 hover:border-amber-600'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="font-semibold">Partial Portion</div>
-                          <div className="text-xs opacity-80 mt-1">
-                            {selectedPortions 
-                              ? `${(selectedPortions.portionFraction * 100).toFixed(0)}% selected`
-                              : 'Customize amounts'
-                            }
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -421,50 +347,6 @@ export function RegisterMealModal({
                   </button>
                 </div>
               </div>
-
-              {/* Portion Selector Modal */}
-              {showPortionSelector && selectedMeal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80">
-                  <div className="relative w-full max-w-2xl bg-neutral-900 rounded-2xl shadow-2xl border border-amber-800/30 overflow-hidden max-h-[90vh] overflow-y-auto">
-                    <div className="p-6 bg-gradient-to-r from-amber-900/20 to-amber-800/20 border-b border-amber-800/30">
-                      <h3 className="text-xl font-bold text-amber-200">Select Portion</h3>
-                      <p className="text-neutral-300 mt-1 text-sm">
-                        Customize how much of {selectedMeal.name} you consumed
-                      </p>
-                    </div>
-                    <div className="p-6">
-                      <MealPortionSelector
-                        meal={{
-                          mealId: selectedMeal.MealID,
-                          name: selectedMeal.name,
-                          description: selectedMeal.description,
-                          mealFoods: selectedMeal.mealFoods.map(mf => ({
-                            foodId: mf.food.FoodID,
-                            foodName: mf.food.name,
-                            quantity: mf.quantity,
-                            svgLink: mf.food.svgLink,
-                            kCal: mf.food.kCal
-                          })),
-                          totalCalories: selectedMeal.mealFoods.reduce(
-                            (sum, mf) => sum + mf.food.kCal * mf.quantity,
-                            0
-                          )
-                        }}
-                        onConfirm={(portionData) => {
-                          setSelectedPortions(portionData);
-                          setShowPortionSelector(false);
-                        }}
-                        onCancel={() => {
-                          setShowPortionSelector(false);
-                          setPortionMode('full');
-                          setSelectedPortions(null);
-                        }}
-                        loading={false}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Date/Time Selection Mode */}
               {!showDateTimeSelection ? (

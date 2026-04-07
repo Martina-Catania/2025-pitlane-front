@@ -497,7 +497,7 @@ export function SessionDetailsModal({
                           className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
                         >
                           <PieChart className="h-4 w-4 mr-2" />
-                          {hasSelectedPortion ? 'Portion Already Selected' : 'Select Your Portion'}
+                          {hasSelectedPortion ? 'Meal Already Confirmed' : 'Confirm Full Meal'}
                         </Button>
                       )}
                     </div>

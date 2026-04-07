@@ -8,14 +8,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export interface RegisterMealData {
   mealId: number;
   date: string;
-  portions?: {
-    portionFraction: number;
-    foodPortions: Array<{
-      foodId: number;
-      portionFraction: number;
-      absoluteQuantity?: number;
-    }>;
-  };
 }
 
 export interface MealRegistrationResult {
@@ -72,7 +64,6 @@ export class MealService {
       console.log('Registering meal:', {
         mealId: mealData.mealId,
         date: mealData.date,
-        portions: mealData.portions,
         profileId: profileId,
         mealName: mealName
       });
@@ -90,8 +81,7 @@ export class MealService {
           description: description,
           profileId: profileId,
           mealId: mealData.mealId,
-          consumedAt: mealData.date,
-          portions: mealData.portions || null
+          consumedAt: mealData.date
         }),
       });
 
@@ -173,8 +163,7 @@ export class MealService {
           profileId: profileId,
           groupId: groupId,
           mealId: mealData.mealId,
-          consumedAt: mealData.date,
-          portions: mealData.portions || null
+          consumedAt: mealData.date
         }),
       });
 

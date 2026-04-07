@@ -325,7 +325,7 @@ export function GameSessionDetailsModal({
                                 {/* Portion status */}
                                 {participant.mealPortions.length > 0 && (
                                   <p className="text-xs text-amber-400 mt-1">
-                                    ✓ Portion registered
+                                    ✓ Meal confirmed
                                   </p>
                                 )}
                               </div>

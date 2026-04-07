@@ -313,7 +313,7 @@ export default function UserHistoryPage() {
     setIsRegisterMealModalOpen(false);
   };
 
-  const handleRegisterMeal = async (mealData: { mealId: number; date: string; portions?: { portionFraction: number; foodPortions: Array<{ foodId: number; portionFraction: number; absoluteQuantity?: number; }>; } }) => {
+  const handleRegisterMeal = async (mealData: { mealId: number; date: string }) => {
     const meal = allMeals.find(m => m.MealID === mealData.mealId);
     if (!meal) {
       console.error('Meal not found in allMeals array:', mealData.mealId);
@@ -328,8 +328,7 @@ export default function UserHistoryPage() {
 
     const registerMealData: RegisterMealData = {
       mealId: mealData.mealId,
-      date: mealData.date,
-      portions: mealData.portions
+      date: mealData.date
     };
 
     const result = await MealService.registerIndividualMeal(

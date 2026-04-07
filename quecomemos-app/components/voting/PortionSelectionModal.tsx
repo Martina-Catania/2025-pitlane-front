@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { VotingService } from './VotingService';
 import { GameHistoryService } from '@/components/games/clicker-game/GameHistoryService';
 import { useGlobalNotification } from '@/lib/contexts/NotificationContext';
-import { MealPortionSelector, type PortionData } from '@/components/meal';
 
 interface MealFood {
   foodId: number;
@@ -52,63 +52,44 @@ export function PortionSelectionModal({
   const { showSuccess, showError } = useGlobalNotification();
   const [loading, setLoading] = useState(false);
 
-  const handlePortionConfirm = async (portionData: PortionData) => {
-    console.log('[PortionSelectionModal] Confirming portion:', {
-      isGameSession,
-      mealId,
-      sessionId,
-      userId,
-      portionData: {
-        portionFraction: portionData.portionFraction,
-        totalCalories: portionData.totalCalories,
-        mode: portionData.mode,
-        foodPortions: portionData.foodPortions
-      }
-    });
-    
+  const handleConfirmFullConsumption = async () => {
     setLoading(true);
     try {
+      const targetMeal = winnerMeal;
+      if (!targetMeal) {
+        throw new Error('Meal details are required to confirm consumption');
+      }
+
+      const fullMealFoodPortions = targetMeal.mealFoods.map((food) => ({
+        foodId: food.foodId,
+        portionFraction: 1
+      }));
+
       if (isGameSession && mealId) {
-        // Game session portion registration
-        console.log('[PortionSelectionModal] Calling GameHistoryService with:', {
-          sessionId,
-          userId,
-          mealId,
-          mealPortionFraction: portionData.portionFraction,
-          foodPortionsCount: portionData.foodPortions.length
-        });
-        
         await GameHistoryService.registerGameMealPortion(
           sessionId,
           userId!,
           mealId,
-          portionData.portionFraction,
-          portionData.foodPortions.map(fp => ({
-            foodId: fp.foodId,
-            portionFraction: fp.portionFraction
-          }))
+          1,
+          fullMealFoodPortions
         );
       } else if (winnerMeal && userId) {
-        // Voting session portion registration
         await VotingService.selectMealPortion(
           sessionId,
           userId,
-          portionData.portionFraction,
-          portionData.foodPortions
+          1,
+          fullMealFoodPortions
         );
       } else {
-        throw new Error('Invalid configuration for portion selection');
+        throw new Error('Invalid configuration for meal confirmation');
       }
 
-      const percentLabel = portionData.mode === 'percentage' 
-        ? `${(portionData.portionFraction * 100).toFixed(1)}%`
-        : 'Custom';
-
       const mealDisplayName = isGameSession ? mealName : winnerMeal?.name;
+      const totalCalories = targetMeal.totalCalories;
 
       showSuccess(
-        'Portion Registered',
-        `You've registered ${percentLabel} portion of ${mealDisplayName} (${portionData.totalCalories} kcal)`
+        'Meal Registered',
+        `You've confirmed full consumption of ${mealDisplayName} (${totalCalories} kcal)`
       );
 
       onClose();
@@ -116,10 +97,10 @@ export function PortionSelectionModal({
         onSuccess();
       }
     } catch (error) {
-      console.error('Error registering portion:', error);
+      console.error('Error confirming meal consumption:', error);
       showError(
-        'Registration Failed',
-        error instanceof Error ? error.message : 'Failed to register portion'
+        'Confirmation Failed',
+        error instanceof Error ? error.message : 'Failed to confirm meal consumption'
       );
     } finally {
       setLoading(false);
@@ -135,10 +116,9 @@ export function PortionSelectionModal({
   // For voting sessions, winnerMeal is always required
   if (!isGameSession && !meal) return null;
   
-  // For game sessions, we need winnerMeal for the MealPortionSelector
-  // If only mealId is provided without winnerMeal, we can't render the portion selector
+  // For game sessions we also need a winner meal object to compute food portions.
   if (isGameSession && !meal) {
-    console.error('[PortionSelectionModal] Game session requires winnerMeal object for portion selection');
+    console.error('[PortionSelectionModal] Game session requires winnerMeal object for full consumption confirmation');
     return null;
   }
 
@@ -155,7 +135,7 @@ export function PortionSelectionModal({
             <CardTitle className={`text-2xl font-bold ${
               isGameSession ? 'text-amber-400' : 'text-amber-200'
             }`}>
-              Select Your Portion
+              Confirm Meal Consumption
             </CardTitle>
             <button
               onClick={onClose}
@@ -166,20 +146,36 @@ export function PortionSelectionModal({
             </button>
           </div>
           <p className="text-neutral-300 mt-2">
-            Choose how much of <span className={`font-semibold ${
+            Confirm full consumption of <span className={`font-semibold ${
               isGameSession ? 'text-amber-400' : 'text-amber-200'
-            }`}>{displayMealName}</span> you consumed
+            }`}>{displayMealName}</span>
           </p>
         </CardHeader>
 
         {/* Content */}
-        <CardContent className="p-6">
-          <MealPortionSelector
-            meal={meal!}
-            onConfirm={handlePortionConfirm}
-            onCancel={onClose}
-            loading={loading}
-          />
+        <CardContent className="p-6 space-y-4">
+          <p className="text-sm text-neutral-300">
+            Partial portions are no longer supported. This action will register the full meal for this session.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmFullConsumption}
+              disabled={loading}
+              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {loading ? 'Confirming...' : 'Confirm Full Meal'}
+            </Button>
+          </div>
         </CardContent>
       </div>
     </div>

@@ -137,16 +137,6 @@ export default function GroupsPage() {
   const handleRegisterGroupMeal = async (mealData: { 
     mealId: number; 
     date: string;
-    portions?: {
-      mode: 'percentage' | 'absolute';
-      portionFraction: number;
-      foodPortions: Array<{
-        foodId: number;
-        portionFraction: number;
-        absoluteQuantity?: number;
-      }>;
-      totalCalories: number;
-    }
   }) => {
     try {
       if (!userData?.profile) {
@@ -165,8 +155,7 @@ export default function GroupsPage() {
 
       const registerMealData: RegisterMealData = {
         mealId: mealData.mealId,
-        date: mealData.date,
-        portions: mealData.portions
+        date: mealData.date
       };
 
       const result = await MealService.registerGroupMeal(
