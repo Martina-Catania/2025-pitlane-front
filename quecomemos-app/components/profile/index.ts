@@ -1,9 +1,9 @@
-export { UserProfileSection } from './user-profile-section';
-export { UserPreferenceCards } from './user-preference-cards';
-export { UserSidebar } from './user-sidebar';
-export { SettingsForm } from './settings-form';
-export { AllMeals } from './all-meals';
-export { UserMeals } from './user-meals';
+export { UserProfileSection } from './UserProfileSection';
+export { UserPreferenceCards } from './UserPreferenceCards';
+export { UserSidebar } from './UserSidebar';
+export { SettingsForm } from './SettingsForm';
+export { AllMeals } from './AllMeals';
+export { UserMeals } from './UserMeals';
 export { UserBadges } from './UserBadges';
 export { BadgeSelectionModal } from './badges/BadgeSelectionModal';
 export { PrimaryBadgeDisplay } from './badges/PrimaryBadgeDisplay';

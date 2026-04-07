@@ -7,7 +7,7 @@ import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import AddMealForm from '../meal/AddMealForm';
 import { MealSearchBar } from '../meal/MealSearchBar';
 import { MealComposition } from '../meal/MealComposition';
-import { fetchGroupDietaryInfo } from '@/lib/utils/groupService';
+import { fetchGroupDietaryInfo } from '@/lib/services/GroupService';
 import { Group } from '../groups/index';
 
 interface GroupDietaryInfo {

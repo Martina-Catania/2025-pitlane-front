@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { NotificationType } from '@/components/modals/notification-modal';
+import { NotificationType } from '@/components/modals/NotificationModal';
 
 interface NotificationState {
   isOpen: boolean;

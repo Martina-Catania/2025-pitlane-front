@@ -1,7 +1,7 @@
 export * from './food-cards';
 export * from './carousels';
 export * from './forms';
-export { UserFoodsPage } from './user-foods-page';
+export { UserFoodsPage } from './UserFoodsPage';
 export { UserFoods } from './UserFoods';
 export { UserOwnFoods } from './UserOwnFoods';
-export { PreferenceFilteredFoodsPage } from './preference-filtered-foods-page';
+export { PreferenceFilteredFoodsPage } from './PreferenceFilteredFoodsPage';

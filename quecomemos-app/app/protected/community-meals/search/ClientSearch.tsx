@@ -11,7 +11,7 @@ import { CalorieRangeSlider } from '@/components/common/sliders';
 import { MultiSelect } from '@/components/common/MultiSelect';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { useUser } from '@/lib/contexts/UserContext';
-import { fetchAllPreferences, fetchAllDietaryRestrictions, Preference, DietaryRestriction } from '@/lib/utils/preferencesService';
+import { fetchAllPreferences, fetchAllDietaryRestrictions, Preference, DietaryRestriction } from '@/lib/services/PreferencesService';
 
 interface SearchFilters {
   searchTerm: string;

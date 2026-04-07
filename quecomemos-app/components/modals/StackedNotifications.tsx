@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import ReactDOM from 'react-dom';
-import { NotificationModal } from './notification-modal';
+import { NotificationModal } from './NotificationModal';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/lib/contexts/UserContext';
-import { AllMeals } from './all-meals';
+import { AllMeals } from './AllMeals';
 import { PreferencesWarning } from '@/components/forms';
 import DashboardGroupsSection from '@/components/groups/DashboardGroupsSection';
 

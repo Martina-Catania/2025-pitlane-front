@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGlobalNotification } from "@/lib/contexts/NotificationContext";
-import { ConfirmationModal } from "./confirmation-modal";
+import { ConfirmationModal } from "./ConfirmationModal";
 import { useConfirmation } from "@/lib/hooks/useConfirmation";
 import { SquarePen, Trash2, Plus, Utensils } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config/api";
