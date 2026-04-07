@@ -185,7 +185,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                                 alt={badge.name}
                                 width={40}
                                 height={40}
-                                className="w-10 h-10 object-contain"
+                                className="w-full h-full object-cover"
                               />
                             ) : (
                               <Award className={`w-8 h-8 ${levelConfig ? levelConfig.iconColor : 'text-zinc-500'}`} />
@@ -316,7 +316,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                             alt={badge.name}
                             width={32}
                             height={32}
-                            className="w-8 h-8 object-contain"
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <Award className={`w-7 h-7 ${hasEarned && levelConfig ? levelConfig.iconColor : 'text-zinc-600'}`} />
@@ -402,7 +402,7 @@ export function BadgeProgressDisplay({ profileId }: BadgeProgressDisplayProps) {
                                   alt={`${badge.name} - ${level}`}
                                   width={20}
                                   height={20}
-                                  className={`w-5 h-5 object-contain ${!isAchieved ? 'opacity-40' : ''}`}
+                                  className={`w-full h-full object-cover ${!isAchieved ? 'opacity-40' : ''}`}
                                 />
                               ) : (
                                 <Award className={`w-4 h-4 ${

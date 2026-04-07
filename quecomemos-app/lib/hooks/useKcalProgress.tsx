@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useCalorieProgressRefresh } from '@/lib/contexts/CalorieProgressContext';
+import { API_BASE_URL } from '@/lib/config/api';
+import { getCurrentUserAndAccessTokenOrThrow } from '@/lib/utils/authFetch';
 
 interface ConsumptionItem {
   name: string;
@@ -27,15 +28,12 @@ export function useCalorieProgress(date?: Date) {
   const fetchProgress = useCallback(async () => {
     try {
       setLoading(true);
-      const supabase = createClient();
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      const { userId, accessToken } = await getCurrentUserAndAccessTokenOrThrow();
 
       const dateParam = date ? `?date=${date.toISOString()}` : '';
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/${user.id}/calorie-progress${dateParam}`, {
+      const response = await fetch(`${API_BASE_URL}/profile/${userId}/calorie-progress${dateParam}`, {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
@@ -72,16 +70,13 @@ export function useCalorieProgress(date?: Date) {
 
   const updateCalorieGoal = async (newGoal: number) => {
     try {
-      const supabase = createClient();
+      const { userId, accessToken } = await getCurrentUserAndAccessTokenOrThrow();
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profile/${user.id}/calorie-goal`, {
+      const response = await fetch(`${API_BASE_URL}/profile/${userId}/calorie-goal`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({ calorieGoal: newGoal })
       });

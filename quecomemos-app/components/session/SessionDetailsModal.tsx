@@ -7,7 +7,7 @@ import { Trophy, Users, Clock, X, Eye, PieChart, Gamepad2, Egg } from 'lucide-re
 import { useState, useEffect } from 'react';
 import { VotingService } from '../voting/VotingService';
 import { GameHistoryService, GameSessionDetails } from '../games/clicker-game/GameHistoryService';
-import { MealModal } from '@/components/modals/meal-modal';
+import { MealModal } from '@/components/modals/MealModal';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { PortionSelectionModal } from '../voting/PortionSelectionModal';
@@ -497,7 +497,7 @@ export function SessionDetailsModal({
                           className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50"
                         >
                           <PieChart className="h-4 w-4 mr-2" />
-                          {hasSelectedPortion ? 'Portion Already Selected' : 'Select Your Portion'}
+                          {hasSelectedPortion ? 'Meal Already Confirmed' : 'Confirm Full Meal'}
                         </Button>
                       )}
                     </div>

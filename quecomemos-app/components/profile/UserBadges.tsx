@@ -129,7 +129,7 @@ export function UserBadges({ badges, loading = false }: UserBadgesProps) {
                       alt={badge.name}
                       width={32}
                       height={32}
-                      className="w-full h-full rounded-full border border-gray-200 bg-white p-0.5"
+                      className="w-full h-full rounded-full object-cover border border-gray-200"
                       onError={(e) => {
                         // Fallback to emoji if image fails
                         const target = e.target as HTMLImageElement;

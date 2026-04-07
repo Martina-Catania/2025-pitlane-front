@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Settings, LogOut, X, Home, Utensils, ChefHat, Users, Activity } from 'lucide-react';
+import { User, Settings, LogOut, X, Home, Utensils, ChefHat, Users, Activity, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/lib/contexts/UserContext';
 
@@ -193,6 +193,20 @@ export function UserSidebar() {
               <div className="font-medium text-sm text-card-foreground">My Profile</div>
               <div className="text-xs text-muted-foreground">
                 View your consumption history and calorie goals
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/protected/shopping-list"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-3 w-full p-3 text-left hover:bg-amber-800/20 rounded-lg transition-colors"
+          >
+            <ShoppingBasket className="w-5 h-5 text-amber-300" />
+            <div>
+              <div className="font-medium text-sm text-card-foreground">Shopping List</div>
+              <div className="text-xs text-muted-foreground">
+                Check foods needed for planned meals
               </div>
             </div>
           </Link>

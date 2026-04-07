@@ -1,6 +1,6 @@
-export { CustomCheckbox } from './custom-checkbox';
-export { DropdownWrapper } from './dropdown-wrapper';
-export { IconSelect } from './icon-select';
-export { PreferencesWarning } from './preferences-warning';
-export { AddUserDataForm } from './add-user-data-form';
+export { CustomCheckbox } from './CustomCheckbox';
+export { DropdownWrapper } from './DropdownWrapper';
+export { IconSelect } from './IconSelect';
+export { PreferencesWarning } from './PreferencesWarning';
+export { AddUserDataForm } from './AddUserDataForm';
 export * from './password';

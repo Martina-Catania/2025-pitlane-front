@@ -1,24 +1,17 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import { PlannedMealsService } from '@/lib/services/PlannedMealsService';
+import { API_BASE_URL } from '@/lib/config/api';
+import { getAccessTokenOrThrow } from '@/lib/utils/authFetch';
 
 export interface RegisterMealData {
   mealId: number;
   date: string;
-  portions?: {
-    portionFraction: number;
-    foodPortions: Array<{
-      foodId: number;
-      portionFraction: number;
-      absoluteQuantity?: number;
-    }>;
-  };
 }
 
 export interface MealRegistrationResult {
   success: boolean;
+  planned?: boolean;
   consumption?: {
     ConsumptionID: number;
     name: string;
@@ -43,10 +36,24 @@ export class MealService {
     try {
       console.log('Attempting to register meal:', mealData);
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
+      const targetDate = new Date(mealData.date);
+      if (!Number.isNaN(targetDate.getTime()) && targetDate > new Date()) {
+        await PlannedMealsService.createPlannedMeal({
+          profileId,
+          mealId: mealData.mealId,
+          plannedFor: targetDate.toISOString()
+        });
+
+        return {
+          success: true,
+          planned: true
+        };
+      }
+
+      let accessToken: string;
+      try {
+        accessToken = await getAccessTokenOrThrow('Authentication required. Please log in to register meals.');
+      } catch {
         return {
           success: false,
           error: 'Authentication required. Please log in to register meals.'
@@ -56,7 +63,6 @@ export class MealService {
       console.log('Registering meal:', {
         mealId: mealData.mealId,
         date: mealData.date,
-        portions: mealData.portions,
         profileId: profileId,
         mealName: mealName
       });
@@ -67,15 +73,14 @@ export class MealService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           name: description,
           description: description,
           profileId: profileId,
           mealId: mealData.mealId,
-          consumedAt: mealData.date,
-          portions: mealData.portions || null
+          consumedAt: mealData.date
         }),
       });
 
@@ -118,10 +123,25 @@ export class MealService {
     try {
       console.log('Attempting to register group meal:', mealData);
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
+      const targetDate = new Date(mealData.date);
+      if (!Number.isNaN(targetDate.getTime()) && targetDate > new Date()) {
+        await PlannedMealsService.createPlannedMeal({
+          profileId,
+          groupId,
+          mealId: mealData.mealId,
+          plannedFor: targetDate.toISOString()
+        });
+
+        return {
+          success: true,
+          planned: true
+        };
+      }
+
+      let accessToken: string;
+      try {
+        accessToken = await getAccessTokenOrThrow('Authentication required. Please log in to register meals.');
+      } catch {
         return {
           success: false,
           error: 'Authentication required. Please log in to register meals.'
@@ -134,7 +154,7 @@ export class MealService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           name: description,
@@ -142,8 +162,7 @@ export class MealService {
           profileId: profileId,
           groupId: groupId,
           mealId: mealData.mealId,
-          consumedAt: mealData.date,
-          portions: mealData.portions || null
+          consumedAt: mealData.date
         }),
       });
 

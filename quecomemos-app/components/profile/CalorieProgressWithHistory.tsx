@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Utensils } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalorieCircleProgress } from './calorie-circle-progress';
+import { CalorieCircleProgress } from './CalorieCircleProgress';
 
 interface ConsumptionItem {
   name: string;

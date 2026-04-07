@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Users, Clock, PieChart, X, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { VotingService } from './VotingService';
-import { MealModal } from '@/components/modals/meal-modal';
+import { MealModal } from '@/components/modals/MealModal';
 import { useUser } from '@/lib/contexts/UserContext';
 import { API_BASE_URL } from '@/lib/config/api';
 import { PortionSelectionModal } from './PortionSelectionModal';

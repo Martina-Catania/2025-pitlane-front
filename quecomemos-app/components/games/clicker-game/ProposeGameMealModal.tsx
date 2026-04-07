@@ -7,7 +7,7 @@ import { MealComposition } from '@/components/meal/MealComposition';
 import AddMealForm from '@/components/meal/AddMealForm';
 import { useMeals, Meal } from '@/lib/contexts/MealsContext';
 import { useUser } from '@/lib/contexts/UserContext';
-import { fetchGroupDietaryInfo } from '@/lib/utils/groupService';
+import { fetchGroupDietaryInfo } from '@/lib/services/GroupService';
 
 interface GroupDietaryInfo {
   dietaryRestrictions: Array<{

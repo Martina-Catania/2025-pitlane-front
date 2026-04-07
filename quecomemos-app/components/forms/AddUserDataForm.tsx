@@ -1,7 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { CustomCheckbox } from "./custom-checkbox";
+import { CustomCheckbox } from "./CustomCheckbox";
 import {
     Card,
     CardContent,

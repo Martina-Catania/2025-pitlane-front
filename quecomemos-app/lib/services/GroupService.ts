@@ -1,7 +1,7 @@
 'use client';
 
 import { API_BASE_URL } from '@/lib/config/api';
-import { createClient } from '@/lib/supabase/client';
+import { authFetch } from '@/lib/utils/authFetch';
 import { Meal } from '@/lib/contexts/MealsContext';
 
 export interface GroupDietaryInfo {
@@ -31,18 +31,12 @@ export interface GroupFilteredMeals {
 
 export async function fetchGroupDietaryInfo(groupId: string): Promise<GroupDietaryInfo | null> {
   try {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('No authentication token');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/dietary-info`, {
+    const response = await authFetch(`${API_BASE_URL}/groups/${groupId}/dietary-info`, {
       headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
+    }, {
+      tokenErrorMessage: 'No authentication token'
     });
 
     if (!response.ok) {
@@ -61,18 +55,12 @@ export async function fetchGroupDietaryInfo(groupId: string): Promise<GroupDieta
 
 export async function fetchGroupFilteredMeals(groupId: string): Promise<GroupFilteredMeals | null> {
   try {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('No authentication token');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/meal-consumptions/groups/${groupId}/filtered-meals`, {
+    const response = await authFetch(`${API_BASE_URL}/meal-consumptions/groups/${groupId}/filtered-meals`, {
       headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
+    }, {
+      tokenErrorMessage: 'No authentication token'
     });
 
     if (!response.ok) {

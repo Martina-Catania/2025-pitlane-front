@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ConfirmationType } from '@/components/modals/confirmation-modal';
+import { ConfirmationType } from '@/components/modals/ConfirmationModal';
 
 interface ConfirmationOptions {
   type?: ConfirmationType;

@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/lib/config/api';
+import { createClient } from '@/lib/supabase/client';
 import type {
   VotingSession,
   CreateVotingSessionRequest,
@@ -11,16 +12,29 @@ import type {
 
 const VOTING_BASE_URL = `${API_BASE_URL}/voting`;
 
+async function getAuthHeaders() {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error('No valid session found');
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${session.access_token}`,
+  };
+}
+
 export class VotingService {
   /**
    * Start a new voting session for a group
    */
   static async startVotingSession(data: CreateVotingSessionRequest): Promise<VotingSession> {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/start`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -36,7 +50,8 @@ export class VotingService {
    * Get voting session details
    */
   static async getVotingSession(sessionId: number): Promise<VotingSession> {
-    const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}`);
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}`, { headers });
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -52,14 +67,13 @@ export class VotingService {
    */
   static async getInitialActiveSession(groupId: number): Promise<VotingSession[]> {
     try {
+      const headers = await getAuthHeaders();
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const response = await fetch(`${VOTING_BASE_URL}/groups/${groupId}/initial`, {
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
       
       clearTimeout(timeoutId);
@@ -110,11 +124,10 @@ export class VotingService {
    * Propose a meal for voting
    */
   static async proposeMeal(sessionId: number, data: ProposeMealRequest) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/propose`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -130,11 +143,10 @@ export class VotingService {
    * Start voting phase (transition from proposal to voting)
    */
   static async startVotingPhase(sessionId: number): Promise<VotingSession> {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/start-voting`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -149,11 +161,10 @@ export class VotingService {
    * Cast a vote for a meal proposal
    */
   static async castVote(sessionId: number, data: CastVoteRequest) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/vote`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -169,11 +180,10 @@ export class VotingService {
    * Remove a vote
    */
   static async removeVote(sessionId: number, voteId: number) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/vote/${voteId}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -188,11 +198,10 @@ export class VotingService {
    * Complete voting session and determine winner
    */
   static async completeVotingSession(sessionId: number) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/complete`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -210,11 +219,10 @@ export class VotingService {
     sessionId: number,
     data: CreateConsumptionFromVoteRequest
   ) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/create-consumption`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -230,11 +238,10 @@ export class VotingService {
    * Mark user as ready for voting (proposal phase confirmation)
    */
   static async confirmReadyForVoting(sessionId: number, userId: string): Promise<ConfirmReadyForVotingResponse> {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/confirm-ready`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ userId }),
     });
 
@@ -250,11 +257,10 @@ export class VotingService {
    * Confirm user's votes (voting phase confirmation)
    */
   static async confirmVotes(sessionId: number, userId: string): Promise<ConfirmVotesResponse> {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/confirm-votes`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ userId }),
     });
 
@@ -270,7 +276,8 @@ export class VotingService {
    * Get confirmation status for a voting session
    */
   static async getConfirmationStatus(sessionId: number) {
-    const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/confirmation-status`);
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/confirmation-status`, { headers });
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -284,11 +291,10 @@ export class VotingService {
    * Clean up temporary voting data after session completion
    */
   static async cleanupVotingSession(sessionId: number) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/sessions/${sessionId}/cleanup`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -303,11 +309,10 @@ export class VotingService {
    * Check for auto-transitions (could be called periodically)
    */
   static async checkTransitions() {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/check-transitions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -366,8 +371,10 @@ export class VotingService {
    */
   static async getGroupVotingHistory(groupId: number, limit = 10, offset = 0) {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(
-        `${VOTING_BASE_URL}/history/groups/${groupId}?limit=${limit}&offset=${offset}`
+        `${VOTING_BASE_URL}/history/groups/${groupId}?limit=${limit}&offset=${offset}`,
+        { headers }
       );
 
       if (!response.ok) {
@@ -394,7 +401,8 @@ export class VotingService {
    */
   static async getVotingSessionDetails(sessionId: number) {
     try {
-      const response = await fetch(`${VOTING_BASE_URL}/history/sessions/${sessionId}`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${VOTING_BASE_URL}/history/sessions/${sessionId}`, { headers });
 
       if (!response.ok) {
         let errorMessage = 'Failed to get session details';
@@ -424,11 +432,10 @@ export class VotingService {
     mealPortionFraction: number,
     foodPortions: Array<{ foodId: number; portionFraction: number }>
   ) {
+    const headers = await getAuthHeaders();
     const response = await fetch(`${VOTING_BASE_URL}/history/sessions/${sessionId}/portions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         userId,
         mealPortionFraction,
@@ -448,8 +455,10 @@ export class VotingService {
    * Get participant status and portion selection info
    */
   static async getParticipantStatus(sessionId: number, userId: string) {
+    const headers = await getAuthHeaders();
     const response = await fetch(
-      `${VOTING_BASE_URL}/history/sessions/${sessionId}/participants/${userId}`
+      `${VOTING_BASE_URL}/history/sessions/${sessionId}/participants/${userId}`,
+      { headers }
     );
 
     if (!response.ok) {
