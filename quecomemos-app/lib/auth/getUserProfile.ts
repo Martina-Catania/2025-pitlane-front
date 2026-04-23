@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { API_BASE_URL } from '@/lib/config/api';
 
 interface UserProfile {
   id: string;
@@ -19,7 +20,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 
   try {
     const response = await fetch(
-      `http://localhost:3005/profile/${data.claims.sub}`,
+      `${API_BASE_URL}/profile/${data.claims.sub}`,
       {
         cache: 'no-store', // Siempre datos frescos en server-side
         headers: {
