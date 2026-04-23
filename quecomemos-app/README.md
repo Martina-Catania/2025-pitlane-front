@@ -15,12 +15,11 @@ Set these values before running the app:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_API_URL=
-NEXT_PUBLIC_BACKEND_URL=
+BACKEND_URL=
 ```
 
-Use the same Supabase key value for the `PUBLISHABLE_OR_ANON_KEY` and `ANON_KEY` entries if both are present in the codebase.
+`BACKEND_URL` is optional. If omitted, server routes fall back to `NEXT_PUBLIC_API_URL`.
 
 ## Local Development
 

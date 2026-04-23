@@ -1,32 +1,34 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+
+function getBackendBaseUrl() {
+  const backendBaseUrl =
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_URL
+
+  if (!backendBaseUrl) {
+    throw new Error(
+      'Missing backend URL. Set BACKEND_URL, NEXT_PUBLIC_BACKEND_URL, or NEXT_PUBLIC_API_URL.'
+    )
+  }
+
+  const normalized = backendBaseUrl.endsWith('/')
+    ? backendBaseUrl.slice(0, -1)
+    : backendBaseUrl
+
+  try {
+    return new URL(normalized).toString().replace(/\/$/, '')
+  } catch {
+    throw new Error(`Invalid backend URL configuration: ${backendBaseUrl}`)
+  }
+}
 
 export async function PUT(request: Request) {
   try {
     const { calorieGoal } = await request.json()
-    const cookieStore = await cookies()
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Ignore cookie setting errors
-            }
-          },
-        },
-      }
-    )
+    const backendBaseUrl = getBackendBaseUrl()
+    const supabase = await createClient()
     
     // Get the user session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -41,7 +43,7 @@ export async function PUT(request: Request) {
     const userId = session.user.id
 
     // Make request to backend
-    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/profile/${userId}/calorie-goal`, {
+    const backendResponse = await fetch(`${backendBaseUrl}/profile/${userId}/calorie-goal`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -64,8 +66,12 @@ export async function PUT(request: Request) {
 
   } catch (error) {
     console.error('Error updating calorie goal:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        ...(process.env.NODE_ENV !== 'production' ? { details: errorMessage } : {}),
+      },
       { status: 500 }
     )
   }

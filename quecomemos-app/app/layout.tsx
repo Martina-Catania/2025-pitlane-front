@@ -9,13 +9,27 @@ import { NotificationProvider } from "@/lib/contexts/NotificationContext";
 import { CalorieProgressProvider } from "@/lib/contexts/CalorieProgressContext";
 import { BadgeProviderWrapper } from "@/components/providers/BadgeProviderWrapper";
 
+function toAbsoluteUrl(rawValue?: string): URL | null {
+  if (!rawValue) return null;
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+  const normalized = /^https?:\/\//i.test(rawValue)
+    ? rawValue
+    : `https://${rawValue}`;
+
+  try {
+    return new URL(normalized);
+  } catch {
+    return null;
+  }
+}
+
+const metadataBaseUrl =
+  toAbsoluteUrl(process.env.NEXT_PUBLIC_SITE_URL) ??
+  toAbsoluteUrl(process.env.VERCEL_URL) ??
+  new URL("http://localhost:3000");
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: metadataBaseUrl,
   title: "QueComemos",
   description: "El sabor de la democracia en cada comida.",
 };
